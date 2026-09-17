@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f8f9f6" />
+    <title>Nomi — espace de productivité</title>
+    <link rel="icon" href="./mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./layout.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link" data-i18n="skip">Aller au contenu</a>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#home" aria-label="Nomi">
+          <img src="./mark.svg" alt="" width="33" height="33" />
+          <span>nomi<span class="brand-dot">.</span></span>
+        </a>
+        <div class="workspace-label">
+          <span class="workspace-avatar">n</span
+          ><span data-i18n="workspace">Espace personnel</span>
+        </div>
+        <nav aria-label="Navigation principale" data-label="navigation">
+          <a class="nav-link" href="#home" data-page="home"
+            ><span data-icon="home"></span
+            ><span data-i18n="home">Accueil</span></a
+          >
+          <a class="nav-link" href="#spaces" data-page="spaces"
+            ><span data-icon="spaces"></span
+            ><span data-i18n="spaces">Espaces de travail</span></a
+          >
+          <a class="nav-link" href="#preferences" data-page="preferences"
+            ><span data-icon="preferences"></span
+            ><span data-i18n="preferences">Préférences</span></a
+          >
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="brand-caption" data-i18n="localOnly">
+            Votre espace, simplement.
+          </div>
+          <span class="nyne" data-i18n="byNyne">PAR NYNE TECHNOLOGIES</span>
+        </div>
+      </aside>
+      <div class="main-shell">
+        <header class="topbar">
+          <div class="breadcrumb">
+            <span data-i18n="workspace">Espace personnel</span
+            ><span aria-hidden="true">/</span
+            ><span id="current-page">Vue d’ensemble</span>
+          </div>
+          <div class="topbar-controls">
+            <button
+              class="icon-button top-search"
+              id="top-command"
+              type="button"
+              data-label="openCommand"
+              aria-label="Ouvrir la palette de commandes"
+            >
+              <span data-icon="search"></span><kbd>Ctrl K</kbd>
+            </button>
+            <label class="language-control"
+              ><span data-icon="globe"></span
+              ><span class="sr-only" data-i18n="language">Langue</span
+              ><select id="language">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </select></label
+            >
+          </div>
+        </header>
+        <main id="main" tabindex="-1"></main>
+        <footer class="footer">
+          <span
+            ><span class="status-dot" aria-hidden="true"></span
+            ><span data-i18n="prototype">Prototype · IA locale</span></span
+          ><span data-i18n="prototypeNote"
+            >Modèle ouvert · sans API payante</span
+          >
+        </footer>
+      </div>
+    </div>
+    <dialog
+      id="palette"
+      aria-labelledby="palette-title"
+      aria-describedby="palette-help"
+    >
+      <div class="palette-top">
+        <h2 id="palette-title" data-i18n="command">
+          Que souhaitez-vous faire ?
+        </h2>
+        <button
+          type="button"
+          class="icon-button"
+          id="close-palette"
+          data-label="close"
+          aria-label="Fermer"
+        >
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <div class="palette-search">
+        <span data-icon="search"></span
+        ><input
+          id="command-search"
+          type="search"
+          autocomplete="off"
+          data-label="search"
+          aria-label="Rechercher une commande"
+          aria-controls="command-results"
+        />
+      </div>
+      <div id="command-results" class="command-results"></div>
+      <p id="no-results" data-i18n="noResults" hidden>
+        Aucun résultat. Essayez « vérifier » ou « études ».
+      </p>
+      <p class="palette-help" id="palette-help" data-i18n="commandHelp">
+        ↑ ↓ pour parcourir · Entrée pour ouvrir · Échap pour fermer
+      </p>
+    </dialog>
+    <div class="toast" id="notification" role="status" aria-live="polite"></div>
+  </body>
+</html>

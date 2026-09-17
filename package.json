@@ -1,0 +1,33 @@
+{
+  "name": "nomi-architecture-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node server/start.js",
+    "lint": "eslint preview/*.js server/*.js checks/*.js && prettier --check preview server content checks package.json tsconfig.json eslint.config.js ARCHITECTURE.md README.md",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test checks/*.test.js",
+    "test:live": "node checks/live-inference.js",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "format": "prettier --write preview server content checks package.json tsconfig.json eslint.config.js ARCHITECTURE.md README.md"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "@types/node": "22.15.30",
+    "eslint": "9.39.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "0.9.12",
+    "exceljs": "4.4.0",
+    "fflate": "0.8.3",
+    "pdfjs-dist": "5.4.296"
+  }
+}

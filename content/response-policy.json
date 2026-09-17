@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "maxCharacters": 24000,
+  "regenerationInstruction": "The previous draft was rejected because its opening amount contradicted its final conclusion. Recalculate the original request independently, without reusing that draft. Give one consistent final answer and check that all statements of the final amount agree. Do not mention the rejected draft or invent new assumptions.",
+  "forbiddenCharacters": "[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2069\\ufeff]",
+  "numbersPattern": "[+−-]?[0-9]+(?:[.,][0-9]+)*(?:e[+-]?[0-9]+)?",
+  "resultConsistency": {
+    "headingPrefix": "(?:(?:résultat|result|total|prix final|final price)[ \\t]*:[ \\t]*)?",
+    "conclusionPrefix": "(?:(?:Le[ \\t]+)?(?:prix final|montant final|total)[ \\t]+est[ \\t]+(?:(?:donc|de)[ \\t]+)?|(?:The[ \\t]+)?(?:final price|final amount|total)[ \\t]+is[ \\t]+(?:therefore[ \\t]+)?)",
+    "quantities": [
+      "(?<amount>[+−-]?[0-9]+(?:[   ][0-9]{3})*(?:[.,][0-9]{1,2})?)[ \\t]*(?<unit>[€£$])",
+      "(?<unit>[€£$])[ \\t]*(?<amount>[+−-]?[0-9]+(?:[   ][0-9]{3})*(?:[.,][0-9]{1,2})?)"
+    ]
+  },
+  "normalizations": [
+    { "id": "layout", "pattern": "\\r\\n?", "replacement": "\n" },
+    { "id": "layout", "pattern": "[ \\t]+$", "replacement": "" },
+    { "id": "layout", "pattern": "^ {0,3}#{1,6}[ \\t]+", "replacement": "" },
+    {
+      "id": "layout",
+      "pattern": "^\\*\\*([^*\\n]+)\\*\\*(?=$|[ \\t.,:;!?])",
+      "replacement": "$1"
+    },
+    { "id": "layout", "pattern": "\\n{3,}", "replacement": "\n\n" },
+    {
+      "id": "professional-tone",
+      "pattern": "^(?:bravo[ ,]+(?:mon[ ]+)?(?:petit[ ]+)?champion(?:ne)?|(?:mon[ ]+)?petit[ ]+génie|good[ ]+(?:boy|girl)|well[ ]+done[ ,]+(?:little[ ]+)?(?:buddy|champ))[ !.,:;—-]+",
+      "replacement": ""
+    }
+  ],
+  "blockedPatterns": [
+    {
+      "id": "internal-reasoning",
+      "pattern": "</?think(?:>|[ ])"
+    },
+    {
+      "id": "diagnosis-request",
+      "pattern": "(?:quel(?:le)?(?: est)?[ ]+(?:votre|ton|le)[ ]+diagnostic|(?:indiquez|précisez|partagez|donnez|révélez|dis-moi|dites-moi)[^.!?\\n]{0,70}(?:diagnostic|handicap)|(?:êtes[- ]vous|es-tu|avez[- ]vous|as-tu)[^.!?\\n]{0,65}(?:dyscalcul|dyslex|dysprax|autis|tdah|diagnosti|handicap)|(?:what(?: is|'s)[ ]+your[ ]+diagnosis|(?:share|provide|tell me|disclose)[^.!?\\n]{0,70}(?:diagnosis|disability)|(?:are you|do you have|have you been)[^.!?\\n]{0,65}(?:dyscalcul|dyslex|dysprax|autis|adhd|diagnos|disabil)))"
+    },
+    {
+      "id": "medical-framing",
+      "pattern": "(?:nomi[ ]+(?:est|constitue|agit comme|is|acts as|serves as)[^.!?\\n]{0,65}(?:médical|medical|cliniqu|clinical|handicap|disabil)|(?:votre|ton|your)[ ]+(?:dyscalculie|dyslexie|dyspraxie|autisme|tdah|dyscalculia|dyslexia|dyspraxia|autism|adhd|handicap|disability))"
+    },
+    {
+      "id": "patronizing-tone",
+      "pattern": "(?:bravo[ ,]+(?:mon[ ]+)?(?:petit[ ]+)?champion|(?:mon|ma)[ ]+petit(?:e)?[ ]+(?:génie|champion|chéri)|pauvre[ ]+(?:vous|toi)|good[ ]+(?:boy|girl)|little[ ]+(?:buddy|champ)|poor[ ]+you)"
+    },
+    {
+      "id": "code-output",
+      "pattern": "```|~~~|<script\\b|(?:^|[\\n`])[ \\t]*(?:(?:const|let|var)[ \\t]+[A-Za-z_$][A-Za-z0-9_$]*[ \\t]*[:=]|(?:def|function)[ \\t]+[A-Za-z_$][A-Za-z0-9_$]*[ \\t]*\\(|class[ \\t]+[A-Za-z_$][A-Za-z0-9_$]*[ \\t]*[:{])|=>"
+    }
+  ]
+}

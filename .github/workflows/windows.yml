@@ -1,0 +1,34 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish self-contained x64
+        run: >
+          dotnet publish Nomi.WinUI/Nomi.WinUI.csproj -c Release -r win-x64
+          -p:Platform=x64 -p:PublishReadyToRun=true -o artifacts/Nomi-win-x64
+      - name: Zip
+        run: Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nomi-win-x64
+          path: artifacts/Nomi-win-x64.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/Nomi-win-x64.zip

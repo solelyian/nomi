@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Nomi.WinUI/OllamaClient.cs" Link="OllamaClient.cs" />
+    <Compile Include="../../Nomi.WinUI/ResponsePolicy.cs" Link="ResponsePolicy.cs" />
+    <Compile Include="../../Nomi.WinUI/DocumentText.cs" Link="DocumentText.cs" />
+    <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../content/inference.json" Link="content/inference.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../content/response-policy.json" Link="content/response-policy.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../response-policy-cases.json" Link="response-policy-cases.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ExcelDataReader" Version="3.7.0" />
+    <PackageReference Include="PdfPig" Version="0.1.11" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+  </ItemGroup>
+</Project>

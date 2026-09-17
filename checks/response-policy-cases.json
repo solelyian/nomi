@@ -1,0 +1,250 @@
+[
+  {
+    "name": "Reject the conflicting price observed in live Ollama output",
+    "source": "32,00 €\n\nLe prix initial est de 80 €.\n\nUne remise de 15 % signifie que 15 % du prix est soustrait.\n\n15 % de 80 € = 0,15 × 80 = 12 €.\n\n80 € - 12 € = 68 €.\n\nLe prix final est donc 68,00 €.\n\nSource : calcul de remise sur un prix.\n\nFacteur : 15 % = 0,15.\n\nUnité : euro (€).\n\nRemarque : le résultat est 68,00 €, pas 32,00 €.\n\n(32,00 € serait le cas d'une remise de 25 % sur 128 €, ou d'un autre calcul erroné.)\n\nVérification : 0,15 × 80 = 12 → 80 - 12 = 68.\n\nLe prix final est 68,00 €.",
+    "format": "steps",
+    "expected": "",
+    "changes": [],
+    "reasons": ["conflicting-result"]
+  },
+  {
+    "name": "Reject conflicting English prices with different currency placement",
+    "source": "### Result: $24.50\nThe final price is 25.00$.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["conflicting-result"]
+  },
+  {
+    "name": "Reject conflicting negative balances",
+    "source": "−12,50 €\nLe total est de +12,50 €.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["conflicting-result"]
+  },
+  {
+    "name": "Compare large monetary amounts without floating point rounding",
+    "source": "£9007199254740992.01\nThe total is £9007199254740992.02.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["conflicting-result"]
+  },
+  {
+    "name": "Equivalent monetary notation leaves text untouched",
+    "source": "Résultat : +01 234,50 €\nLe prix final est donc 1234.5 €.",
+    "format": "summary",
+    "expected": "Résultat : +01 234,50 €\nLe prix final est donc 1234.5 €.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Ignore intermediate costs and quantities when comparing the conclusion",
+    "source": "68 €\nLe prix initial est de 80 €.\nRemise : 12 €.\nLe prix final est donc 68,00 €.",
+    "format": "summary",
+    "expected": "68 €\nLe prix initial est de 80 €.\nRemise : 12 €.\nLe prix final est donc 68,00 €.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Different currencies do not imply conflicting values",
+    "source": "$12\nLe total est de 10 €.",
+    "format": "summary",
+    "expected": "$12\nLe total est de 10 €.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Conditional prices and quoted prices are not unconditional conclusions",
+    "source": "Résultat : 68 €\nLe prix final est 80 € si la remise est annulée.\n« Le prix final est 80 €. »",
+    "format": "summary",
+    "expected": "Résultat : 68 €\nLe prix final est 80 € si la remise est annulée.\n« Le prix final est 80 €. »",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Signed zero is the same monetary amount",
+    "source": "−0,00 €\nLe total est de 0 €.",
+    "format": "summary",
+    "expected": "−0,00 €\nLe total est de 0 €.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "French amounts, signs, units and assumptions survive formatting",
+    "source": "### **Résultat : 68 €**  \r\n80 € × 15 % = 12 €.\r\n80 € − 12 € = 68 €.\r\nHypothèse : sans autres frais.",
+    "format": "steps",
+    "expected": "Résultat : 68 €\n\n80 € × 15 % = 12 €.\n\n80 € − 12 € = 68 €.\n\nHypothèse : sans autres frais.",
+    "changes": ["layout", "reading-spacing"],
+    "reasons": []
+  },
+  {
+    "name": "Remove an overfamiliar French opening without changing the result",
+    "source": "Bravo champion ! Le total est de 12,50 €.",
+    "format": "summary",
+    "expected": "Le total est de 12,50 €.",
+    "changes": ["professional-tone"],
+    "reasons": []
+  },
+  {
+    "name": "Remove an overfamiliar English opening",
+    "source": "Well done, little buddy! The total is £12.50, assuming no fees.",
+    "format": "summary",
+    "expected": "The total is £12.50, assuming no fees.",
+    "changes": ["professional-tone"],
+    "reasons": []
+  },
+  {
+    "name": "Preserve summary paragraphs and uncertainty",
+    "source": "Estimated total: $1,234.56.\n\nThis assumes a fixed rate; confirm the rate before use.",
+    "format": "summary",
+    "expected": "Estimated total: $1,234.56.\n\nThis assumes a fixed rate; confirm the rate before use.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Preserve mathematical operators and scientific notation",
+    "source": "2 ** 3 ** 4 ; 2 **3** 4 ; −1,5 °C ; +2.5e-3 kg ; 1/2 ; 12:30 ; 1 234,56 €",
+    "format": "summary",
+    "expected": "2 ** 3 ** 4 ; 2 **3** 4 ; −1,5 °C ; +2.5e-3 kg ; 1/2 ; 12:30 ; 1 234,56 €",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Retain numbered steps and constraints instead of truncating",
+    "source": "1. Résultat : 20 minutes.\n2. Tâches : 60 minutes.\n3. Pauses : 10 minutes.\n4. Budget : 90 minutes.\n5. Sans chevauchement.",
+    "format": "steps",
+    "expected": "1. Résultat : 20 minutes.\n\n2. Tâches : 60 minutes.\n\n3. Pauses : 10 minutes.\n\n4. Budget : 90 minutes.\n\n5. Sans chevauchement.",
+    "changes": ["reading-spacing"],
+    "reasons": []
+  },
+  {
+    "name": "A course can mention diagnostic concepts without profiling the user",
+    "source": "Dans ce cours, un diagnostic différentiel compare plusieurs hypothèses.",
+    "format": "summary",
+    "expected": "Dans ce cours, un diagnostic différentiel compare plusieurs hypothèses.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Class averages and finance prose are not code",
+    "source": "Class average is 20.\nReturn on investment is 15%; confirm the fees.",
+    "format": "summary",
+    "expected": "Class average is 20.\nReturn on investment is 15%; confirm the fees.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "A useful clarification is preserved",
+    "source": "Quelle est l’unité cible ?",
+    "format": "steps",
+    "expected": "Quelle est l’unité cible ?",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "French diagnosis solicitation",
+    "source": "Le total est de 68 €. Quel est votre diagnostic ?",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["diagnosis-request"]
+  },
+  {
+    "name": "English diagnosis solicitation",
+    "source": "Please share your diagnosis so I can adapt.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["diagnosis-request"]
+  },
+  {
+    "name": "Question about a condition",
+    "source": "Êtes-vous dyscalculique ?",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["diagnosis-request"]
+  },
+  {
+    "name": "English question about a condition",
+    "source": "Have you been diagnosed with ADHD?",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["diagnosis-request"]
+  },
+  {
+    "name": "Clinical product framing",
+    "source": "Nomi est un dispositif médical.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["medical-framing"]
+  },
+  {
+    "name": "English clinical product framing",
+    "source": "Nomi is a clinical assistant.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["medical-framing"]
+  },
+  {
+    "name": "Do not attribute a diagnosis to the user",
+    "source": "Votre dyslexie explique cette erreur.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["medical-framing"]
+  },
+  {
+    "name": "Do not delete a sentence of pity and pretend nothing happened",
+    "source": "Le résultat est 20. Pauvre vous, cela doit être difficile.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["patronizing-tone"]
+  },
+  {
+    "name": "Code fences",
+    "source": "Voici le résultat :\n```python\nprint(80 * 0.85)\n```",
+    "format": "steps",
+    "expected": "",
+    "changes": [],
+    "reasons": ["code-output"]
+  },
+  {
+    "name": "Unfenced code declaration",
+    "source": "const total = 80 * 0.85;",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["code-output"]
+  },
+  {
+    "name": "Never expose a reasoning block",
+    "source": "<think>Reasoning</think> The result is 68.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["internal-reasoning"]
+  },
+  {
+    "name": "Reject concealed text",
+    "source": "Quel est votre dia\u200bgnostic ?",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["hidden-characters"]
+  },
+  {
+    "name": "Do not invent a response when only a greeting was generated",
+    "source": "Bravo champion !",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["empty-response"]
+  }
+]
