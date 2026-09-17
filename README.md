@@ -110,12 +110,28 @@ La variante Instruct a été vérifiée en français et en anglais.
 
 ## 2. Ouvrir l’application WinUI sur Windows
 
+### Installer sans compiler
+
+Chaque tag `v*` publie sur la page **Releases** GitHub, via
+`.github/workflows/windows.yml` (runner Windows) :
+
+- `Nomi-Setup-<version>.exe` — installateur Inno Setup (`installer/nomi.iss`) :
+  double-clic, raccourcis Bureau et Menu Démarrer, désinstallation depuis
+  Windows ; aucune ligne de commande ni prérequis .NET ;
+- `Nomi-win-x64.zip` — version portable, `Nomi.WinUI.exe` à lancer directement.
+
+L’exécutable n’est pas signé : Windows SmartScreen peut afficher un avertissement
+(« Informations complémentaires → Exécuter quand même »). Ollama reste à installer
+séparément (section 1).
+
+### Compiler soi-même
+
 Prérequis : Windows 10 version 1809 ou ultérieure, architecture x64, SDK .NET 8,
 Visual Studio avec la charge de travail WinUI et Windows SDK.
 
-Les packages sont épinglés : Windows App SDK 1.8.260209005 et Windows SDK Build
-Tools 10.0.26100.3916. Le projet est non empaqueté et autonome pour simplifier
-l’essai local ; aucun certificat MSIX n’est requis.
+Le package Windows App SDK est épinglé à 1.8.260209005 (il fixe lui-même la
+version des Windows SDK Build Tools). Le projet est non empaqueté et autonome
+pour simplifier l’essai local ; aucun certificat MSIX n’est requis.
 
 Depuis le dossier racine :
 
