@@ -235,8 +235,9 @@ public sealed partial class MainWindow : Window
                 {
                     grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 }
-                Grid.SetRow(grid.Children[index], index / count);
-                Grid.SetColumn(grid.Children[index], index % count);
+                var child = (FrameworkElement)grid.Children[index];
+                Grid.SetRow(child, index / count);
+                Grid.SetColumn(child, index % count);
             }
         }
         Reflow(0);
@@ -454,7 +455,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private StackPanel CreateDocumentPanel(Draft draft)
+    private ContentControl CreateDocumentPanel(Draft draft)
     {
         var panel = new StackPanel { Spacing = 10 };
         var files = new StackPanel { Spacing = 8 };
@@ -538,7 +539,7 @@ public sealed partial class MainWindow : Window
         panel.Children.Add(files);
         panel.Children.Add(status);
         RenderFiles();
-        return panel;
+        return new ContentControl { Content = panel, HorizontalContentAlignment = HorizontalAlignment.Stretch, IsTabStop = false };
     }
 
     private void ShowPreferences()
