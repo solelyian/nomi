@@ -31,7 +31,11 @@ public sealed partial class MainWindow : Window
     private string homeIntent = "understand";
     private bool compact;
     private bool summary;
-    private readonly OllamaClient inference = new();
+    private readonly LocalInferenceClient inference = new();
+    private CancellationTokenSource? modelPreparation;
+    private ModelProgress modelProgress = new("local-model-missing");
+    private Action? updateModelPanel;
+    private Action? updateRequestControls;
     private readonly Dictionary<string, Draft> drafts = new();
     private CancellationTokenSource? generation;
     private CancellationTokenSource? documentReading;
@@ -47,7 +51,8 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             CancelGeneration();
-            inference.Dispose();
+            modelPreparation?.Cancel();
+            _ = inference.DisposeAsync();
         };
         Refresh();
     }
@@ -128,6 +133,8 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(Navigation, T("navigation"));
         Breadcrumb.Text = $"{T("workspace")}  /  {T(page == "home" ? "overview" : page == "action" ? "action" : page)}";
         PageBody.Children.Clear();
+        updateModelPanel = null;
+        updateRequestControls = null;
         PageBody.Spacing = compact ? 14 : 24;
         if (page == "preferences") ShowPreferences();
         else if (page == "spaces") ShowSpaces();
@@ -186,6 +193,78 @@ public sealed partial class MainWindow : Window
                 resume.HorizontalContentAlignment = HorizontalAlignment.Left;
                 PageBody.Children.Add(resume);
             }
+        }
+    }
+
+    private FrameworkElement CreateModelPanel()
+    {
+        var panel = new StackPanel { Spacing = 10 };
+        panel.Children.Add(Heading(T("localModelTitle")));
+        panel.Children.Add(Text(T("localModelHelp"), 12));
+        var status = Text("", 13);
+        AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
+        var progress = new ProgressBar { Minimum = 0, Maximum = 100 };
+        AutomationProperties.SetName(progress, T("localModelTitle"));
+        var prepare = Button("", async (_, _) => await PrepareModel(), true);
+        var cancel = Button(T("stop"), (_, _) => modelPreparation?.Cancel());
+        updateModelPanel = () =>
+        {
+            status.Text = T(inference.Ready ? "local-model-ready" : modelProgress.Stage);
+            if (modelProgress.Stage == "model-downloading")
+                status.Text += $" {modelProgress.Fraction:P0}";
+            prepare.Content = Text(T(inference.HasModel ? "loadLocalModel" : "downloadLocalModel"));
+            AutomationProperties.SetName(prepare, T(inference.HasModel ? "loadLocalModel" : "downloadLocalModel"));
+            prepare.IsEnabled = modelPreparation is null && !inference.Ready;
+            cancel.Visibility = modelPreparation is not null ? Visibility.Visible : Visibility.Collapsed;
+            progress.Visibility = modelPreparation is not null ? Visibility.Visible : Visibility.Collapsed;
+            progress.IsIndeterminate = modelProgress.Stage != "model-downloading";
+            progress.Value = modelProgress.Fraction * 100;
+            updateRequestControls?.Invoke();
+        };
+        updateModelPanel();
+        panel.Children.Add(status);
+        panel.Children.Add(progress);
+        panel.Children.Add(CardGrid(new[] { prepare, cancel }, 2));
+        return panel;
+    }
+
+    private async Task PrepareModel()
+    {
+        if (modelPreparation is not null || generation is not null) return;
+        using var controller = new CancellationTokenSource();
+        modelPreparation = controller;
+        modelProgress = new("model-verifying");
+        updateModelPanel?.Invoke();
+        try
+        {
+            var progress = new Progress<ModelProgress>(value =>
+            {
+                if (modelPreparation != controller) return;
+                modelProgress = value;
+                updateModelPanel?.Invoke();
+            });
+            await inference.PrepareAsync(true, progress, controller.Token);
+            modelProgress = new("local-model-ready", 1);
+        }
+        catch (OperationCanceledException)
+        {
+            modelProgress = new(controller.IsCancellationRequested ? "model-paused" : "model-download-error");
+        }
+        catch (InferenceException error) { modelProgress = new(error.Message); }
+        catch (HttpRequestException) { modelProgress = new("model-download-error"); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            modelProgress = new("model-storage-error");
+        }
+        catch (Exception error)
+        {
+            StartupDiagnostics.Write($"Local model initialization: {error.GetType().Name} (0x{error.HResult:X8})");
+            modelProgress = new("local-engine-error");
+        }
+        finally
+        {
+            modelPreparation = null;
+            updateModelPanel?.Invoke();
         }
     }
 
@@ -257,7 +336,7 @@ public sealed partial class MainWindow : Window
         PageBody.Children.Add(Heading(T("spaces"), true));
         PageBody.Children.Add(Text(T("spacesIntro")));
         PageBody.Children.Add(ContextGrid());
-        PageBody.Children.Add(Text(T("demoNotice"), 12));
+        PageBody.Children.Add(Text(T("nativeLocalNotice"), 12));
     }
 
     private void ShowAction(bool home = false)
@@ -316,6 +395,7 @@ public sealed partial class MainWindow : Window
             };
         }
         PageBody.Children.Add(input);
+        PageBody.Children.Add(CreateModelPanel());
         var documentsPanel = CreateDocumentPanel(draft);
         PageBody.Children.Add(documentsPanel);
         var formatPicker = new ComboBox
@@ -353,15 +433,18 @@ public sealed partial class MainWindow : Window
             FrameworkElementAutomationPeer.FromElement(copyStatus)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
         });
         var send = Button(T("send"), (_, _) => { }, true);
+        updateRequestControls = () => send.IsEnabled = inference.Ready && generation is null;
+        updateRequestControls();
         var stop = Button(T("stop"), (_, _) => CancelGeneration());
         stop.Visibility = Visibility.Collapsed;
         async Task Send()
         {
             if (generation is not null) return;
+            if (!inference.Ready) { SetStatus("local-model-missing"); return; }
             if (documentReading is not null) { SetStatus("documentReading"); return; }
             if (string.IsNullOrWhiteSpace(input.Text) && draft.Documents.Count == 0) { SetStatus("invalid-request"); input.Focus(FocusState.Programmatic); return; }
             using var controller = new CancellationTokenSource();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(180));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(controller.Token, timeout.Token);
             generation = controller;
             activeDraft = draft;
@@ -391,15 +474,20 @@ public sealed partial class MainWindow : Window
             }
             catch (OperationCanceledException) { SetStatus(timeout.IsCancellationRequested ? "timeout" : "stopped"); }
             catch (InferenceException exception) { SetStatus(exception.Message); }
-            catch (HttpRequestException) { SetStatus("engine-unavailable"); }
+            catch (HttpRequestException) { SetStatus("local-engine-error"); }
             catch (IOException) { SetStatus("incomplete-response"); }
             catch (JsonException) { SetStatus("invalid-response"); }
             catch (ObjectDisposedException) when (controller.IsCancellationRequested) { SetStatus("stopped"); }
+            catch (Exception error)
+            {
+                StartupDiagnostics.Write($"Local inference: {error.GetType().Name} (0x{error.HResult:X8})");
+                SetStatus("local-engine-error");
+            }
             finally
             {
                 generation = null;
                 activeDraft = null;
-                send.IsEnabled = true;
+                updateRequestControls?.Invoke();
                 example.IsEnabled = true;
                 formatPicker.IsEnabled = true;
                 documentsPanel.IsEnabled = true;
@@ -435,7 +523,7 @@ public sealed partial class MainWindow : Window
         PageBody.Children.Add(new Expander
         {
             Header = T("localProcessing"),
-            Content = Text($"{inference.Model} · Ollama\n\n{T("demoNotice")}", 12),
+            Content = Text($"{inference.Model} · llama.cpp\n\n{T("nativeLocalNotice")}", 12),
             HorizontalAlignment = HorizontalAlignment.Stretch
         });
     }

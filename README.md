@@ -6,7 +6,8 @@ vérifier, convertir, planifier, communiquer et apprendre. L’architecture rest
 
 ## Deux supports
 
-- **`Nomi.WinUI/`** : application Windows native en C# / XAML, WinUI 3.
+- **`Nomi.WinUI/`** : application Windows native en C# / XAML, WinUI 3, avec
+  moteur llama.cpp intégré via LLamaSharp 0.26.0, sans Ollama ni serveur à installer.
 - **`preview/`** : aperçu navigateur interactif, connecté au modèle local par
   le petit serveur Node de `server/`.
 - **`content/`** : catalogue français–anglais partagé. Le sélecteur change les
@@ -56,12 +57,13 @@ unités et hypothèses suivants sont conservés. Les transformations appliquées
 indiquées dans « Traitement de la réponse » ; le bouton Copier utilise ce même texte.
 Les chiffres ne sont ni arrondis ni convertis automatiquement.
 
-Le flux Ollama reste progressif en interne, mais **aucun fragment brut n’est
+La génération reste progressive en interne, mais **aucun fragment brut n’est
 envoyé au navigateur ni affiché par WinUI**. Une interruption, une réponse
 tronquée ou invalide, un dépassement de 24 000 caractères ou une règle bloquante
 donne un message localisé, sans réponse partielle. Aucun deuxième modèle ni
 service payant n’intervient.
-La nouvelle tentative éventuelle utilise le même délai global de trois minutes
+La nouvelle tentative éventuelle utilise le même délai global (cinq minutes
+dans WinUI, trois minutes dans l’aperçu web)
 et peut aussi être annulée. Elle peut allonger l’attente.
 
 Cette première politique utilise des règles textuelles ciblées, pas une analyse
@@ -82,7 +84,28 @@ libellés FR/EN si une nouvelle transformation est introduite, puis ajouter un c
 avant/après dans `checks/response-policy-cases.json`. Les mêmes cas sont exécutés
 en JavaScript et en C#. Relancer les contrôles puis redémarrer Nomi.
 
-## 1. Installer le modèle gratuit
+## 1. Utiliser l’application Windows
+
+Télécharger l’installateur depuis les [Releases](https://github.com/solelyian/nomi/releases),
+puis l’ouvrir par double-clic. Lancer Nomi depuis le Bureau ou le Menu Démarrer.
+Dans Nomi, choisir **Télécharger le modèle** : environ 2,5 Go sont téléchargés,
+vérifiés puis chargés. La progression et le bouton **Arrêter** restent disponibles ;
+un téléchargement interrompu reprend au prochain essai.
+
+Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 4B Instruct 2507,
+quantifié Q4_K_M, est téléchargé séparément depuis Hugging Face (Apache-2.0).
+Le fichier, sa version, sa taille et son SHA-256 sont épinglés dans
+`content/local-model.json`. Nomi n’utilise un modèle qu’après vérification complète.
+À chaque ouverture suivante, choisir **Charger le modèle** : aucune connexion
+Internet n’est nécessaire. Ni Ollama, ni PowerShell, ni clé API ne sont requis.
+
+Prévoir au moins 8 Go de RAM (16 Go conseillés) et 4 Go d’espace libre.
+L’inférence fonctionne sur CPU x64 ; la vitesse dépend de l’ordinateur.
+Le modèle reste dans `%LOCALAPPDATA%\Nyne\Nomi\models` après une mise à jour
+ou une désinstallation, pour éviter un nouveau téléchargement. Ce dossier peut
+être supprimé manuellement si Nomi n’est plus utilisé.
+
+## Modèle pour l’aperçu web uniquement
 
 Installer [Ollama](https://ollama.com/download/windows) et ouvrir l’application.
 Dans un terminal :
@@ -121,8 +144,7 @@ Chaque tag `v*` publie sur la page **Releases** GitHub, via
 - `Nomi-win-x64.zip` — version portable, `Nomi.WinUI.exe` à lancer directement.
 
 L’exécutable n’est pas signé : Windows SmartScreen peut afficher un avertissement
-(« Informations complémentaires → Exécuter quand même »). Ollama reste à installer
-séparément (section 1).
+(« Informations complémentaires → Exécuter quand même »).
 
 ### Compiler soi-même
 
@@ -141,7 +163,7 @@ dotnet build .\Nomi.WinUI\Nomi.WinUI.csproj -c Debug -p:Platform=x64
 dotnet run --project .\Nomi.WinUI\Nomi.WinUI.csproj -c Debug -p:Platform=x64
 ```
 
-Le client C# appelle directement Ollama. Node.js n’est pas requis pour WinUI.
+Le client WinUI exécute llama.cpp dans son propre processus. Node.js n’est pas requis.
 Ouvrir le projet dans Visual Studio permet aussi de le lancer avec F5 en x64.
 La publication autonome se fait avec :
 
@@ -149,9 +171,9 @@ La publication autonome se fait avec :
 dotnet publish .\Nomi.WinUI\Nomi.WinUI.csproj -c Release -r win-x64 -p:Platform=x64
 ```
 
-**La compilation XAML et l’exécution de l’application WinUI restent non vérifiées :
-cette version a été préparée sur Ubuntu. Le client d’inférence C# est compilé
-et testé séparément ; aucun exécutable Windows validé n’est fourni.**
+Le workflow Windows compile le XAML, installe le setup et vérifie l’activation
+de la fenêtre depuis un autre répertoire de travail avant de publier les fichiers.
+Les diagnostics de démarrage sont conservés en artefact du workflow.
 
 Pour la validation Windows : envoyer depuis l’accueil sans navigation préalable ;
 changer d’intention sans perdre la saisie ; charger un exemple ; choisir le format ;
@@ -231,7 +253,8 @@ Les sorties sont affichées comme texte, sans exécution de HTML ou de code.
 
 Un modèle peut se tromper : les consignes ne constituent pas un vérificateur
 mathématique déterministe. Relire les chiffres avant de les utiliser.
-Les réponses sont limitées à 768 tokens et la génération à trois minutes :
+Les réponses sont limitées à 768 tokens et la génération à cinq minutes dans
+WinUI (trois minutes dans l’aperçu web) :
 une interruption ou une limite de longueur est signalée, sans afficher le brouillon.
 
 Nomi ne journalise ni ne sauvegarde les demandes sur disque. Les préférences web
@@ -240,14 +263,21 @@ Aucun fournisseur d’inférence distant n’est appelé par le prototype.
 
 ## Dépannage et configuration
 
-- **Ollama indisponible** : ouvrir Ollama ou lancer `ollama serve`, puis vérifier la connexion.
-- **Modèle absent** : lancer `ollama pull qwen3:4b-instruct`.
+- **Démarrage Windows** : consulter `%LOCALAPPDATA%\Nyne\Nomi\logs\startup.log`.
+  Les erreurs de démarrage affichent aussi une boîte de dialogue avec ce chemin.
+- **Modèle absent dans WinUI** : choisir **Télécharger le modèle**, puis attendre
+  la fin de la vérification et du chargement avant de lancer une demande.
+- **Téléchargement interrompu** : vérifier la connexion et réessayer pour reprendre.
+- **Modèle invalide** : retenter le téléchargement ; aucun fichier invalide n’est chargé.
+- **Espace disque insuffisant** : libérer au moins 4 Go puis réessayer.
+- **Ollama indisponible (web uniquement)** : ouvrir Ollama ou lancer `ollama serve`.
+- **Modèle absent (web uniquement)** : lancer `ollama pull qwen3:4b-instruct`.
 - **Modèle occupé** : attendre la fin de l’autre demande, puis réessayer.
 - **Délai dépassé** : raccourcir la demande ; sur CPU, une réponse peut prendre plusieurs dizaines de secondes.
 - **Réponse écartée par Nomi** : reformuler ou réessayer. Pour améliorer une règle
   trop stricte, ajouter un cas de régression avant de modifier la politique.
 
-`NOMI_MODEL` permet de choisir un autre modèle local déjà téléchargé.
+Pour l’aperçu web, `NOMI_MODEL` permet de choisir un autre modèle local déjà téléchargé.
 `NOMI_OLLAMA_URL` permet de changer le port Ollama, avec une adresse HTTP loopback
 uniquement. Relancer Nomi après modification. Les essais portent sur la variante
 Qwen3 Instruct indiquée ci-dessus ; les modèles cloud et les sorties de raisonnement
@@ -281,7 +311,9 @@ et les termes de cours à préserver, les violations en fin de flux, l’absence
 texte exposé avant la fin, les réponses tronquées et les délais dépassés.
 Le projet .NET exécute les contrôles du vrai client C# avec un transport simulé,
 les mêmes cas de politique, le parcours natif avec contrôle avant affichage et
-la lecture C# des mêmes fixtures documentaires.
+la lecture C# des mêmes fixtures documentaires. Les contrôles du gestionnaire
+de modèle couvrent la reprise, le hash, les plages HTTP, l’annulation et les
+accès concurrents, sans téléchargement réel.
 Le script Python vérifie les
 documents XML natifs et les correspondances des gestionnaires XAML/C#.
 Ces contrôles ne certifient pas l’accessibilité de l’interface rendue.
@@ -296,9 +328,20 @@ dotnet run --project checks/Nomi.Inference.Checks -- --policy-live
 
 Le premier lance son propre serveur sur un port temporaire et exerce les six actions
 en français et en anglais, après adaptation. `--live` exerce le transport Ollama C# ;
-`--policy-live` exerce le parcours complet `GenerateNomiAsync` utilisé par WinUI.
+`--policy-live` exerce la politique commune via l’ancien transport Ollama.
 Ces essais vérifient quelques demandes représentatives, sans mesurer la fiabilité
 générale du modèle. Aucun test de l’interface dans le navigateur n’a encore été effectué.
+
+Pour vérifier le moteur intégré, sans Ollama :
+
+```sh
+dotnet run --project checks/Nomi.Inference.Checks -- --embedded-live
+```
+
+Ce contrôle télécharge et vérifie le modèle si nécessaire, exerce les six actions
+dans les deux langues, l’extraction d’un PDF et l’annulation suivie d’une nouvelle
+demande. `NOMI_TEST_MODEL_DIR` permet d’utiliser un dossier de modèle dédié pour
+ces contrôles uniquement.
 
 Les contrôles du projet Windows, à exécuter sur Windows :
 
@@ -313,3 +356,4 @@ dotnet build .\Nomi.WinUI\Nomi.WinUI.csproj -c Release -p:Platform=x64 -warnaser
 - [Windows App SDK 1.8.260209005](https://www.nuget.org/packages/Microsoft.WindowsAppSDK/1.8.260209005)
 - [Qwen3 4B Instruct dans Ollama](https://ollama.com/library/qwen3:4b-instruct)
 - [Fiche et licence du modèle](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)
+- [LLamaSharp](https://github.com/SciSharp/LLamaSharp)

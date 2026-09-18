@@ -12,6 +12,7 @@ permissions:
 jobs:
   publish:
     runs-on: windows-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -35,7 +36,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: startup-diagnostics
-          path: artifacts/startup-*
+          path: |
+            artifacts/startup-*
+            artifacts/startup.log
+      - name: Verify embedded CPU engine without Ollama
+        run: |
+          if (!(Get-ChildItem artifacts/Nomi-win-x64 -Recurse -Filter llama.dll)) {
+            throw "Embedded native llama library missing from publish output"
+          }
+          dotnet run --project checks/Nomi.Inference.Checks -c Release -- --embedded-live
       - name: Zip portable build
         run: Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
       - uses: actions/upload-artifact@v4

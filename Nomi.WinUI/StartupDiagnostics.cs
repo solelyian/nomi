@@ -22,6 +22,8 @@ internal static class StartupDiagnostics
     internal static void Report(Exception error)
     {
         Write(error.ToString());
+        foreach (var key in error.Data.Keys)
+            Write($"{key}: {error.Data[key]}");
         MessageBox(IntPtr.Zero,
             $"Nomi n’a pas pu démarrer / Nomi could not start.\n\n{error.Message}\n\nJournal / Log: {DirectoryPath}",
             "Nomi", 0x10);

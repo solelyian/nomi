@@ -9,6 +9,8 @@ public partial class App : Application
     public App()
     {
         UnhandledException += (_, args) => StartupDiagnostics.Report(args.Exception);
+        DebugSettings.IsXamlResourceReferenceTracingEnabled = true;
+        DebugSettings.XamlResourceReferenceFailed += (_, args) => StartupDiagnostics.Write(args.Message);
         StartupDiagnostics.Write("Initializing application");
         InitializeComponent();
     }

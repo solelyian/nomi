@@ -7,15 +7,21 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Nomi.WinUI/NomiInferenceClient.cs" Link="NomiInferenceClient.cs" />
+    <Compile Include="../../Nomi.WinUI/ModelStore.cs" Link="ModelStore.cs" />
+    <Compile Include="../../Nomi.WinUI/LocalInferenceClient.cs" Link="LocalInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/OllamaClient.cs" Link="OllamaClient.cs" />
     <Compile Include="../../Nomi.WinUI/ResponsePolicy.cs" Link="ResponsePolicy.cs" />
     <Compile Include="../../Nomi.WinUI/DocumentText.cs" Link="DocumentText.cs" />
     <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/inference.json" Link="content/inference.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../content/local-model.json" Link="content/local-model.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/response-policy.json" Link="content/response-policy.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../response-policy-cases.json" Link="response-policy-cases.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="LLamaSharp" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.26.0" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
