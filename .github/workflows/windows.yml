@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main]
+    branches: [main, "devin/*-integrated-windows-ai"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -28,6 +28,14 @@ jobs:
           else echo "NOMI_VERSION=0.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"; fi
       - name: Build installer
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\nomi.iss'
+      - name: Verify installed application starts
+        run: ./checks/windows-startup.ps1
+      - name: Upload startup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: startup-diagnostics
+          path: artifacts/startup-*
       - name: Zip portable build
         run: Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
       - uses: actions/upload-artifact@v4
