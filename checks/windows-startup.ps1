@@ -2,8 +2,12 @@ $ErrorActionPreference = "Stop"
 $setup = Get-ChildItem artifacts/Nomi-Setup-*.exe | Select-Object -First 1
 $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
+if (Test-Path "$logs\startup.log") { Remove-Item "$logs\startup.log" }
 $install = Start-Process $setup.FullName -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /DIR=`"$app`"" -PassThru -Wait
 if ($install.ExitCode -ne 0) { throw "Installer exit: $($install.ExitCode)" }
+foreach ($name in 'Nomi.WinUI.pri', 'MainWindow.xbf', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+    if (!(Test-Path "$app\$name")) { throw "Installed dependency missing: $name" }
+}
 $since = Get-Date
 $process = Start-Process "$app\Nomi.WinUI.exe" -WorkingDirectory $env:WINDIR -PassThru
 try {

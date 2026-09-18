@@ -1,0 +1,14 @@
+Nomi includes LLamaSharp 0.26.0 (SciSharp STACK) and its llama.cpp CPU backend.
+Their MIT licenses are in LLamaSharp.txt and llama.cpp.txt.
+Source: https://github.com/SciSharp/LLamaSharp/tree/v0.26.0
+
+The optional Qwen3 4B Instruct 2507 model download is licensed under Apache-2.0.
+License: Qwen3.txt
+Original model: https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507
+Quantized model: https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF
+The exact revision and SHA-256 are recorded in content/local-model.json.
+
+The Windows installer includes Microsoft Visual C++ runtime DLLs from the
+Visual Studio REDIST list for app-local deployment. These files are copyright
+Microsoft Corporation and remain subject to Microsoft's redistribution terms.
+https://learn.microsoft.com/visualstudio/releases/2022/redistribution

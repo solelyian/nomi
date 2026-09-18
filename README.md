@@ -174,6 +174,10 @@ dotnet publish .\Nomi.WinUI\Nomi.WinUI.csproj -c Release -r win-x64 -p:Platform=
 Le workflow Windows compile le XAML, installe le setup et vérifie l’activation
 de la fenêtre depuis un autre répertoire de travail avant de publier les fichiers.
 Les diagnostics de démarrage sont conservés en artefact du workflow.
+La publication inclut explicitement l’index de ressources de l’application et
+les XAML compilés : leur omission dans la publication unpackaged causait l’échec
+de chargement de `MainWindow.xaml`. Le runtime Visual C++ est également livré
+à côté de l’exécutable pour le moteur CPU, sans installation séparée.
 
 Pour la validation Windows : envoyer depuis l’accueil sans navigation préalable ;
 changer d’intention sans perdre la saisie ; charger un exemple ; choisir le format ;

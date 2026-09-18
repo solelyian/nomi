@@ -27,4 +27,19 @@
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
+  <Target Name="PublishNomiXamlResources" BeforeTargets="ComputeResolvedFilesToPublishList"
+          DependsOnTargets="$(GenerateProjectPriFile)">
+    <Error Condition="!Exists('$(ProjectPriFullPath)')" Text="The application resource index is missing." />
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(ProjectPriFullPath)">
+        <RelativePath>$(ProjectPriFileName)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <_NomiXamlBinary Include="$(TargetDir)**\*.xbf" Exclude="$(PublishDir)**\*" />
+      <ResolvedFileToPublish Include="@(_NomiXamlBinary)">
+        <RelativePath>%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

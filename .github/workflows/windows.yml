@@ -22,6 +22,18 @@ jobs:
         run: >
           dotnet publish Nomi.WinUI/Nomi.WinUI.csproj -c Release -r win-x64
           -p:Platform=x64 -p:PublishReadyToRun=true -o artifacts/Nomi-win-x64
+      - name: Include app-local Visual C++ runtime
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $redist = Get-ChildItem "$vs\VC\Redist\MSVC" -Directory |
+            Where-Object Name -Match '^\d+\.\d+\.\d+$' |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          $crt = Get-ChildItem "$($redist.FullName)\x64\Microsoft.VC*.CRT\*.dll"
+          if (!$crt) { throw "Visual C++ redistributable DLLs not found" }
+          $crt | Copy-Item -Destination artifacts/Nomi-win-x64
+          foreach ($name in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            if (!(Test-Path "artifacts/Nomi-win-x64/$name")) { throw "Missing $name" }
+          }
       - name: Version
         shell: bash
         run: |
