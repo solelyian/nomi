@@ -462,7 +462,7 @@ public sealed partial class MainWindow : Window
             IsTextSelectionEnabled = true,
             Foreground = Palette("NomiInk")
         };
-        Typography.SetNumeralAlignment(block, Windows.UI.Text.FontNumeralAlignment.Tabular);
+        Typography.SetNumeralAlignment(block, FontNumeralAlignment.Tabular);
         var position = 0;
         foreach (Match match in NumberPattern.Matches(text))
         {
