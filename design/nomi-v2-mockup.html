@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nomi — maquette de la nouvelle interface WinUI</title>
+<style>
+  :root{
+    --bg:#f3f1ee; --mica:#ebe7e2; --surface:#ffffff; --surface-2:#f7f5f2; --line:#e2ddd6; --line-strong:#cfc8bf;
+    --ink:#171512; --ink-2:#4d4741; --ink-3:#857d74; --accent:#b4482b; --accent-ink:#ffffff; --accent-soft:#f6e6df;
+    --ok:#2f7a4f; --num:#171512; --shadow:0 1px 2px rgba(20,15,10,.06),0 8px 24px rgba(20,15,10,.06);
+    --mono:"Cascadia Mono","Consolas",ui-monospace,monospace;
+  }
+  .dark{
+    --bg:#111110; --mica:#1a1917; --surface:#1f1e1c; --surface-2:#262523; --line:#2f2d2a; --line-strong:#3f3c38;
+    --ink:#f2efea; --ink-2:#c9c3bb; --ink-3:#8d867d; --accent:#e8825f; --accent-ink:#1a1210; --accent-soft:#3a2a23;
+    --ok:#6fc48f; --num:#f2efea; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#8f8a84;font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:22px;padding:28px}
+  h1.page{color:#fff;font-weight:500;font-size:15px;margin:0;letter-spacing:.2px;opacity:.9}
+  .tools{display:flex;gap:8px;background:rgba(0,0,0,.28);padding:8px;border-radius:12px}
+  .tools button{background:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}
+  .tools button.on{background:#171512;color:#fff}
+  .win{width:1280px;height:860px;background:var(--mica);border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;display:grid;grid-template-rows:40px 1fr;color:var(--ink);position:relative}
+  /* title bar */
+  .title{display:flex;align-items:center;padding:0 0 0 18px;font-size:12px;color:var(--ink-3);gap:14px}
+  .brand{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-weight:600;font-size:16px;color:var(--ink);letter-spacing:-.3px}
+  .brand b{color:var(--accent)}
+  .title .sep{width:1px;height:16px;background:var(--line-strong)}
+  .title .spacer{flex:1}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;font-size:12px}
+  .seg span{padding:4px 10px;color:var(--ink-2)}
+  .seg span.on{background:var(--ink);color:var(--bg);font-weight:600}
+  .kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line-strong);border-radius:5px;padding:2px 6px;color:var(--ink-2);background:var(--surface)}
+  .caption{display:flex;gap:44px;padding-right:0;margin-left:6px}
+  .caption i{width:46px;height:40px;display:inline-block}
+  .caption i.close{background:linear-gradient(transparent,transparent)}
+  /* body */
+  .body{display:grid;grid-template-columns:76px 1fr 304px;min-height:0}
+  .rail{border-right:1px solid var(--line);display:flex;flex-direction:column;padding:10px 8px;gap:4px}
+  .rail .item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0 8px;border-radius:9px;font-size:10.5px;color:var(--ink-2);position:relative;letter-spacing:.1px}
+  .rail .item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .rail .item.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+  .rail .item.on::before{content:"";position:absolute;left:-6px;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--accent)}
+  .rail .item .k{position:absolute;top:5px;right:6px;font-family:var(--mono);font-size:9px;color:var(--ink-3)}
+  .rail .grow{flex:1}
+  .rail .item.sm{padding:8px 0}
+  main{padding:20px 26px 22px;overflow:hidden;display:flex;flex-direction:column;gap:16px;min-height:0}
+  .crumbs{display:flex;align-items:baseline;gap:10px;font-size:12px;color:var(--ink-3)}
+  .crumbs h2{margin:0;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:22px;font-weight:600;letter-spacing:-.4px;color:var(--ink)}
+  .crumbs .ctx{border:1px solid var(--line-strong);border-radius:999px;padding:2px 9px;color:var(--ink-2)}
+  /* composer */
+  .composer{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .composer:focus-within{border-color:var(--accent)}
+  .composer .row{display:flex;align-items:center;gap:8px;padding:10px 14px}
+  .composer .row.top{border-bottom:1px solid var(--line);background:var(--surface-2);font-size:12px;color:var(--ink-2)}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:7px;padding:4px 9px;font-size:12px;color:var(--ink);background:var(--surface)}
+  .chip.act{border-color:var(--accent);color:var(--accent);font-weight:600;background:var(--accent-soft)}
+  .chip .x{color:var(--ink-3);font-size:13px;margin-left:2px}
+  .chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .composer textarea,.composer .ta{border:0;outline:0;resize:none;font:inherit;font-size:17px;line-height:1.5;padding:16px 18px 6px;min-height:104px;color:var(--ink);background:transparent;width:100%}
+  .composer .ta .ph{color:var(--ink-3)}
+  .composer .ta .n{font-variant-numeric:tabular-nums;color:var(--accent)}
+  .composer .row.bottom{justify-content:space-between;padding:8px 12px 12px}
+  .composer .left{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-3)}
+  .btn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:8px 14px}
+  .btn.primary .kbd{border-color:rgba(255,255,255,.35);background:transparent;color:inherit;opacity:.85}
+  .btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+  /* result */
+  .result{background:var(--surface);border:1px solid var(--line);border-radius:12px;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  .result .head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink-3)}
+  .result .head .tag{color:var(--ok);display:inline-flex;align-items:center;gap:6px;font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+  .result .head .spacer{flex:1}
+  .result .content{flex:1;padding:22px 26px;font-size:15px;line-height:1.65;color:var(--ink);overflow:auto;max-width:720px}
+  .result .content ol{margin:0;padding-left:0;list-style:none;counter-reset:s}
+  .result .content li{display:grid;grid-template-columns:36px 1fr;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .result .content li::before{counter-increment:s;content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:4px}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;color:var(--num)}
+  .concl{margin-top:16px;padding:14px 16px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 8px 8px 0}
+  .concl small{display:block;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+  .result .foot{border-top:1px solid var(--line);padding:9px 16px;font-size:11.5px;color:var(--ink-3);display:flex;gap:16px}
+  /* inspector */
+  aside{border-left:1px solid var(--line);padding:20px 18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+  .card h4{margin:0 0 8px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .card p{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+  .doc{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12.5px;border-top:1px solid var(--line)}
+  .doc:first-of-type{border-top:0}
+  .doc .ic{width:26px;height:30px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-strong);font-family:var(--mono);font-size:8.5px;display:grid;place-items:center;color:var(--ink-2)}
+  .doc .m{flex:1;min-width:0}.doc .m b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .doc .m span{color:var(--ink-3);font-size:11px}
+  .doc .x{color:var(--ink-3)}
+  .ex{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--ink-2);margin-top:6px;background:var(--surface-2)}
+  .ex .n{font-variant-numeric:tabular-nums;color:var(--ink)}
+  .model{display:flex;align-items:center;gap:10px}
+  .model .st{font-weight:600;font-size:13px;display:flex;gap:7px;align-items:center}
+  .bar{height:4px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;width:62%;background:var(--accent)}
+  .shortcut{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);padding:4px 0}
+  /* first run + palette overlays */
+  .overlay{position:absolute;inset:40px 0 0 0;display:none;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);place-items:center}
+  .win.palette .overlay.pal{display:grid}
+  .pal .box{width:620px;background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-top:-260px}
+  .pal .q{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);font-size:16px}
+  .pal .q .ph{color:var(--ink-3)}
+  .pal .grp{padding:8px 8px 4px;font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3)}
+  .pal .it{display:flex;align-items:center;gap:12px;padding:9px 12px;margin:0 6px;border-radius:8px;font-size:13.5px}
+  .pal .it.on{background:var(--surface-2)}
+  .pal .it .d{flex:1;color:var(--ink-3);font-size:12px}
+  .pal .it .kbd{opacity:.8}
+  .pal .box .hint{padding:8px 14px 10px;font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line)}
+  .win.firstrun .result .content,.win.firstrun .result .foot,.win.firstrun .result .head{display:none}
+  .win.firstrun .result{display:grid;place-items:center;background:transparent;border-style:dashed}
+  .win.firstrun .empty{display:block}
+  .empty{display:none;text-align:center;max-width:420px;color:var(--ink-2);font-size:13.5px;line-height:1.55}
+  .empty h3{margin:0 0 6px;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-weight:600;font-size:20px;letter-spacing:-.3px;color:var(--ink)}
+  .win.firstrun .bar{display:block}.bar{display:none}
+  .win.firstrun .model .st .ready{display:none}.win.firstrun .model .st .dl{display:inline}.model .st .dl{display:none}
+  .win.firstrun .btn.primary{opacity:.45}
+  .legend{color:#fff;font-size:12.5px;max-width:1280px;line-height:1.6;opacity:.92}
+  .legend b{font-weight:600}
+</style>
+</head>
+<body>
+<h1 class="page">Nomi · maquette de la nouvelle interface WinUI 3 (1280 × 860) — outil de prévisualisation, thème suivi depuis Windows dans l’application</h1>
+<div class="tools">
+  <button class="on" onclick="theme(false,this)">Thème clair</button><button onclick="theme(true,this)">Thème sombre</button>
+  <span style="width:8px"></span>
+  <button class="on" onclick="state('',this)">Espace de travail</button><button onclick="state('firstrun',this)">Premier lancement</button><button onclick="state('palette',this)">Palette Ctrl+K</button>
+</div>
+
+<div class="win" id="win">
+  <div class="title">
+    <span class="brand">nomi<b>.</b></span>
+    <span class="sep"></span>
+    <span>Nyne Technologies · traitement local</span>
+    <span class="spacer"></span>
+    <span class="seg"><span class="on">FR</span><span>EN</span></span>
+    <span class="kbd">Ctrl K</span>
+    <span class="caption"><i>—</i><i>▢</i><i>✕</i></span>
+  </div>
+  <div class="body">
+    <nav class="rail">
+      <div class="item"><span class="k">1</span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Comprendre</div>
+      <div class="item on"><span class="k">2</span><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>Vérifier</div>
+      <div class="item"><span class="k">3</span><svg viewBox="0 0 24 24"><path d="M4 7h13M14 3l4 4-4 4M20 17H7M10 13l-4 4 4 4"/></svg>Convertir</div>
+      <div class="item"><span class="k">4</span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Planifier</div>
+      <div class="item"><span class="k">5</span><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Communiquer</div>
+      <div class="item"><span class="k">6</span><svg viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h5v16H6a2 2 0 01-2-2zM13 4h5a2 2 0 012 2v12a2 2 0 01-2 2h-5z"/></svg>Apprendre</div>
+      <div class="grow"></div>
+      <div class="item sm"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Espaces</div>
+      <div class="item sm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Réglages</div>
+    </nav>
+
+    <main>
+      <div class="crumbs"><h2>Vérifier</h2><span>·</span><span class="ctx">Vente &amp; commerce</span><span class="spacer" style="flex:1"></span><span>Relisez un raisonnement avant de continuer.</span></div>
+
+      <section class="composer">
+        <div class="row top">
+          <span class="chip act"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>Vérifier ▾</span>
+          <span class="chip">Vente &amp; commerce <span class="x">×</span></span>
+          <span style="flex:1"></span>
+          <span>Format</span>
+          <span class="seg"><span class="on">Étapes</span><span>Résumé</span></span>
+        </div>
+        <div class="ta">Un client achète pour <span class="n">85,00 €</span> HT. On applique <span class="n">−20 %</span> puis une TVA à <span class="n">20 %</span>. Le total TTC affiché est <span class="n">81,60 €</span>. Est-ce cohérent ?</div>
+        <div class="row bottom">
+          <div class="left">
+            <span class="chip"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Document</span>
+            <span class="chip">offre-avril.xlsx <span class="x">×</span></span>
+            <span>PDF · Word · Excel · PowerPoint · 4 max</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="btn ghost">Exemple</span>
+            <span class="btn primary">Lancer <span class="kbd">Ctrl ↵</span></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="result">
+        <div class="head"><span class="tag"><i class="dot"></i>Réponse</span><span>Vérifier · Étapes · Qwen3 4B, local</span><span class="spacer"></span><span class="btn ghost">Copier</span><span class="btn ghost">Modifier la demande</span></div>
+        <div class="content">
+          <ol>
+            <li><div>Point de départ : <span class="num">85,00 €</span> HT.</div></li>
+            <li><div>Remise de <span class="num">20 %</span> : 85,00 × 0,80 = <span class="num">68,00 €</span> HT.</div></li>
+            <li><div>TVA de <span class="num">20 %</span> sur le montant remisé : 68,00 × 1,20 = <span class="num">81,60 €</span> TTC.</div></li>
+            <li><div>Le total affiché correspond au calcul remise puis TVA. L’ordre inverse donnerait le même résultat, car les deux opérations sont des multiplications.</div></li>
+          </ol>
+          <div class="concl"><small>Conclusion</small>Le total de <span class="num">81,60 €</span> TTC est cohérent avec une remise de 20 % appliquée avant la TVA.</div>
+        </div>
+        <div class="foot"><span>Règles Nomi : mise en forme · ton professionnel</span><span>Relire les chiffres avant de les utiliser</span></div>
+        <div class="empty">
+          <h3>Nomi est prêt à travailler hors ligne.</h3>
+          Le moteur est intégré à l’application. Un modèle d’environ 2,5 Go est téléchargé une seule fois, vérifié, puis conservé sur cet ordinateur. Aucune donnée ne quitte votre poste.
+          <div style="margin-top:14px"><span class="btn primary" style="opacity:1">Télécharger le modèle · 2,5 Go</span></div>
+        </div>
+      </section>
+    </main>
+
+    <aside>
+      <div class="card">
+        <h4>Moteur local</h4>
+        <div class="model"><div class="st"><i class="dot"></i><span class="ready">Prêt · hors ligne</span><span class="dl">Téléchargement · 62 %</span></div><span style="flex:1"></span><span class="kbd" style="font-size:10px">CPU</span></div>
+        <p style="margin-top:6px">Qwen3 4B Instruct · Q4_K_M · llama.cpp</p>
+        <div class="bar"><i></i></div>
+      </div>
+      <div class="card">
+        <h4>Documents joints</h4>
+        <div class="doc"><span class="ic">XLSX</span><div class="m"><b>offre-avril.xlsx</b><span>Feuille « Devis » · 42 cellules lues</span></div><span class="x">×</span></div>
+        <p style="margin-top:8px">Lus localement, texte seul. Pas de macro ni de lien suivi.</p>
+      </div>
+      <div class="card">
+        <h4>Exemples · Vérifier</h4>
+        <span class="ex">Une commission de <span class="n">3 %</span> sur <span class="n">12 400 €</span> donne-t-elle <span class="n">372 €</span> ?</span>
+        <span class="ex">Relire les totaux d’un tableau de bord avant envoi.</span>
+        <span class="ex">Contrôler une boucle qui cumule des <span class="n">%</span> dans le code.</span>
+      </div>
+      <div class="card">
+        <h4>Raccourcis</h4>
+        <div class="shortcut"><span>Lancer</span><span class="kbd">Ctrl ↵</span></div>
+        <div class="shortcut"><span>Palette</span><span class="kbd">Ctrl K</span></div>
+        <div class="shortcut"><span>Changer d’action</span><span class="kbd">Ctrl 1–6</span></div>
+        <div class="shortcut"><span>Arrêter</span><span class="kbd">Échap</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="overlay pal">
+    <div class="box">
+      <div class="q"><span>›</span><span>vér<span class="ph">ifier une remise…</span></span></div>
+      <div class="grp">Actions</div>
+      <div class="it on"><span>✓</span><span>Vérifier</span><span class="d">Relisez un raisonnement avant de continuer.</span><span class="kbd">2</span></div>
+      <div class="grp">Espaces</div>
+      <div class="it"><span>▦</span><span>Vente &amp; commerce</span><span class="d">Remises, monnaie, commissions</span></div>
+      <div class="it"><span>▦</span><span>Travail du savoir</span><span class="d">Relire un tableur avant envoi</span></div>
+      <div class="grp">Préférences</div>
+      <div class="it"><span>⇄</span><span>Passer en anglais</span><span class="d"></span></div>
+      <div class="hint">↑↓ naviguer · ↵ ouvrir · Échap fermer</div>
+    </div>
+  </div>
+</div>
+
+<p class="legend"><b>Principes.</b> Un seul geste : le composeur en haut est le point d’entrée unique (action et espace comme puces, document et format à portée, « Lancer » toujours au même endroit). La réponse occupe la place principale, avec numéros tabulaires, étapes numérotées et une conclusion unique mise en avant. La colonne de droite porte l’état du moteur, les documents et des exemples contextuels. Rail gauche : les six actions au clavier (Ctrl 1–6). Identité : Segoe UI Variable, une seule couleur d’accent (terre cuite), surfaces Mica, thèmes clair/sombre suivis depuis Windows. Aucun vocabulaire clinique.</p>
+
+<script>
+  function theme(dark,btn){document.getElementById('win').classList.toggle('dark',dark);[...btn.parentNode.children].slice(0,2).forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+  function state(s,btn){const w=document.getElementById('win');w.classList.remove('firstrun','palette');if(s)w.classList.add(s);[...btn.parentNode.children].slice(3).forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+  const h=location.hash.slice(1).split(',');if(h.includes('dark'))theme(true,document.querySelectorAll('.tools button')[1]);if(h.includes('firstrun'))state('firstrun',document.querySelectorAll('.tools button')[3]);if(h.includes('palette'))state('palette',document.querySelectorAll('.tools button')[4]);
+</script>
+</body>
+</html>

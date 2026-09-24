@@ -3,11 +3,16 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
@@ -18,6 +23,13 @@ namespace Nomi;
 
 public sealed partial class MainWindow : Window
 {
+    private static readonly string[] RailGlyphs = ["\uE721", "\uE73E", "\uE8AB", "\uE787", "\uE8BD", "\uE8F1"];
+    private static readonly Regex NumberPattern = new(
+        @"(?<![\p{L}\d])[-−+]?\d(?:[\d\u00a0\u202f ]*\d)?(?:[.,]\d+)?(?:\s?(?:%|€|\$|£))?",
+        RegexOptions.Compiled);
+    private static readonly Regex StepPattern = new(
+        @"^\s*(?:(?:étape|step)\s+)?(\d{1,2})\s*[.):\-–—]\s+(.+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     private readonly Dictionary<string, Catalog> catalogs = new()
     {
         ["fr"] = Catalog.Load("fr"),
@@ -25,39 +37,95 @@ public sealed partial class MainWindow : Window
     };
 
     private string language = "fr";
-    private string page = "home";
-    private string? actionId;
+    private string actionId = "understand";
     private string? contextId;
-    private string homeIntent = "understand";
-    private bool compact;
+    private string view = "workspace";
     private bool summary;
     private readonly LocalInferenceClient inference = new();
     private CancellationTokenSource? modelPreparation;
     private ModelProgress modelProgress = new("local-model-missing");
-    private Action? updateModelPanel;
-    private Action? updateRequestControls;
     private readonly Dictionary<string, Draft> drafts = new();
     private CancellationTokenSource? generation;
     private CancellationTokenSource? documentReading;
     private Draft? activeDraft;
     private bool updating;
-    private ContentDialog? palette;
     private Catalog Current => catalogs[language];
+    private NomiAction Action => Current.Actions.Single(item => item.Id == actionId);
+    private WorkContext? Context => Current.Contexts.SingleOrDefault(item => item.Id == contextId);
+    private Draft CurrentDraft
+    {
+        get
+        {
+            var key = $"{actionId}:{contextId}";
+            if (!drafts.TryGetValue(key, out var draft)) drafts[key] = draft = new Draft();
+            return draft;
+        }
+    }
 
     public MainWindow()
     {
         InitializeComponent();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 940));
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(DragRegion);
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 860));
+        if (MicaController.IsSupported()) SystemBackdrop = new MicaBackdrop();
+        Root.ActualThemeChanged += (_, _) => { ApplyChrome(); Refresh(); };
         Closed += (_, _) =>
         {
             CancelGeneration();
             modelPreparation?.Cancel();
             _ = inference.DisposeAsync();
         };
+        var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
+        submit.Invoked += async (_, args) => { args.Handled = true; await Launch(); };
+        RequestBox.KeyboardAccelerators.Add(submit);
+        var escape = new KeyboardAccelerator { Key = VirtualKey.Escape };
+        escape.Invoked += (_, args) => { if (generation is not null) { args.Handled = true; CancelGeneration(); } };
+        RequestBox.KeyboardAccelerators.Add(escape);
+        ApplyChrome();
         Refresh();
+        RequestBox.Focus(FocusState.Programmatic);
     }
 
     private string T(string key) => Current.Labels[key];
+
+    private bool Dark => Root.ActualTheme == ElementTheme.Dark;
+
+    private Brush Palette(string key)
+    {
+        var theme = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries[Dark ? "Default" : "Light"];
+        return (Brush)theme[key];
+    }
+
+    private void ApplyChrome()
+    {
+        if (SystemBackdrop is null) Root.Background = Palette("NomiCanvas");
+        var bar = AppWindow.TitleBar;
+        bar.ButtonBackgroundColor = Colors.Transparent;
+        bar.ButtonInactiveBackgroundColor = Colors.Transparent;
+        bar.ButtonForegroundColor = ((SolidColorBrush)Palette("NomiInk2")).Color;
+        bar.ButtonInactiveForegroundColor = ((SolidColorBrush)Palette("NomiInk3")).Color;
+        bar.ButtonHoverBackgroundColor = ((SolidColorBrush)Palette("NomiSurface2")).Color;
+        bar.ButtonHoverForegroundColor = ((SolidColorBrush)Palette("NomiInk")).Color;
+        foreach (var button in new[] { LaunchButton, EmptyAction, PrepareButton })
+        {
+            var accent = ((SolidColorBrush)Palette("NomiAccent")).Color;
+            var hover = Dark ? Blend(accent, 0.12, Colors.White) : Blend(accent, 0.12, Colors.Black);
+            var pressed = Dark ? Blend(accent, 0.22, Colors.White) : Blend(accent, 0.22, Colors.Black);
+            button.Resources["ButtonBackgroundPointerOver"] = new SolidColorBrush(hover);
+            button.Resources["ButtonBackgroundPressed"] = new SolidColorBrush(pressed);
+            button.Resources["ButtonBorderBrushPointerOver"] = new SolidColorBrush(hover);
+            button.Resources["ButtonBorderBrushPressed"] = new SolidColorBrush(pressed);
+            button.Resources["ButtonForegroundPointerOver"] = Palette("NomiAccentInk");
+            button.Resources["ButtonForegroundPressed"] = Palette("NomiAccentInk");
+        }
+    }
+
+    private static Windows.UI.Color Blend(Windows.UI.Color color, double amount, Windows.UI.Color towards)
+    {
+        byte Mix(byte a, byte b) => (byte)Math.Round(a + (b - a) * amount);
+        return Windows.UI.Color.FromArgb(255, Mix(color.R, towards.R), Mix(color.G, towards.G), Mix(color.B, towards.B));
+    }
 
     private void CancelGeneration()
     {
@@ -66,166 +134,514 @@ public sealed partial class MainWindow : Window
         documentReading?.Cancel();
     }
 
-    private static TextBlock Text(string value, double size = 14)
+    private TextBlock Text(string value, double size = 13, string ink = "NomiInk")
     {
         return new TextBlock
         {
             Text = value,
             FontSize = size,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Palette(ink)
         };
     }
 
-    private static TextBlock Heading(string value, bool primary = false)
+    private static void Announce(TextBlock block, string value)
     {
-        var text = Text(value, primary ? 36 : 19);
-        text.FontWeight = FontWeights.SemiBold;
-        AutomationProperties.SetHeadingLevel(
-            text, primary ? AutomationHeadingLevel.Level1 : AutomationHeadingLevel.Level2);
-        return text;
-    }
-
-    private Button Button(string label, RoutedEventHandler handler, bool primary = false)
-    {
-        var button = new Button
-        {
-            Content = Text(label),
-            MinHeight = 44,
-            Padding = new Thickness(16, 10, 16, 10)
-        };
-        if (primary)
-        {
-            button.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
-        }
-        AutomationProperties.SetName(button, label);
-        button.Click += handler;
-        return button;
+        block.Text = value;
+        block.Visibility = value.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        FrameworkElementAutomationPeer.FromElement(block)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
     }
 
     private void Refresh()
     {
         updating = true;
         Root.Language = Current.Locale;
-        Title = $"Nomi — {T(page == "action" ? "workspace" : page)}";
-        LanguagePicker.Header = T("language");
-        AutomationProperties.SetName(LanguagePicker, T("language"));
-        LanguagePicker.SelectedIndex = language == "fr" ? 0 : 1;
+        Title = view == "workspace" ? $"Nomi — {Action.Title}" : $"Nomi — {T(view == "spaces" ? "spaces" : "preferences")}";
+        Tagline.Text = T("tagline");
+        FrenchToggle.IsChecked = language == "fr";
+        EnglishToggle.IsChecked = language == "en";
+        AutomationProperties.SetName(FrenchToggle, "Français");
+        AutomationProperties.SetName(EnglishToggle, "English");
         AutomationProperties.SetName(CommandButton, T("openCommand"));
         ToolTipService.SetToolTip(CommandButton, T("openCommand"));
-        BrandCaption.Text = T("localOnly");
-        PrototypeLabel.Text = T("prototype");
-        PrototypeNote.Text = T("prototypeNote");
-        Navigation.MenuItems.Clear();
-        foreach (var (id, glyph) in new[] { ("home", "\uE80F"), ("spaces", "\uE8F1"), ("preferences", "\uE713") })
-        {
-            var item = new NavigationViewItem
-            {
-                Content = T(id),
-                Tag = id,
-                Icon = new FontIcon { Glyph = glyph }
-            };
-            Navigation.MenuItems.Add(item);
-            if (id == page)
-            {
-                Navigation.SelectedItem = item;
-            }
-        }
-        AutomationProperties.SetName(Navigation, T("navigation"));
-        Breadcrumb.Text = $"{T("workspace")}  /  {T(page == "home" ? "overview" : page == "action" ? "action" : page)}";
-        PageBody.Children.Clear();
-        updateModelPanel = null;
-        updateRequestControls = null;
-        PageBody.Spacing = compact ? 14 : 24;
-        if (page == "preferences") ShowPreferences();
-        else if (page == "spaces") ShowSpaces();
-        else if (page == "action") ShowAction();
-        else ShowHome();
+        BuildRail();
+        Workspace.Visibility = view == "workspace" ? Visibility.Visible : Visibility.Collapsed;
+        SpacesPanel.Visibility = view == "spaces" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPanel.Visibility = view == "settings" ? Visibility.Visible : Visibility.Collapsed;
+        if (view == "spaces") BuildSpaces();
+        else if (view == "settings") BuildSettings();
+        RefreshWorkspace();
+        RefreshAside();
+        PaletteHelp.Text = T("commandHelp");
+        PaletteEmpty.Text = T("noResults");
+        PaletteSearch.PlaceholderText = T("commandHint");
+        AutomationProperties.SetName(PaletteSearch, T("search"));
+        AutomationProperties.SetName(PaletteResults, T("search"));
         updating = false;
     }
 
-    private void Navigate(string destination, string? action = null, string? context = null)
+    private void BuildRail()
     {
-        CancelGeneration();
-        page = destination;
-        actionId = action;
-        contextId = context;
-        Refresh();
-        PageScroll.ChangeView(null, 0, null);
-        DispatcherQueue.TryEnqueue(() =>
+        RailActions.Children.Clear();
+        RailFooter.Children.Clear();
+        for (var index = 0; index < Current.Actions.Length; index++)
         {
-            var first = PageBody.Children.OfType<Button>().FirstOrDefault();
-            first?.Focus(FocusState.Programmatic);
-        });
+            var action = Current.Actions[index];
+            var selected = view == "workspace" && action.Id == actionId;
+            var button = RailButton(action.Title, RailGlyphs[index], selected, (index + 1).ToString(CultureInfo.InvariantCulture));
+            AutomationProperties.SetHelpText(button, action.Description);
+            var id = action.Id;
+            button.Click += (_, _) => Open(id, contextId);
+            RailActions.Children.Add(button);
+        }
+        var spaces = RailButton(T("spaces"), "\uE8F1", view == "spaces", null);
+        spaces.Click += (_, _) => { view = "spaces"; Refresh(); };
+        RailFooter.Children.Add(spaces);
+        var settings = RailButton(T("preferences"), "\uE713", view == "settings", null);
+        settings.Click += (_, _) => { view = "settings"; Refresh(); };
+        RailFooter.Children.Add(settings);
     }
 
-    private void ShowHome()
+    private Button RailButton(string label, string glyph, bool selected, string? shortcut)
     {
-        ShowAction(true);
-        PageBody.Children.Add(Heading(T("starterTitle")));
-        PageBody.Children.Add(CardGrid(new[]
+        var grid = new Grid();
+        var content = new StackPanel { Spacing = 5, HorizontalAlignment = HorizontalAlignment.Center };
+        content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 18 });
+        var text = new TextBlock
         {
-            ("verify", "tryVerify"), ("plan", "tryPlan"), ("learn", "tryLearn")
-        }.Select(item => Button(T(item.Item2), (_, _) =>
+            Text = label,
+            FontSize = 10.5,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxWidth = 64,
+            FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal
+        };
+        content.Children.Add(text);
+        grid.Children.Add(content);
+        if (shortcut is not null)
         {
-            CancelGeneration();
-            homeIntent = item.Item1;
-            drafts[$"{language}:home"].Prompt = Current.Actions.Single(action => action.Id == homeIntent).Prompt;
-            Refresh();
-            PageBody.Children.OfType<TextBox>().FirstOrDefault()?.Focus(FocusState.Programmatic);
-        })), 3));
-        PageBody.Children.Add(Button(T("allSpaces"), (_, _) => Navigate("spaces")));
-        var resumable = drafts.Where(item => item.Key.StartsWith($"{language}:", StringComparison.Ordinal)
-            && item.Key != $"{language}:home" && !string.IsNullOrWhiteSpace(item.Value.Prompt)).TakeLast(3).Reverse().ToArray();
-        if (resumable.Length > 0)
-        {
-            PageBody.Children.Add(Heading(T("resumeTitle")));
-            PageBody.Children.Add(Text(T("sessionOnly"), 12));
-            foreach (var item in resumable)
+            grid.Children.Add(new TextBlock
             {
-                var parts = item.Key.Split(':');
-                var action = Current.Actions.Single(entry => entry.Id == parts[1]);
-                var resume = Button(action.Title, (_, _) => Navigate("action", action.Id, parts[2]));
-                var label = Text($"{action.Title} · {item.Value.Prompt}", 13);
-                label.MaxLines = 2;
-                label.TextTrimming = TextTrimming.CharacterEllipsis;
-                resume.Content = label;
-                resume.HorizontalAlignment = HorizontalAlignment.Stretch;
-                resume.HorizontalContentAlignment = HorizontalAlignment.Left;
-                PageBody.Children.Add(resume);
+                Text = shortcut,
+                FontSize = 9,
+                FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
+                Foreground = Palette("NomiInk3"),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, -4, 4, 0)
+            });
+        }
+        if (selected)
+        {
+            grid.Children.Add(new Border
+            {
+                Width = 3,
+                CornerRadius = new CornerRadius(3),
+                Background = Palette("NomiAccent"),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(-2, 10, 0, 10)
+            });
+        }
+        var button = new Button
+        {
+            Content = grid,
+            Style = (Style)Application.Current.Resources["NomiRail"],
+            Foreground = Palette(selected ? "NomiInk" : "NomiInk2"),
+            Background = selected ? Palette("NomiSurface") : new SolidColorBrush(Colors.Transparent)
+        };
+        AutomationProperties.SetName(button, label);
+        return button;
+    }
+
+    private void Open(string action, string? context)
+    {
+        actionId = action;
+        contextId = context;
+        view = "workspace";
+        Refresh();
+        RequestBox.Focus(FocusState.Programmatic);
+    }
+
+    private void RefreshWorkspace()
+    {
+        var action = Action;
+        var context = Context;
+        var draft = CurrentDraft;
+        ActionTitle.Text = action.Title;
+        ActionDescription.Text = action.Description;
+        ContextTag.Visibility = context is null ? Visibility.Collapsed : Visibility.Visible;
+        ContextTagText.Text = context?.Title ?? "";
+
+        ActionChip.Content = $"{action.Title}  ▾";
+        AutomationProperties.SetName(ActionChip, $"{T("action")} : {action.Title}");
+        var actionMenu = new MenuFlyout { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft };
+        foreach (var item in Current.Actions)
+        {
+            var entry = new ToggleMenuFlyoutItem { Text = item.Title, IsChecked = item.Id == actionId };
+            var id = item.Id;
+            entry.Click += (_, _) => Open(id, contextId);
+            actionMenu.Items.Add(entry);
+        }
+        ActionChip.Flyout = actionMenu;
+
+        ContextChip.Content = $"{context?.Title ?? T("noContext")}  ▾";
+        ContextChip.Foreground = Palette(context is null ? "NomiInk3" : "NomiInk");
+        AutomationProperties.SetName(ContextChip, $"{T("context")} : {context?.Title ?? T("noContext")}");
+        var contextMenu = new MenuFlyout { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft };
+        var none = new ToggleMenuFlyoutItem { Text = T("noContext"), IsChecked = context is null };
+        none.Click += (_, _) => Open(actionId, null);
+        contextMenu.Items.Add(none);
+        contextMenu.Items.Add(new MenuFlyoutSeparator());
+        foreach (var item in Current.Contexts)
+        {
+            var entry = new ToggleMenuFlyoutItem { Text = item.Title, IsChecked = item.Id == contextId };
+            var id = item.Id;
+            entry.Click += (_, _) => Open(actionId, id);
+            contextMenu.Items.Add(entry);
+        }
+        ContextChip.Flyout = contextMenu;
+
+        FormatLabel.Text = T("nextFormat");
+        StepsToggle.Content = T("steps");
+        SummaryToggle.Content = T("summary");
+        StepsToggle.IsChecked = !summary;
+        SummaryToggle.IsChecked = summary;
+        AutomationProperties.SetName(StepsToggle, $"{T("response")} : {T("steps")}");
+        AutomationProperties.SetName(SummaryToggle, $"{T("response")} : {T("summary")}");
+
+        RequestBox.PlaceholderText = action.Prompt;
+        RequestBox.Text = draft.Prompt;
+        AutomationProperties.SetName(RequestBox, T("requestLabel"));
+        AutomationProperties.SetHelpText(RequestBox, T("requestHelp"));
+        AttachLabel.Text = T("documentButton");
+        AutomationProperties.SetName(AttachButton, T("attachDocuments"));
+        ToolTipService.SetToolTip(AttachButton, T("documentHelp"));
+        DocumentFormats.Text = T("documentFormats");
+        ExampleButton.Content = T("loadExample");
+        AutomationProperties.SetName(ExampleButton, T("loadExample"));
+        StopButton.Content = T("stop");
+        LaunchLabel.Text = T("send");
+        AutomationProperties.SetName(LaunchButton, $"{T("send")} (Ctrl+Enter)");
+        ToolTipService.SetToolTip(LaunchButton, T("requestHelp"));
+
+        ResultTag.Text = T("responseTag");
+        CopyButton.Content = T("copy");
+        EditButton.Content = T("editRequest");
+        EmptyAction.Content = T(inference.HasModel ? "loadLocalModel" : "downloadWithSize");
+        AutomationProperties.SetName(EmptyAction, (string)EmptyAction.Content);
+        AutomationProperties.SetLiveSetting(StatusText, AutomationLiveSetting.Polite);
+        RenderDocuments(draft);
+        RenderResult(draft);
+        UpdateControls();
+    }
+
+    private void UpdateControls()
+    {
+        var busy = generation is not null;
+        LaunchButton.IsEnabled = inference.Ready && !busy;
+        StopButton.Visibility = busy && activeDraft == CurrentDraft ? Visibility.Visible : Visibility.Collapsed;
+        ExampleButton.IsEnabled = !busy;
+        AttachButton.IsEnabled = !busy && documentReading is null;
+        StepsToggle.IsEnabled = SummaryToggle.IsEnabled = !busy;
+        RequestBox.IsReadOnly = busy && activeDraft == CurrentDraft;
+        var draft = CurrentDraft;
+        StatusText.Foreground = Palette(draft.Status is "stopped" or "timeout" || draft.Status.Contains("error") || draft.Status.Contains("invalid") || draft.Status == "policy-blocked"
+            ? "NomiAccent" : "NomiInk2");
+        Announce(StatusText, draft.Status == "idle" ? "" : T(draft.Status));
+    }
+
+    private void RenderResult(Draft draft)
+    {
+        var hasOutput = draft.Output.Length > 0;
+        ResultBody.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
+        EmptyState.Visibility = hasOutput ? Visibility.Collapsed : Visibility.Visible;
+        ResultHead.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
+        ResultFoot.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
+        if (!hasOutput)
+        {
+            var firstRun = !inference.Ready;
+            EmptyTitle.Text = T(firstRun ? "firstRunTitle" : "emptyTitle");
+            EmptyText.Text = T(firstRun ? "firstRunText" : "emptyText");
+            EmptyAction.Visibility = firstRun && modelPreparation is null ? Visibility.Visible : Visibility.Collapsed;
+            ResultPanel.BorderBrush = Palette("NomiLine");
+            ResultPanel.Background = new SolidColorBrush(Colors.Transparent);
+            return;
+        }
+        ResultPanel.BorderBrush = Palette("NomiLine");
+        ResultPanel.Background = Palette("NomiSurface");
+        ResultMeta.Text = $"{Action.Title} · {T(summary ? "summary" : "steps")} · {inference.Model}";
+        ResultBody.Children.Clear();
+        var paragraphs = draft.Output.Split('\n', StringSplitOptions.TrimEntries).Where(line => line.Length > 0).ToArray();
+        var lastIndex = paragraphs.Length - 1;
+        for (var index = 0; index < paragraphs.Length; index++)
+        {
+            var line = paragraphs[index];
+            var step = StepPattern.Match(line);
+            if (step.Success)
+            {
+                var row = new Grid { ColumnSpacing = 10, Padding = new Thickness(0, 8, 0, 8) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var number = new TextBlock
+                {
+                    Text = step.Groups[1].Value.PadLeft(2, '0'),
+                    FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
+                    FontSize = 12,
+                    Foreground = Palette("NomiInk3"),
+                    Margin = new Thickness(0, 4, 0, 0)
+                };
+                var body = RichText(step.Groups[2].Value, 15);
+                Grid.SetColumn(body, 1);
+                row.Children.Add(number);
+                row.Children.Add(body);
+                ResultBody.Children.Add(row);
+                ResultBody.Children.Add(new Border { Height = 1, Background = Palette("NomiLine"), Opacity = 0.9 });
+                continue;
             }
+            var conclusion = index == lastIndex && index > 0 && paragraphs.Length > 1
+                && (StepPattern.IsMatch(paragraphs[index - 1]) || IsConclusion(line));
+            if (conclusion)
+            {
+                var block = new StackPanel { Spacing = 4 };
+                block.Children.Add(new TextBlock
+                {
+                    Text = T("conclusion").ToUpperInvariant(),
+                    FontSize = 11,
+                    CharacterSpacing = 80,
+                    Foreground = Palette("NomiInk3")
+                });
+                block.Children.Add(RichText(StripConclusion(line), 15));
+                ResultBody.Children.Add(new Border
+                {
+                    Child = block,
+                    Margin = new Thickness(0, 16, 0, 0),
+                    Padding = new Thickness(16, 12, 16, 14),
+                    Background = Palette("NomiSurface2"),
+                    BorderBrush = Palette("NomiAccent"),
+                    BorderThickness = new Thickness(3, 0, 0, 0),
+                    CornerRadius = new CornerRadius(0, 8, 8, 0)
+                });
+                continue;
+            }
+            var paragraph = RichText(line, 15);
+            paragraph.Margin = new Thickness(0, 0, 0, 10);
+            ResultBody.Children.Add(paragraph);
+        }
+        var rules = draft.Rules.Length > 0
+            ? $"{T("policyPrefix")} : {string.Join(" · ", draft.Rules.Select(rule => T($"policy-{rule}")))}     "
+            : "";
+        ResultFootText.Text = rules + T("resultReminder");
+    }
+
+    private static bool IsConclusion(string line)
+    {
+        var lower = line.ToLowerInvariant();
+        return lower.StartsWith("conclusion", StringComparison.Ordinal)
+            || lower.StartsWith("en résumé", StringComparison.Ordinal)
+            || lower.StartsWith("en resume", StringComparison.Ordinal)
+            || lower.StartsWith("résultat", StringComparison.Ordinal)
+            || lower.StartsWith("in summary", StringComparison.Ordinal)
+            || lower.StartsWith("result", StringComparison.Ordinal)
+            || lower.StartsWith("bottom line", StringComparison.Ordinal);
+    }
+
+    private static string StripConclusion(string line)
+    {
+        var colon = line.IndexOf(':');
+        return colon is > 0 and < 24 ? line[(colon + 1)..].Trim() : line;
+    }
+
+    private TextBlock RichText(string text, double size)
+    {
+        var block = new TextBlock
+        {
+            FontSize = size,
+            LineHeight = size * 1.6,
+            TextWrapping = TextWrapping.Wrap,
+            IsTextSelectionEnabled = true,
+            Foreground = Palette("NomiInk")
+        };
+        Typography.SetNumeralAlignment(block, Windows.UI.Text.FontNumeralAlignment.Tabular);
+        var position = 0;
+        foreach (Match match in NumberPattern.Matches(text))
+        {
+            if (match.Index > position) block.Inlines.Add(new Run { Text = text[position..match.Index] });
+            block.Inlines.Add(new Run { Text = match.Value, FontWeight = FontWeights.SemiBold });
+            position = match.Index + match.Length;
+        }
+        if (position < text.Length) block.Inlines.Add(new Run { Text = text[position..] });
+        return block;
+    }
+
+    private void RenderDocuments(Draft draft)
+    {
+        DocumentChips.Children.Clear();
+        DocumentList.Children.Clear();
+        DocumentsTitle.Text = T("documentsTitle");
+        DocumentNote.Text = T(draft.Documents.Count > 0 ? "documentLocalNote" : "documentsNone");
+        DocumentFormats.Visibility = draft.Documents.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var document in draft.Documents.ToArray())
+        {
+            var chip = new Button { Style = (Style)Application.Current.Resources["NomiChip"] };
+            var chipContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            var name = new TextBlock { Text = document.Name, MaxWidth = 180, TextTrimming = TextTrimming.CharacterEllipsis };
+            chipContent.Children.Add(name);
+            chipContent.Children.Add(new TextBlock { Text = "×", Foreground = Palette("NomiInk3") });
+            chip.Content = chipContent;
+            AutomationProperties.SetName(chip, $"{T("documentRemove")} {document.Name}");
+            ToolTipService.SetToolTip(chip, $"{T("documentRemove")} · {document.Name}");
+            chip.Click += (_, _) => RemoveDocument(draft, document);
+            DocumentChips.Children.Add(chip);
+
+            var row = new Grid { ColumnSpacing = 10 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var extension = System.IO.Path.GetExtension(document.Name).TrimStart('.').ToUpperInvariant();
+            row.Children.Add(new Border
+            {
+                Width = 30,
+                Height = 34,
+                CornerRadius = new CornerRadius(5),
+                BorderBrush = Palette("NomiLineStrong"),
+                BorderThickness = new Thickness(1),
+                Background = Palette("NomiSurface2"),
+                VerticalAlignment = VerticalAlignment.Top,
+                Child = new TextBlock
+                {
+                    Text = extension.Length > 4 ? extension[..4] : extension,
+                    FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
+                    FontSize = 8.5,
+                    Foreground = Palette("NomiInk2"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            });
+            var details = new StackPanel { Spacing = 2 };
+            var title = Text(document.Name, 13);
+            title.FontWeight = FontWeights.SemiBold;
+            title.TextTrimming = TextTrimming.CharacterEllipsis;
+            title.TextWrapping = TextWrapping.NoWrap;
+            details.Children.Add(title);
+            var count = document.Text.Length.ToString("N0", new CultureInfo(Current.Locale));
+            details.Children.Add(Text(document.Truncated ? $"{count} car. · {T("documentPartialShort")}" : $"{count} car.", 11.5, "NomiInk3"));
+            var preview = new TextBlock
+            {
+                Text = document.Text,
+                FontSize = 11.5,
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true,
+                Foreground = Palette("NomiInk2")
+            };
+            details.Children.Add(new Expander
+            {
+                Header = new TextBlock { Text = T("documentPreview"), FontSize = 11.5 },
+                Content = new ScrollViewer { Content = preview, MaxHeight = 200 },
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 4, 0, 0)
+            });
+            Grid.SetColumn(details, 1);
+            row.Children.Add(details);
+            var remove = new Button
+            {
+                Content = new FontIcon { Glyph = "\uE711", FontSize = 11 },
+                Style = (Style)Application.Current.Resources["NomiGhost"],
+                Padding = new Thickness(6),
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            AutomationProperties.SetName(remove, $"{T("documentRemove")} {document.Name}");
+            remove.Click += (_, _) => RemoveDocument(draft, document);
+            Grid.SetColumn(remove, 2);
+            row.Children.Add(remove);
+            DocumentList.Children.Add(row);
+        }
+        Announce(DocumentStatus, draft.DocumentStatus.Length > 0 ? T(draft.DocumentStatus) : "");
+    }
+
+    private void RemoveDocument(Draft draft, AttachedDocument document)
+    {
+        if (documentReading is not null || generation is not null) return;
+        draft.Documents.Remove(document);
+        draft.DocumentStatus = "";
+        RenderDocuments(draft);
+        AttachButton.Focus(FocusState.Programmatic);
+    }
+
+    private void RefreshAside()
+    {
+        EngineTitle.Text = T("engineTitle");
+        EngineDetail.Text = $"{inference.Model} · llama.cpp";
+        AutomationProperties.SetLiveSetting(EngineStatus, AutomationLiveSetting.Polite);
+        AutomationProperties.SetLiveSetting(DocumentStatus, AutomationLiveSetting.Polite);
+        AutomationProperties.SetName(EngineProgress, T("engineTitle"));
+        PrepareCancel.Content = T("stop");
+        UpdateEngine();
+
+        ExamplesTitle.Text = $"{T("examplesTitle")} · {Action.Title}";
+        ExampleList.Children.Clear();
+        var prompt = new Button
+        {
+            Content = Text(Action.Prompt, 12.5),
+            Style = (Style)Application.Current.Resources["NomiExample"]
+        };
+        AutomationProperties.SetName(prompt, $"{T("loadExample")} : {Action.Prompt}");
+        prompt.Click += (_, _) => UseExample();
+        ExampleList.Children.Add(prompt);
+        foreach (var context in Current.Contexts.Where(item => item.Action == actionId))
+        {
+            var card = new Button
+            {
+                Content = Text($"{context.Title} — {context.Description}", 12.5, "NomiInk2"),
+                Style = (Style)Application.Current.Resources["NomiExample"]
+            };
+            AutomationProperties.SetName(card, $"{T("context")} : {context.Title}");
+            var id = context.Id;
+            card.Click += (_, _) => Open(actionId, id);
+            ExampleList.Children.Add(card);
+        }
+
+        ShortcutsTitle.Text = T("shortcutsTitle");
+        ShortcutList.Children.Clear();
+        foreach (var (label, keys) in new[]
+        {
+            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutAction"), "Ctrl 1–6"), (T("stop"), "Esc")
+        })
+        {
+            var row = new Grid();
+            row.Children.Add(Text(label, 12.5, "NomiInk2"));
+            row.Children.Add(new Border
+            {
+                Style = (Style)Application.Current.Resources["NomiKbd"],
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Child = new TextBlock { Text = keys, Style = (Style)Application.Current.Resources["NomiKbdText"] }
+            });
+            ShortcutList.Children.Add(row);
         }
     }
 
-    private FrameworkElement CreateModelPanel()
+    private void UpdateEngine()
     {
-        var panel = new StackPanel { Spacing = 10 };
-        panel.Children.Add(Heading(T("localModelTitle")));
-        panel.Children.Add(Text(T("localModelHelp"), 12));
-        var status = Text("", 13);
-        AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
-        var progress = new ProgressBar { Minimum = 0, Maximum = 100 };
-        AutomationProperties.SetName(progress, T("localModelTitle"));
-        var prepare = Button("", async (_, _) => await PrepareModel(), true);
-        var cancel = Button(T("stop"), (_, _) => modelPreparation?.Cancel());
-        updateModelPanel = () =>
-        {
-            status.Text = T(inference.Ready ? "local-model-ready" : modelProgress.Stage);
-            if (modelProgress.Stage == "model-downloading")
-                status.Text += $" {modelProgress.Fraction:P0}";
-            prepare.Content = Text(T(inference.HasModel ? "loadLocalModel" : "downloadLocalModel"));
-            AutomationProperties.SetName(prepare, T(inference.HasModel ? "loadLocalModel" : "downloadLocalModel"));
-            prepare.IsEnabled = modelPreparation is null && !inference.Ready;
-            cancel.Visibility = modelPreparation is not null ? Visibility.Visible : Visibility.Collapsed;
-            progress.Visibility = modelPreparation is not null ? Visibility.Visible : Visibility.Collapsed;
-            progress.IsIndeterminate = modelProgress.Stage != "model-downloading";
-            progress.Value = modelProgress.Fraction * 100;
-            updateRequestControls?.Invoke();
-        };
-        updateModelPanel();
-        panel.Children.Add(status);
-        panel.Children.Add(progress);
-        panel.Children.Add(CardGrid(new[] { prepare, cancel }, 2));
-        return panel;
+        var preparing = modelPreparation is not null;
+        string status;
+        if (inference.Ready) status = T("engineReady");
+        else if (modelProgress.Stage == "model-downloading") status = $"{T("engineDownloading")} · {modelProgress.Fraction:P0}";
+        else if (preparing) status = T("engineBusy");
+        else status = T("engineMissing");
+        Announce(EngineStatus, status);
+        EngineDot.Fill = Palette(inference.Ready ? "NomiOk" : preparing ? "NomiAccent" : "NomiInk3");
+        EngineProgress.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
+        EngineProgress.IsIndeterminate = modelProgress.Stage != "model-downloading";
+        EngineProgress.Value = modelProgress.Fraction * 100;
+        var message = inference.Ready || modelProgress.Stage is "local-model-missing" or "model-downloading" ? "" : T(modelProgress.Stage);
+        Announce(EngineMessage, message);
+        PrepareButton.Content = T(inference.HasModel ? "loadLocalModel" : "downloadLocalModel");
+        AutomationProperties.SetName(PrepareButton, (string)PrepareButton.Content);
+        PrepareButton.Visibility = inference.Ready || preparing ? Visibility.Collapsed : Visibility.Visible;
+        PrepareCancel.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
+        EmptyAction.Content = T(inference.HasModel ? "loadLocalModel" : "downloadWithSize");
+        if (view == "workspace" && CurrentDraft.Output.Length == 0) RenderResult(CurrentDraft);
+        UpdateControls();
     }
 
     private async Task PrepareModel()
@@ -234,14 +650,14 @@ public sealed partial class MainWindow : Window
         using var controller = new CancellationTokenSource();
         modelPreparation = controller;
         modelProgress = new("model-verifying");
-        updateModelPanel?.Invoke();
+        UpdateEngine();
         try
         {
             var progress = new Progress<ModelProgress>(value =>
             {
                 if (modelPreparation != controller) return;
                 modelProgress = value;
-                updateModelPanel?.Invoke();
+                UpdateEngine();
             });
             await inference.PrepareAsync(true, progress, controller.Token);
             modelProgress = new("local-model-ready", 1);
@@ -264,268 +680,77 @@ public sealed partial class MainWindow : Window
         finally
         {
             modelPreparation = null;
-            updateModelPanel?.Invoke();
+            UpdateEngine();
+            if (inference.Ready) RequestBox.Focus(FocusState.Programmatic);
         }
     }
 
-    private Button Card(string title, string description, Action open)
+    private void UseExample()
     {
-        var content = new StackPanel { Spacing = compact ? 8 : 14 };
-        content.Children.Add(Text("↗", 20));
-        var name = Text(title, 18);
-        name.FontWeight = FontWeights.SemiBold;
-        content.Children.Add(name);
-        content.Children.Add(Text(description, 13));
-        var button = new Button
-        {
-            Content = content,
-            Padding = new Thickness(compact ? 18 : 24),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
-            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8)
-        };
-        AutomationProperties.SetName(button, title);
-        AutomationProperties.SetHelpText(button, description);
-        button.Click += (_, _) => open();
-        return button;
+        if (generation is not null) return;
+        RequestBox.Text = Action.Prompt;
+        RequestBox.Focus(FocusState.Programmatic);
+        RequestBox.SelectionStart = RequestBox.Text.Length;
     }
 
-    private static Grid CardGrid(IEnumerable<Button> buttons, int maximumColumns)
+    private async Task Launch()
     {
-        var grid = new Grid { ColumnSpacing = 14, RowSpacing = 14 };
-        foreach (var button in buttons) grid.Children.Add(button);
-        void Reflow(double width)
-        {
-            var count = Math.Clamp((int)(width / 260), 1, maximumColumns);
-            if (grid.ColumnDefinitions.Count == count) return;
-            grid.ColumnDefinitions.Clear();
-            grid.RowDefinitions.Clear();
-            for (var column = 0; column < count; column++)
-            {
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            }
-            for (var index = 0; index < grid.Children.Count; index++)
-            {
-                if (index % count == 0)
-                {
-                    grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                }
-                var child = (FrameworkElement)grid.Children[index];
-                Grid.SetRow(child, index / count);
-                Grid.SetColumn(child, index % count);
-            }
-        }
-        Reflow(0);
-        grid.SizeChanged += (_, args) => Reflow(args.NewSize.Width);
-        return grid;
-    }
-
-    private Grid ContextGrid()
-    {
-        return CardGrid(Current.Contexts.Select(context =>
-            Card(context.Title, context.Description,
-                () => Navigate("action", context.Action, context.Id))), 2);
-    }
-
-    private void ShowSpaces()
-    {
-        PageBody.Children.Add(Heading(T("spaces"), true));
-        PageBody.Children.Add(Text(T("spacesIntro")));
-        PageBody.Children.Add(ContextGrid());
-        PageBody.Children.Add(Text(T("nativeLocalNotice"), 12));
-    }
-
-    private void ShowAction(bool home = false)
-    {
-        var action = Current.Actions.Single(item => item.Id == (home ? homeIntent : actionId));
-        var context = Current.Contexts.SingleOrDefault(item => item.Id == contextId);
-        Breadcrumb.Text = $"{T("workspace")}  /  {(home ? T("overview") : action.Title)}";
-        if (!home) PageBody.Children.Add(Button(T("back"), (_, _) => Navigate("home")));
-        PageBody.Children.Add(Text(home ? T("greeting") : context?.Title ?? T("spaceTag"), 12));
-        PageBody.Children.Add(Heading(home ? T("headline") : action.Title, true));
-        PageBody.Children.Add(Text(home ? T("intro") : action.Description));
-        RadioButtons? intentPicker = null;
-        var intentDescription = Text(action.Description, 12);
-        if (home)
-        {
-            intentPicker = new RadioButtons
-            {
-                Header = T("intent"),
-                ItemsSource = Current.Actions.Select(item => item.Title).ToArray(),
-                SelectedIndex = Array.FindIndex(Current.Actions, item => item.Id == homeIntent),
-                MaxColumns = 3
-            };
-            AutomationProperties.SetName(intentPicker, T("intent"));
-            PageBody.Children.Add(intentPicker);
-            PageBody.Children.Add(intentDescription);
-        }
-        var key = home ? $"{language}:home" : $"{language}:{actionId}:{contextId}";
-        if (!drafts.TryGetValue(key, out var draft))
-        {
-            draft = new Draft();
-            drafts[key] = draft;
-        }
-        var input = new TextBox
-        {
-            Header = T("requestLabel"),
-            PlaceholderText = action.Prompt,
-            Text = draft.Prompt,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            MaxLength = 6000,
-            MinHeight = 130,
-            MaxHeight = 400
-        };
-        AutomationProperties.SetName(input, T("requestLabel"));
-        AutomationProperties.SetHelpText(input, T("requestHelp"));
-        input.TextChanged += (_, _) => draft.Prompt = input.Text;
-        if (intentPicker is not null)
-        {
-            intentPicker.SelectionChanged += (_, _) =>
-            {
-                if (intentPicker.SelectedIndex < 0) return;
-                action = Current.Actions[intentPicker.SelectedIndex];
-                homeIntent = action.Id;
-                intentDescription.Text = action.Description;
-                input.PlaceholderText = action.Prompt;
-            };
-        }
-        PageBody.Children.Add(input);
-        PageBody.Children.Add(CreateModelPanel());
-        var documentsPanel = CreateDocumentPanel(draft);
-        PageBody.Children.Add(documentsPanel);
-        var formatPicker = new ComboBox
-        {
-            Header = T("nextFormat"),
-            ItemsSource = new[] { T("steps"), T("summary") },
-            SelectedIndex = summary ? 1 : 0,
-            MinHeight = 44
-        };
-        AutomationProperties.SetName(formatPicker, T("response"));
-        formatPicker.SelectionChanged += (_, _) => summary = formatPicker.SelectedIndex == 1;
-        PageBody.Children.Add(formatPicker);
-        var example = Button(T("loadExample"), (_, _) => { input.Text = action.Prompt; input.Focus(FocusState.Programmatic); });
-        var status = Text(draft.Status == "idle" ? "" : T(draft.Status), 13);
-        AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
+        if (generation is not null || view != "workspace") return;
+        var draft = CurrentDraft;
+        var action = Action;
         void SetStatus(string value)
         {
             draft.Status = value;
-            status.Text = T(value);
-            FrameworkElementAutomationPeer.FromElement(status)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            if (draft == CurrentDraft) UpdateControls();
         }
-        var output = Text(draft.Output, 16);
-        var policyRules = Text(string.Join(" · ", draft.Rules.Select(rule => T($"policy-{rule}"))), 12);
-        output.IsTextSelectionEnabled = true;
-        var result = new StackPanel
+        if (!inference.Ready) { SetStatus("local-model-missing"); return; }
+        if (documentReading is not null) { SetStatus("documentReading"); return; }
+        if (string.IsNullOrWhiteSpace(RequestBox.Text) && draft.Documents.Count == 0)
         {
-            Spacing = compact ? 12 : 20,
-            Visibility = draft.Output.Length > 0 ? Visibility.Visible : Visibility.Collapsed
-        };
-        var copyStatus = Text("", 12);
-        AutomationProperties.SetLiveSetting(copyStatus, AutomationLiveSetting.Polite);
-        var copy = Button(T("copy"), (_, _) =>
+            SetStatus("invalid-request");
+            RequestBox.Focus(FocusState.Programmatic);
+            return;
+        }
+        using var controller = new CancellationTokenSource();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(controller.Token, timeout.Token);
+        generation = controller;
+        activeDraft = draft;
+        draft.Output = "";
+        draft.Rules = [];
+        RenderResult(draft);
+        SetStatus("generating");
+        try
         {
-            copyStatus.Text = CopyResponse(output.Text);
-            FrameworkElementAutomationPeer.FromElement(copyStatus)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
-        });
-        var send = Button(T("send"), (_, _) => { }, true);
-        updateRequestControls = () => send.IsEnabled = inference.Ready && generation is null;
-        updateRequestControls();
-        var stop = Button(T("stop"), (_, _) => CancelGeneration());
-        stop.Visibility = Visibility.Collapsed;
-        async Task Send()
+            var adapted = await inference.GenerateNomiAsync(draft.Prompt, action.Id, language,
+                summary ? "summary" : "steps", linked.Token, draft.Documents.ToArray());
+            linked.Token.ThrowIfCancellationRequested();
+            draft.Output = adapted.Text;
+            draft.Rules = adapted.Changes;
+            SetStatus(adapted.Changes.Length > 0 ? "policy-adjusted" : "policy-applied");
+        }
+        catch (OperationCanceledException) { SetStatus(timeout.IsCancellationRequested ? "timeout" : "stopped"); }
+        catch (InferenceException exception) { SetStatus(exception.Message); }
+        catch (HttpRequestException) { SetStatus("local-engine-error"); }
+        catch (IOException) { SetStatus("incomplete-response"); }
+        catch (JsonException) { SetStatus("invalid-response"); }
+        catch (ObjectDisposedException) when (controller.IsCancellationRequested) { SetStatus("stopped"); }
+        catch (Exception error)
         {
-            if (generation is not null) return;
-            if (!inference.Ready) { SetStatus("local-model-missing"); return; }
-            if (documentReading is not null) { SetStatus("documentReading"); return; }
-            if (string.IsNullOrWhiteSpace(input.Text) && draft.Documents.Count == 0) { SetStatus("invalid-request"); input.Focus(FocusState.Programmatic); return; }
-            using var controller = new CancellationTokenSource();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(controller.Token, timeout.Token);
-            generation = controller;
-            activeDraft = draft;
-            send.IsEnabled = false;
-            example.IsEnabled = false;
-            formatPicker.IsEnabled = false;
-            documentsPanel.IsEnabled = false;
-            if (intentPicker is not null) intentPicker.IsEnabled = false;
-            input.IsReadOnly = true;
-            stop.Visibility = Visibility.Visible;
-            copyStatus.Text = "";
-            draft.Output = output.Text = "";
-            draft.Rules = [];
-            policyRules.Text = "";
-            result.Visibility = Visibility.Collapsed;
-            SetStatus("generating");
-            try
+            StartupDiagnostics.Write($"Local inference: {error.GetType().Name} (0x{error.HResult:X8})");
+            SetStatus("local-engine-error");
+        }
+        finally
+        {
+            generation = null;
+            activeDraft = null;
+            if (draft == CurrentDraft && view == "workspace")
             {
-                var adapted = await inference.GenerateNomiAsync(input.Text, action.Id, language,
-                    summary ? "summary" : "steps", linked.Token, draft.Documents.ToArray());
-                linked.Token.ThrowIfCancellationRequested();
-                draft.Output = output.Text = adapted.Text;
-                draft.Rules = adapted.Changes;
-                policyRules.Text = string.Join(" · ", draft.Rules.Select(rule => T($"policy-{rule}")));
-                result.Visibility = Visibility.Visible;
-                SetStatus(adapted.Changes.Length > 0 ? "policy-adjusted" : "policy-applied");
-            }
-            catch (OperationCanceledException) { SetStatus(timeout.IsCancellationRequested ? "timeout" : "stopped"); }
-            catch (InferenceException exception) { SetStatus(exception.Message); }
-            catch (HttpRequestException) { SetStatus("local-engine-error"); }
-            catch (IOException) { SetStatus("incomplete-response"); }
-            catch (JsonException) { SetStatus("invalid-response"); }
-            catch (ObjectDisposedException) when (controller.IsCancellationRequested) { SetStatus("stopped"); }
-            catch (Exception error)
-            {
-                StartupDiagnostics.Write($"Local inference: {error.GetType().Name} (0x{error.HResult:X8})");
-                SetStatus("local-engine-error");
-            }
-            finally
-            {
-                generation = null;
-                activeDraft = null;
-                updateRequestControls?.Invoke();
-                example.IsEnabled = true;
-                formatPicker.IsEnabled = true;
-                documentsPanel.IsEnabled = true;
-                if (intentPicker is not null) intentPicker.IsEnabled = true;
-                input.IsReadOnly = false;
-                stop.Visibility = Visibility.Collapsed;
+                RenderResult(draft);
+                UpdateControls();
+                if (draft.Output.Length > 0) CopyButton.Focus(FocusState.Programmatic);
             }
         }
-        send.Click += async (_, _) => await Send();
-        var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
-        submit.Invoked += async (_, args) => { args.Handled = true; await Send(); };
-        input.KeyboardAccelerators.Add(submit);
-        var controls = CardGrid(new[] { example, send, stop }, 3);
-        PageBody.Children.Add(controls);
-        PageBody.Children.Add(Text(T("requestHelp"), 12));
-        PageBody.Children.Add(status);
-        result.Children.Add(Heading(T("resultTitle")));
-        result.Children.Add(copy);
-        result.Children.Add(copyStatus);
-        result.Children.Add(output);
-        result.Children.Add(Text(T("resultReminder"), 12));
-        var responseDetails = new StackPanel { Spacing = 12 };
-        responseDetails.Children.Add(policyRules);
-        responseDetails.Children.Add(Text($"{T("resultTag")} · {inference.Model}", 11));
-        result.Children.Add(new Expander
-        {
-            Header = T("responseDetails"),
-            Content = responseDetails,
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        });
-        result.Children.Add(Button(T("editRequest"), (_, _) => input.Focus(FocusState.Programmatic)));
-        PageBody.Children.Add(result);
-        PageBody.Children.Add(new Expander
-        {
-            Header = T("localProcessing"),
-            Content = Text($"{inference.Model} · llama.cpp\n\n{T("nativeLocalNotice")}", 12),
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        });
     }
 
     private string CopyResponse(string response)
@@ -543,132 +768,160 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private ContentControl CreateDocumentPanel(Draft draft)
+    private async Task AttachDocuments()
     {
-        var panel = new StackPanel { Spacing = 10 };
-        var files = new StackPanel { Spacing = 8 };
-        var status = Text(draft.DocumentStatus.Length > 0 ? T(draft.DocumentStatus) : "", 12);
-        AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
+        var draft = CurrentDraft;
         void SetStatus(string code)
         {
             draft.DocumentStatus = code;
-            status.Text = code.Length > 0 ? T(code) : "";
-            FrameworkElementAutomationPeer.FromElement(status)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            if (draft == CurrentDraft) Announce(DocumentStatus, code.Length > 0 ? T(code) : "");
         }
-        void RenderFiles()
+        if (generation is not null || documentReading is not null) { SetStatus("document-busy"); return; }
+        using var controller = new CancellationTokenSource();
+        documentReading = controller;
+        UpdateControls();
+        try
         {
-            files.Children.Clear();
-            foreach (var document in draft.Documents.ToArray())
+            var picker = new FileOpenPicker();
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+            foreach (var extension in DocumentText.Extensions) picker.FileTypeFilter.Add(extension);
+            var selection = await picker.PickMultipleFilesAsync();
+            controller.Token.ThrowIfCancellationRequested();
+            if (selection.Count == 0) return;
+            if (selection.Count + draft.Documents.Count > DocumentText.MaxFiles)
+                throw new InferenceException("document-limit");
+            SetStatus("documentReading");
+            foreach (var file in selection)
             {
-                var row = new StackPanel { Spacing = 8 };
-                row.Children.Add(Text(document.Name));
-                if (document.Truncated) row.Children.Add(Text(T("documentPartial"), 12));
-                var text = Text(document.Text, 12);
-                text.IsTextSelectionEnabled = true;
-                row.Children.Add(new Expander
-                {
-                    Header = T("documentPreview"),
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    Content = new ScrollViewer { Content = text, MaxHeight = 240 }
-                });
-                var remove = Button(T("documentRemove"), (_, _) =>
-                {
-                    if (documentReading is not null) return;
-                    draft.Documents.Remove(document);
-                    SetStatus("");
-                    RenderFiles();
-                    panel.Children.OfType<Button>().First().Focus(FocusState.Programmatic);
-                });
-                AutomationProperties.SetName(remove, $"{T("documentRemove")} {document.Name}");
-                row.Children.Add(remove);
-                files.Children.Add(row);
-            }
-            if (draft.Documents.Count > 0) files.Children.Add(Text(T("documentPrivacy"), 12));
-        }
-        var add = Button(T("attachDocuments"), async (_, _) =>
-        {
-            if (generation is not null || documentReading is not null) { SetStatus("document-busy"); return; }
-            using var controller = new CancellationTokenSource();
-            documentReading = controller;
-            try
-            {
-                var picker = new FileOpenPicker();
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-                foreach (var extension in DocumentText.Extensions) picker.FileTypeFilter.Add(extension);
-                var selection = await picker.PickMultipleFilesAsync();
                 controller.Token.ThrowIfCancellationRequested();
-                if (selection.Count == 0) return;
-                if (selection.Count + draft.Documents.Count > DocumentText.MaxFiles)
-                    throw new InferenceException("document-limit");
-                SetStatus("documentReading");
-                foreach (var file in selection)
-                {
-                    controller.Token.ThrowIfCancellationRequested();
-                    using var stream = await file.OpenStreamForReadAsync();
-                    if (stream.Length > DocumentText.MaxBytes) throw new InferenceException("document-size");
-                    var bytes = new byte[(int)stream.Length];
-                    await stream.ReadExactlyAsync(bytes, controller.Token);
-                    var document = await Task.Run(() => DocumentText.Read(file.Name, bytes, controller.Token), controller.Token);
-                    controller.Token.ThrowIfCancellationRequested();
-                    DocumentText.Validate([.. draft.Documents, document]);
-                    draft.Documents.Add(document);
-                    RenderFiles();
-                }
-                SetStatus("documentReady");
+                using var stream = await file.OpenStreamForReadAsync();
+                if (stream.Length > DocumentText.MaxBytes) throw new InferenceException("document-size");
+                var bytes = new byte[(int)stream.Length];
+                await stream.ReadExactlyAsync(bytes, controller.Token);
+                var document = await Task.Run(() => DocumentText.Read(file.Name, bytes, controller.Token), controller.Token);
+                controller.Token.ThrowIfCancellationRequested();
+                DocumentText.Validate([.. draft.Documents, document]);
+                draft.Documents.Add(document);
+                if (draft == CurrentDraft) RenderDocuments(draft);
             }
-            catch (OperationCanceledException) { SetStatus("documentStopped"); }
-            catch (InferenceException error) { SetStatus(error.Message); }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or COMException)
-            { SetStatus("document-unreadable"); }
-            finally { documentReading = null; }
-        });
-        panel.Children.Add(add);
-        panel.Children.Add(Text(T("documentHelp"), 12));
-        panel.Children.Add(files);
-        panel.Children.Add(status);
-        RenderFiles();
-        return new ContentControl { Content = panel, HorizontalContentAlignment = HorizontalAlignment.Stretch, IsTabStop = false };
+            SetStatus("documentReady");
+        }
+        catch (OperationCanceledException) { SetStatus("documentStopped"); }
+        catch (InferenceException error) { SetStatus(error.Message); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or COMException)
+        { SetStatus("document-unreadable"); }
+        finally
+        {
+            documentReading = null;
+            UpdateControls();
+        }
     }
 
-    private void ShowPreferences()
+    private void BuildSpaces()
     {
-        PageBody.Children.Add(Heading(T("preferences"), true));
-        PageBody.Children.Add(Text(T("preferencesIntro")));
-        AddPreference("language", "languageHelp", ["Français", "English"], language == "fr" ? 0 : 1, value =>
+        SpacesBody.Children.Clear();
+        var heading = Text(T("spaces"), 22);
+        heading.FontWeight = FontWeights.SemiBold;
+        AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
+        SpacesBody.Children.Add(heading);
+        SpacesBody.Children.Add(Text(T("spacesIntro"), 13.5, "NomiInk2"));
+        var grid = new Grid { ColumnSpacing = 12, RowSpacing = 12, Margin = new Thickness(0, 8, 0, 0) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (var index = 0; index < Current.Contexts.Length; index++)
+        {
+            var context = Current.Contexts[index];
+            var action = Current.Actions.Single(item => item.Id == context.Action);
+            if (index % 2 == 0) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var content = new StackPanel { Spacing = 8 };
+            var title = Text(context.Title, 16);
+            title.FontWeight = FontWeights.SemiBold;
+            content.Children.Add(title);
+            content.Children.Add(Text(context.Description, 13, "NomiInk2"));
+            var footer = new Grid { Margin = new Thickness(0, 8, 0, 0) };
+            var chip = new Border
+            {
+                Background = Palette("NomiAccentSoft"),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(8, 2, 8, 2),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Child = Text(action.Title, 11.5, "NomiAccent")
+            };
+            footer.Children.Add(chip);
+            var open = Text($"{T("openSpace")} →", 12.5, "NomiInk2");
+            open.HorizontalAlignment = HorizontalAlignment.Right;
+            footer.Children.Add(open);
+            content.Children.Add(footer);
+            var card = new Button
+            {
+                Content = content,
+                Style = (Style)Application.Current.Resources["NomiExample"],
+                Background = Palette("NomiSurface"),
+                Padding = new Thickness(18, 16, 18, 16),
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
+            };
+            AutomationProperties.SetName(card, $"{context.Title} · {action.Title}");
+            AutomationProperties.SetHelpText(card, context.Description);
+            var id = context.Id;
+            card.Click += (_, _) => Open(action.Id, id);
+            Grid.SetRow(card, index / 2);
+            Grid.SetColumn(card, index % 2);
+            grid.Children.Add(card);
+        }
+        SpacesBody.Children.Add(grid);
+        SpacesBody.Children.Add(Text(T("spacesHelp"), 12, "NomiInk3"));
+    }
+
+    private void BuildSettings()
+    {
+        SettingsBody.Children.Clear();
+        var heading = Text(T("preferences"), 22);
+        heading.FontWeight = FontWeights.SemiBold;
+        AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
+        SettingsBody.Children.Add(heading);
+        SettingsBody.Children.Add(Text(T("preferencesIntro"), 13.5, "NomiInk2"));
+        AddSetting(T("language"), T("languageHelp"), ["Français", "English"], language == "fr" ? 0 : 1, value =>
         {
             CancelGeneration();
             language = value == 0 ? "fr" : "en";
             Refresh();
-            LanguagePicker.Focus(FocusState.Programmatic);
         });
-        AddPreference("density", "densityHelp", [T("comfortable"), T("compact")], compact ? 1 : 0, value =>
+        var themeIndex = Root.RequestedTheme switch { ElementTheme.Light => 1, ElementTheme.Dark => 2, _ => 0 };
+        AddSetting(T("theme"), T("themeHelp"), [T("themeSystem"), T("themeLight"), T("themeDark")], themeIndex, value =>
         {
-            compact = value == 1;
-            PageBody.Spacing = compact ? 14 : 24;
+            Root.RequestedTheme = value switch { 1 => ElementTheme.Light, 2 => ElementTheme.Dark, _ => ElementTheme.Default };
         });
-        AddPreference("response", "responseHelp", [T("steps"), T("summary")], summary ? 1 : 0,
-            value => summary = value == 1);
-        PageBody.Children.Add(Text(T("nativePreferences"), 12));
+        AddSetting(T("response"), T("responseHelp"), [T("steps"), T("summary")], summary ? 1 : 0, value =>
+        {
+            summary = value == 1;
+            StepsToggle.IsChecked = !summary;
+            SummaryToggle.IsChecked = summary;
+        });
+        SettingsBody.Children.Add(Text(T("nativePreferences"), 12, "NomiInk3"));
+        SettingsBody.Children.Add(Text(T("nativeLocalNotice"), 12, "NomiInk3"));
     }
 
-    private void AddPreference(string label, string help, string[] options, int selected, Action<int> changed)
+    private void AddSetting(string label, string help, string[] options, int selected, Action<int> changed)
     {
-        var select = new ComboBox
-        {
-            Header = T(label),
-            ItemsSource = options,
-            SelectedIndex = selected,
-            MinWidth = 180,
-            MinHeight = 44
-        };
-        AutomationProperties.SetName(select, T(label));
-        AutomationProperties.SetHelpText(select, T(help));
-        select.SelectionChanged += (_, _) =>
-        {
-            if (!updating) changed(select.SelectedIndex);
-        };
-        PageBody.Children.Add(select);
-        PageBody.Children.Add(Text(T(help), 13));
+        var card = new Border { Style = (Style)Application.Current.Resources["NomiCard"], Padding = new Thickness(18, 14, 18, 14) };
+        var grid = new Grid { ColumnSpacing = 16 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+        var title = Text(label, 14);
+        title.FontWeight = FontWeights.SemiBold;
+        text.Children.Add(title);
+        text.Children.Add(Text(help, 12, "NomiInk3"));
+        grid.Children.Add(text);
+        var select = new ComboBox { ItemsSource = options, SelectedIndex = selected, MinWidth = 170, VerticalAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(select, label);
+        AutomationProperties.SetHelpText(select, help);
+        select.SelectionChanged += (_, _) => { if (!updating) changed(select.SelectedIndex); };
+        Grid.SetColumn(select, 1);
+        grid.Children.Add(select);
+        card.Child = grid;
+        SettingsBody.Children.Add(card);
     }
 
     private static string Normalize(string value)
@@ -678,120 +931,162 @@ public sealed partial class MainWindow : Window
             .ToLowerInvariant();
     }
 
-    private async void OpenCommandClicked(object sender, RoutedEventArgs args)
+    private void OpenPalette()
     {
-        if (palette is not null) return;
-        var search = new TextBox { PlaceholderText = T("commandHint") };
-        AutomationProperties.SetName(search, T("search"));
-        var results = new ListView
-        {
-            SelectionMode = ListViewSelectionMode.Single,
-            IsItemClickEnabled = true,
-            MaxHeight = 340
-        };
-        AutomationProperties.SetName(results, T("search"));
-        var empty = Text(T("noResults"));
-        var content = new StackPanel { Spacing = 16 };
-        content.Children.Add(search);
-        content.Children.Add(results);
-        content.Children.Add(empty);
-        content.Children.Add(Text(T("commandHelp"), 12));
-        var dialog = new ContentDialog
-        {
-            XamlRoot = Root.XamlRoot,
-            Title = T("command"),
-            Content = content,
-            CloseButtonText = T("close")
-        };
-        palette = dialog;
-        string? selectedAction = null;
-        string? selectedContext = null;
-        void Choose(ListViewItem item)
-        {
-            if (item.Tag is not Command command) return;
-            selectedAction = command.Action;
-            selectedContext = command.Context;
-            dialog.Hide();
-        }
-        void Filter()
-        {
-            results.Items.Clear();
-            var commands = Current.Actions.Select(action =>
-                    new Command(action.Title, action.Description, action.Id, null, T("action")))
-                .Concat(Current.Contexts.Select(context =>
-                    new Command(context.Title, context.Description, context.Action, context.Id, T("context"))));
-            var terms = Normalize(search.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var command in commands.Where(command =>
-                terms.All(term => Normalize($"{command.Title} {command.Description}").Contains(term))))
-            {
-                var item = new ListViewItem
-                {
-                    Content = Text($"{command.Title}  ·  {command.Kind}"),
-                    Tag = command,
-                    MinHeight = 44
-                };
-                AutomationProperties.SetName(item, $"{command.Title}, {command.Kind}");
-                results.Items.Add(item);
-            }
-            empty.Visibility = results.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            if (results.Items.Count > 0) results.SelectedIndex = 0;
-        }
-        Filter();
-        search.TextChanged += (_, _) => Filter();
-        search.KeyDown += (_, key) =>
-        {
-            if (results.Items.Count == 0) return;
-            if (key.Key == VirtualKey.Enter && results.SelectedItem is ListViewItem item)
-            {
-                Choose(item);
-                key.Handled = true;
-            }
-            else if (key.Key is VirtualKey.Down or VirtualKey.Up)
-            {
-                results.Focus(FocusState.Keyboard);
-                key.Handled = true;
-            }
-        };
-        results.ItemClick += (_, click) =>
-        {
-            if (click.ClickedItem is ListViewItem item) Choose(item);
-        };
-        results.KeyDown += (_, key) =>
-        {
-            if (key.Key == VirtualKey.Enter && results.SelectedItem is ListViewItem item)
-            {
-                Choose(item);
-                key.Handled = true;
-            }
-        };
-        dialog.Opened += (_, _) => search.Focus(FocusState.Programmatic);
-        await dialog.ShowAsync();
-        palette = null;
-        if (selectedAction is not null) Navigate("action", selectedAction, selectedContext);
+        PaletteOverlay.Visibility = Visibility.Visible;
+        PaletteSearch.Text = "";
+        PaletteFilter(PaletteSearch, null!);
+        PaletteSearch.Focus(FocusState.Programmatic);
     }
+
+    private void ClosePalette()
+    {
+        PaletteOverlay.Visibility = Visibility.Collapsed;
+        RequestBox.Focus(FocusState.Programmatic);
+    }
+
+    private void PaletteFilter(object sender, TextChangedEventArgs args)
+    {
+        PaletteResults.Items.Clear();
+        var commands = Current.Actions.Select(action =>
+                new Command(action.Title, action.Description, T("action"), () => Open(action.Id, contextId)))
+            .Concat(Current.Contexts.Select(context =>
+                new Command(context.Title, context.Description, T("context"), () => Open(context.Action, context.Id))))
+            .Append(new Command(T("spaces"), T("spacesIntro"), T("navigation"), () => { view = "spaces"; Refresh(); }))
+            .Append(new Command(T("preferences"), T("preferencesIntro"), T("navigation"), () => { view = "settings"; Refresh(); }));
+        var terms = Normalize(PaletteSearch.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var command in commands.Where(command =>
+            terms.All(term => Normalize($"{command.Title} {command.Description} {command.Kind}").Contains(term))))
+        {
+            var row = new Grid { ColumnSpacing = 12, Padding = new Thickness(6, 4, 6, 4) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var text = new StackPanel { Spacing = 1 };
+            var title = Text(command.Title, 14);
+            text.Children.Add(title);
+            var description = Text(command.Description, 12, "NomiInk3");
+            description.TextWrapping = TextWrapping.NoWrap;
+            description.TextTrimming = TextTrimming.CharacterEllipsis;
+            text.Children.Add(description);
+            row.Children.Add(text);
+            var kind = Text(command.Kind, 11, "NomiInk3");
+            kind.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(kind, 1);
+            row.Children.Add(kind);
+            var item = new ListViewItem { Content = row, Tag = command, MinHeight = 48 };
+            AutomationProperties.SetName(item, $"{command.Title}, {command.Kind}");
+            PaletteResults.Items.Add(item);
+        }
+        PaletteEmpty.Visibility = PaletteResults.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (PaletteResults.Items.Count > 0) PaletteResults.SelectedIndex = 0;
+    }
+
+    private void Choose(object? selected)
+    {
+        if (selected is not ListViewItem { Tag: Command command }) return;
+        ClosePalette();
+        command.Run();
+    }
+
+    private void PaletteKeyDown(object sender, KeyRoutedEventArgs key)
+    {
+        if (key.Key == VirtualKey.Escape)
+        {
+            ClosePalette();
+            key.Handled = true;
+        }
+        else if (key.Key == VirtualKey.Enter)
+        {
+            Choose(PaletteResults.SelectedItem);
+            key.Handled = true;
+        }
+        else if (sender == PaletteSearch && (key.Key is VirtualKey.Down or VirtualKey.Up) && PaletteResults.Items.Count > 0)
+        {
+            var delta = key.Key == VirtualKey.Down ? 1 : -1;
+            PaletteResults.SelectedIndex = Math.Clamp(PaletteResults.SelectedIndex + delta, 0, PaletteResults.Items.Count - 1);
+            PaletteResults.ScrollIntoView(PaletteResults.SelectedItem);
+            key.Handled = true;
+        }
+    }
+
+    private void PaletteItemClick(object sender, ItemClickEventArgs args) => Choose(args.ClickedItem);
+
+    private void PaletteScrimTapped(object sender, TappedRoutedEventArgs args) => ClosePalette();
+
+    private void PaletteCardTapped(object sender, TappedRoutedEventArgs args) => args.Handled = true;
+
+    private void OpenCommandClicked(object sender, RoutedEventArgs args) => OpenPalette();
 
     private void CommandInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         args.Handled = true;
-        if (palette is not null) palette.Hide();
-        else OpenCommandClicked(CommandButton, new RoutedEventArgs());
+        if (PaletteOverlay.Visibility == Visibility.Visible) ClosePalette();
+        else OpenPalette();
     }
 
-    private void LanguageChanged(object sender, SelectionChangedEventArgs args)
+    private void ActionShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (updating || LanguagePicker.SelectedItem is not ComboBoxItem item || item.Tag is not string value) return;
+        var index = (int)sender.Key - (int)VirtualKey.Number1;
+        if (index < 0 || index >= Current.Actions.Length) return;
+        args.Handled = true;
+        if (PaletteOverlay.Visibility == Visibility.Visible) ClosePalette();
+        Open(Current.Actions[index].Id, contextId);
+    }
+
+    private void LanguageToggled(object sender, RoutedEventArgs args)
+    {
+        if (updating || sender is not ToggleButton { Tag: string value }) return;
+        if (value == language) { ((ToggleButton)sender).IsChecked = true; return; }
         CancelGeneration();
         language = value;
         Refresh();
     }
 
-    private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private void FormatToggled(object sender, RoutedEventArgs args)
     {
-        if (updating || args.SelectedItem is not NavigationViewItem item || item.Tag is not string destination) return;
-        Navigate(destination);
+        if (updating) return;
+        summary = sender == SummaryToggle;
+        StepsToggle.IsChecked = !summary;
+        SummaryToggle.IsChecked = summary;
     }
 
-    private sealed record Command(string Title, string Description, string Action, string? Context, string Kind);
+    private void RequestChanged(object sender, TextChangedEventArgs args)
+    {
+        if (updating) return;
+        CurrentDraft.Prompt = RequestBox.Text;
+    }
+
+    private void ComposerFocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiAccent");
+
+    private void ComposerUnfocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiLine");
+
+    private async void AttachClicked(object sender, RoutedEventArgs args) => await AttachDocuments();
+
+    private void ExampleClicked(object sender, RoutedEventArgs args) => UseExample();
+
+    private void StopClicked(object sender, RoutedEventArgs args) => CancelGeneration();
+
+    private async void LaunchClicked(object sender, RoutedEventArgs args) => await Launch();
+
+    private async void PrepareClicked(object sender, RoutedEventArgs args) => await PrepareModel();
+
+    private void PrepareCancelClicked(object sender, RoutedEventArgs args) => modelPreparation?.Cancel();
+
+    private void CopyClicked(object sender, RoutedEventArgs args)
+    {
+        var draft = CurrentDraft;
+        if (draft.Output.Length == 0) return;
+        draft.Status = CopyResponse(draft.Output) == T("copied") ? "copied" : "copyError";
+        UpdateControls();
+    }
+
+    private void EditClicked(object sender, RoutedEventArgs args)
+    {
+        RequestBox.Focus(FocusState.Programmatic);
+        RequestBox.SelectionStart = RequestBox.Text.Length;
+    }
+
+    private sealed record Command(string Title, string Description, string Kind, Action Run);
 
     private sealed class Draft
     {
