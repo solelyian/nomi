@@ -23,6 +23,10 @@ SolidCompression=yes
 WizardStyle=modern
 DisableProgramGroupPage=yes
 MinVersion=10.0.17763
+#if GetEnv("NOMI_SIGN_INSTALLER") == "1"
+SignTool=nomi $f
+SignedUninstaller=yes
+#endif
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"

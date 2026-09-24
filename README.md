@@ -143,8 +143,23 @@ Chaque tag `v*` publie sur la page **Releases** GitHub, via
   Windows ; aucune ligne de commande ni prérequis .NET ;
 - `Nomi-win-x64.zip` — version portable, `Nomi.WinUI.exe` à lancer directement.
 
-L’exécutable n’est pas signé : Windows SmartScreen peut afficher un avertissement
-(« Informations complémentaires → Exécuter quand même »).
+### Signature de code
+
+Le workflow signe `Nomi.WinUI.exe`, l’installateur et le désinstalleur
+(`checks/windows-sign.ps1`, signtool, SHA-256, horodatage RFC 3161) lorsque deux
+secrets GitHub sont définis sur le dépôt (Settings → Secrets and variables →
+Actions) :
+
+- `NOMI_SIGNING_PFX_BASE64` : le certificat de signature de code au format PFX,
+  encodé en base64 (`[Convert]::ToBase64String([IO.File]::ReadAllBytes("nomi.pfx"))`
+  dans PowerShell) ;
+- `NOMI_SIGNING_PASSWORD` : le mot de passe du PFX.
+
+Sans ces secrets, la build reste non signée et Windows SmartScreen peut afficher
+un avertissement (« Informations complémentaires → Exécuter quand même »).
+Seul un certificat émis par une autorité reconnue lève cet avertissement : un
+certificat EV immédiatement, un certificat OV après acquisition de réputation.
+La signature est vérifiée par le workflow avant la publication.
 
 ### Compiler soi-même
 

@@ -34,13 +34,35 @@ jobs:
           foreach ($name in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
             if (!(Test-Path "artifacts/Nomi-win-x64/$name")) { throw "Missing $name" }
           }
+      - name: Sign application
+        env:
+          NOMI_SIGNING_PFX_BASE64: ${{ secrets.NOMI_SIGNING_PFX_BASE64 }}
+          NOMI_SIGNING_PASSWORD: ${{ secrets.NOMI_SIGNING_PASSWORD }}
+        run: |
+          ./checks/windows-sign.ps1 -Files artifacts/Nomi-win-x64/Nomi.WinUI.exe
+          if ($env:NOMI_SIGNING_PFX_BASE64 -and $env:NOMI_SIGNING_PASSWORD) {
+            echo "NOMI_SIGN_INSTALLER=1" >> $env:GITHUB_ENV
+          }
       - name: Version
         shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "NOMI_VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_ENV";
           else echo "NOMI_VERSION=0.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"; fi
       - name: Build installer
-        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\nomi.iss'
+        env:
+          NOMI_SIGNING_PFX_BASE64: ${{ secrets.NOMI_SIGNING_PFX_BASE64 }}
+          NOMI_SIGNING_PASSWORD: ${{ secrets.NOMI_SIGNING_PASSWORD }}
+        run: >
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          "/Snomi=pwsh -NoProfile -File $PWD\checks\windows-sign.ps1 -Files `$p"
+          installer\nomi.iss
+      - name: Verify installer signature
+        if: env.NOMI_SIGN_INSTALLER == '1'
+        run: |
+          $setup = Get-ChildItem artifacts/Nomi-Setup-*.exe | Select-Object -First 1
+          $signature = Get-AuthenticodeSignature $setup.FullName
+          if ($signature.Status -ne 'Valid') { throw "Installer signature: $($signature.Status)" }
+          $signature.SignerCertificate.Subject
       - name: Verify installed application starts
         run: ./checks/windows-startup.ps1
       - name: Upload startup diagnostics
