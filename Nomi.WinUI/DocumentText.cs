@@ -219,6 +219,7 @@ public static class DocumentText
         public void Add(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
+            text = text.ReplaceLineEndings("\n");
             var remaining = MaxCharacters - Text.Length;
             Truncated |= text.Length > remaining;
             Text += text[..Math.Min(text.Length, remaining)];
