@@ -145,21 +145,23 @@ Chaque tag `v*` publie sur la page **Releases** GitHub, via
 
 ### Signature de code
 
-Le workflow signe `Nomi.WinUI.exe`, l’installateur et le désinstalleur
-(`checks/windows-sign.ps1`, signtool, SHA-256, horodatage RFC 3161) lorsque deux
-secrets GitHub sont définis sur le dépôt (Settings → Secrets and variables →
+Le workflow signe `Nomi.WinUI.exe` puis l’installateur avec Azure Trusted Signing
+(action `azure/artifact-signing-action`, SHA-256, horodatage Microsoft) lorsque
+ces secrets GitHub sont définis sur le dépôt (Settings → Secrets and variables →
 Actions) :
 
-- `NOMI_SIGNING_PFX_BASE64` : le certificat de signature de code au format PFX,
-  encodé en base64 (`[Convert]::ToBase64String([IO.File]::ReadAllBytes("nomi.pfx"))`
-  dans PowerShell) ;
-- `NOMI_SIGNING_PASSWORD` : le mot de passe du PFX.
+- `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` : app registration
+  Entra ID disposant du rôle « Trusted Signing Certificate Profile Signer » sur
+  le compte de signature ;
+- `AZURE_TRUSTED_SIGNING_ENDPOINT` : point de terminaison régional du compte
+  (ex. `https://weu.codesigning.azure.net`) ;
+- `AZURE_TRUSTED_SIGNING_ACCOUNT` : nom du compte Trusted Signing ;
+- `AZURE_TRUSTED_SIGNING_PROFILE` : nom du profil de certificat (Public Trust).
 
-Sans ces secrets, la build reste non signée et Windows SmartScreen peut afficher
-un avertissement (« Informations complémentaires → Exécuter quand même »).
-Seul un certificat émis par une autorité reconnue lève cet avertissement : un
-certificat EV immédiatement, un certificat OV après acquisition de réputation.
-La signature est vérifiée par le workflow avant la publication.
+Chaque signature est vérifiée (`checks/windows-verify-signature.ps1`) avant la
+publication. Sans ces secrets, la build reste non signée et Windows SmartScreen
+peut afficher un avertissement (« Informations complémentaires → Exécuter quand
+même »). Le désinstalleur généré par Inno Setup n’est pas signé.
 
 ### Compiler soi-même
 

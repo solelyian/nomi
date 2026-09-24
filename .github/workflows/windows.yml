@@ -34,35 +34,61 @@ jobs:
           foreach ($name in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
             if (!(Test-Path "artifacts/Nomi-win-x64/$name")) { throw "Missing $name" }
           }
-      - name: Sign application
+      - name: Signing configuration
         env:
-          NOMI_SIGNING_PFX_BASE64: ${{ secrets.NOMI_SIGNING_PFX_BASE64 }}
-          NOMI_SIGNING_PASSWORD: ${{ secrets.NOMI_SIGNING_PASSWORD }}
+          AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+          AZURE_TRUSTED_SIGNING_ACCOUNT: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          AZURE_TRUSTED_SIGNING_PROFILE: ${{ secrets.AZURE_TRUSTED_SIGNING_PROFILE }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
-          ./checks/windows-sign.ps1 -Files artifacts/Nomi-win-x64/Nomi.WinUI.exe
-          if ($env:NOMI_SIGNING_PFX_BASE64 -and $env:NOMI_SIGNING_PASSWORD) {
-            echo "NOMI_SIGN_INSTALLER=1" >> $env:GITHUB_ENV
-          }
+          $missing = 'AZURE_TRUSTED_SIGNING_ENDPOINT', 'AZURE_TRUSTED_SIGNING_ACCOUNT', 'AZURE_TRUSTED_SIGNING_PROFILE',
+            'AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET' | Where-Object { !(Get-Item "env:$_").Value }
+          if ($missing) {
+            Write-Host "Signing skipped, secrets missing: $($missing -join ', ')"
+            echo "NOMI_SIGN=0" >> $env:GITHUB_ENV
+          } else { echo "NOMI_SIGN=1" >> $env:GITHUB_ENV }
+      - name: Sign application (Azure Trusted Signing)
+        if: env.NOMI_SIGN == '1'
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_TRUSTED_SIGNING_PROFILE }}
+          files: ${{ github.workspace }}\artifacts\Nomi-win-x64\Nomi.WinUI.exe
+          description: Nomi
+          description-url: https://github.com/solelyian/nomi
+      - name: Verify application signature
+        if: env.NOMI_SIGN == '1'
+        run: ./checks/windows-verify-signature.ps1 artifacts/Nomi-win-x64/Nomi.WinUI.exe
       - name: Version
         shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "NOMI_VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_ENV";
           else echo "NOMI_VERSION=0.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"; fi
       - name: Build installer
-        env:
-          NOMI_SIGNING_PFX_BASE64: ${{ secrets.NOMI_SIGNING_PFX_BASE64 }}
-          NOMI_SIGNING_PASSWORD: ${{ secrets.NOMI_SIGNING_PASSWORD }}
-        run: >
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          "/Snomi=pwsh -NoProfile -File $PWD\checks\windows-sign.ps1 -Files `$p"
-          installer\nomi.iss
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\nomi.iss'
+      - name: Sign installer (Azure Trusted Signing)
+        if: env.NOMI_SIGN == '1'
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_TRUSTED_SIGNING_PROFILE }}
+          files-folder: ${{ github.workspace }}\artifacts
+          files-folder-filter: exe
+          description: Nomi
+          description-url: https://github.com/solelyian/nomi
       - name: Verify installer signature
-        if: env.NOMI_SIGN_INSTALLER == '1'
-        run: |
-          $setup = Get-ChildItem artifacts/Nomi-Setup-*.exe | Select-Object -First 1
-          $signature = Get-AuthenticodeSignature $setup.FullName
-          if ($signature.Status -ne 'Valid') { throw "Installer signature: $($signature.Status)" }
-          $signature.SignerCertificate.Subject
+        if: env.NOMI_SIGN == '1'
+        run: ./checks/windows-verify-signature.ps1 (Get-ChildItem artifacts/Nomi-Setup-*.exe).FullName
       - name: Verify installed application starts
         run: ./checks/windows-startup.ps1
       - name: Upload startup diagnostics
