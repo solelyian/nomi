@@ -216,7 +216,7 @@ public sealed partial class MainWindow : Window
             TextWrapping = TextWrapping.Wrap,
             MaxLines = 2,
             LineHeight = 12,
-            MaxWidth = 66,
+            MaxWidth = 78,
             FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal
         };
         content.Children.Add(text);

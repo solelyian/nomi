@@ -49,7 +49,7 @@
         <!-- Body -->
         <Grid x:Name="Body" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="88" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition x:Name="AsideColumn" Width="316" />
             </Grid.ColumnDefinitions>
