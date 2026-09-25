@@ -99,6 +99,7 @@ jobs:
           path: |
             artifacts/startup-*
             artifacts/startup.log
+            artifacts/ui-*.png
       - name: Verify embedded CPU engine without Ollama
         run: |
           if (!(Get-ChildItem artifacts/Nomi-win-x64 -Recurse -Filter llama.dll)) {
