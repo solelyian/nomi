@@ -85,7 +85,7 @@ internal static class ModelChecks
     private static async Task LiveAsync()
     {
         var directory = Environment.GetEnvironmentVariable("NOMI_TEST_MODEL_DIR");
-        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(40));
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(75));
         await using var client = new LocalInferenceClient(new ModelStore(directory));
         await client.PrepareAsync(true, null, deadline.Token);
         foreach (var language in new[] { "fr", "en" })

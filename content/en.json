@@ -165,7 +165,7 @@
     "spacesHelp": "A workspace presets the action and examples. It stays editable in the composer.",
     "openSpace": "Open",
     "reasoning": "Reasoning",
-    "reasoningHelp": "The model thinks before answering: slower, more reliable for multi-step calculations. Ctrl R.",
+    "reasoningHelp": "Extended thinking before the answer: slower, more reliable for multi-step calculations. Ctrl R.",
     "reasoningProgress": "Nomi is reasoning before answering… {0} words of thinking. The response is then adapted before display."
   },
   "actions": [

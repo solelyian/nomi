@@ -165,7 +165,7 @@
     "spacesHelp": "Un espace pré-règle l’action et les exemples. Il reste modifiable dans le composeur.",
     "openSpace": "Ouvrir",
     "reasoning": "Raisonnement",
-    "reasoningHelp": "Le modèle réfléchit avant de répondre : plus lent, plus fiable pour les calculs en plusieurs étapes. Ctrl R.",
+    "reasoningHelp": "Réflexion approfondie avant la réponse : plus lent, plus fiable pour les calculs en plusieurs étapes. Ctrl R.",
     "reasoningProgress": "Nomi raisonne avant de répondre… {0} mots de réflexion. La réponse est ensuite adaptée avant l’affichage."
   },
   "actions": [

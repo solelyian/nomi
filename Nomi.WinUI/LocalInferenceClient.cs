@@ -10,6 +10,8 @@ public sealed class LocalInferenceClient : NomiInferenceClient, IAsyncDisposable
     private const int ContextTokens = 16384;
     private const int AnswerTokens = 768;
     private const int ReasoningTokens = 3072;
+    private const int QuickThinkTokens = 512;
+    private const string ThinkCutoff = "Considering the limited time by the user, I have to give the solution based on the thinking directly now.";
     private const string ThinkOpen = "<think>\n";
     private const string ThinkClose = "</think>";
     private readonly SemaphoreSlim gate = new(1);
@@ -65,46 +67,66 @@ public sealed class LocalInferenceClient : NomiInferenceClient, IAsyncDisposable
                 template.Add("system", system);
                 template.Add("user", content.Replace("<|", "< |", StringComparison.Ordinal));
                 var formatted = Encoding.UTF8.GetString(template.Apply());
-                if (formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted = formatted[..^ThinkOpen.Length];
-                formatted += reasoning ? ThinkOpen : $"{ThinkOpen}\n{ThinkClose}\n\n";
-                var budget = reasoning ? AnswerTokens + ReasoningTokens : AnswerTokens;
-                if (weights.Tokenize(formatted, true, true, Encoding.UTF8).Length + budget >= ContextTokens)
+                if (!formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted += ThinkOpen;
+                var thinkBudget = reasoning ? ReasoningTokens : QuickThinkTokens;
+                if (weights.Tokenize(formatted, true, true, Encoding.UTF8).Length + thinkBudget + AnswerTokens >= ContextTokens)
                     throw new InferenceException("document-context-limit");
                 var executor = new StatelessExecutor(weights, Parameters());
-                using var sampling = new DefaultSamplingPipeline { Temperature = reasoning ? 0.6f : 0.2f };
-                var parameters = new InferenceParams { MaxTokens = budget, SamplingPipeline = sampling };
-                var thinking = reasoning;
-                var pending = new StringBuilder();
+                var thought = new StringBuilder();
+                var thinking = true;
+                var thinkTokens = 0;
                 var answerTokens = 0;
                 var truncated = false;
-                await foreach (var chunk in executor.InferAsync(formatted, parameters, cancellationToken))
+                await foreach (var chunk in Stream(executor, formatted, thinkBudget + AnswerTokens, cancellationToken))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
                     if (thinking)
                     {
-                        pending.Append(chunk);
-                        var window = Math.Min(pending.Length, chunk.Length + ThinkClose.Length);
-                        var tail = pending.ToString(pending.Length - window, window);
+                        thought.Append(chunk);
+                        var window = Math.Min(thought.Length, chunk.Length + ThinkClose.Length);
+                        var tail = thought.ToString(thought.Length - window, window);
                         var close = tail.IndexOf(ThinkClose, StringComparison.Ordinal);
                         if (close < 0)
                         {
                             onReasoning?.Invoke(chunk);
+                            if (++thinkTokens >= thinkBudget) break;
                             continue;
                         }
                         thinking = false;
                         var answer = tail[(close + ThinkClose.Length)..].TrimStart('\n', ' ');
-                        if (answer.Length > 0) onToken(answer);
+                        if (answer.Length > 0) { answerTokens++; onToken(answer); }
                         continue;
                     }
                     answerTokens++;
                     onToken(chunk);
                     if (answerTokens >= AnswerTokens) { truncated = true; break; }
                 }
+                if (thinking)
+                {
+                    var resumed = $"{formatted}{thought}\n\n{ThinkCutoff}\n{ThinkClose}\n\n";
+                    await foreach (var chunk in Stream(executor, resumed, AnswerTokens, cancellationToken))
+                    {
+                        answerTokens++;
+                        onToken(chunk);
+                        if (answerTokens >= AnswerTokens) { truncated = true; break; }
+                    }
+                }
                 cancellationToken.ThrowIfCancellationRequested();
-                return truncated || thinking;
+                return truncated;
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { gate.Release(); }
+    }
+
+    private static async IAsyncEnumerable<string> Stream(StatelessExecutor executor, string prompt, int maxTokens,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        using var sampling = new DefaultSamplingPipeline { Temperature = 0.6f, TopP = 0.95f, TopK = 20 };
+        var parameters = new InferenceParams { MaxTokens = maxTokens, SamplingPipeline = sampling };
+        await foreach (var chunk in executor.InferAsync(prompt, parameters, cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return chunk;
+        }
     }
 
     public async ValueTask DisposeAsync()
