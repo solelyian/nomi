@@ -39,11 +39,13 @@ public abstract class NomiInferenceClient
     public abstract Task<bool> GenerateAsync(
         string prompt, string action, string language, string format,
         Action<string> onToken, CancellationToken cancellationToken, string instruction = "",
-        IReadOnlyList<AttachedDocument>? documents = null);
+        IReadOnlyList<AttachedDocument>? documents = null, bool reasoning = false,
+        Action<string>? onReasoning = null);
 
     public async Task<PolicyResult> GenerateNomiAsync(
         string prompt, string action, string language, string format, CancellationToken cancellationToken,
-        IReadOnlyList<AttachedDocument>? documents = null)
+        IReadOnlyList<AttachedDocument>? documents = null, bool reasoning = false,
+        Action<string>? onReasoning = null)
     {
         for (var attempt = 0; attempt < 2; attempt++)
         {
@@ -53,7 +55,7 @@ public abstract class NomiInferenceClient
             {
                 buffer.Append(token);
                 if (buffer.Length > ResponsePolicy.MaxCharacters) throw new InferenceException("policy-blocked");
-            }, cancellationToken, attempt == 0 ? "" : ResponsePolicy.RegenerationInstruction, documents);
+            }, cancellationToken, attempt == 0 ? "" : ResponsePolicy.RegenerationInstruction, documents, reasoning, onReasoning);
             cancellationToken.ThrowIfCancellationRequested();
             if (truncated) throw new InferenceException("incomplete-response");
             var result = ResponsePolicy.Apply(buffer.ToString(), format);

@@ -25,7 +25,8 @@ public sealed class OllamaClient : NomiInferenceClient, IDisposable
     public override async Task<bool> GenerateAsync(
         string prompt, string action, string language, string format,
         Action<string> onToken, CancellationToken cancellationToken, string instruction = "",
-        IReadOnlyList<AttachedDocument>? documents = null)
+        IReadOnlyList<AttachedDocument>? documents = null, bool reasoning = false,
+        Action<string>? onReasoning = null)
     {
         var (system, content) = BuildRequest(prompt, action, language, format, instruction, documents);
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/chat")
@@ -35,7 +36,7 @@ public sealed class OllamaClient : NomiInferenceClient, IDisposable
                 model = Model,
                 messages = new[] { new { role = "system", content = system }, new { role = "user", content } },
                 stream = true,
-                think = false,
+                think = reasoning,
                 keep_alive = "15m",
                 options = new { temperature = 0.2, num_ctx = documents?.Count > 0 ? 16384 : 4096, num_predict = 768 }
             })

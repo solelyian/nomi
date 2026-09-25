@@ -113,7 +113,7 @@
     "incomplete-response": "The response is incomplete or too long. It has not been displayed; narrow your request and try again.",
     "invalid-response": "The model’s response could not be read. Try again.",
     "localModelTitle": "AI built into Nomi",
-    "localModelHelp": "Qwen3 4B · Initial 2.5 GB download, then offline use. Allow 4 GB of free disk space and at least 8 GB of RAM (16 GB recommended). No Ollama installation.",
+    "localModelHelp": "Qwen3 4B Thinking · Initial 2.5 GB download, then offline use. Allow 4 GB of free disk space and at least 8 GB of RAM (16 GB recommended). No Ollama installation.",
     "downloadLocalModel": "Download model",
     "loadLocalModel": "Load model",
     "local-model-missing": "Prepare the model using the download or load button above before sending a request.",
@@ -163,7 +163,10 @@
     "policyPrefix": "Nomi rules",
     "conclusion": "Conclusion",
     "spacesHelp": "A workspace presets the action and examples. It stays editable in the composer.",
-    "openSpace": "Open"
+    "openSpace": "Open",
+    "reasoning": "Reasoning",
+    "reasoningHelp": "The model thinks before answering: slower, more reliable for multi-step calculations. Ctrl R.",
+    "reasoningProgress": "Nomi is reasoning before answering… {0} words of thinking. The response is then adapted before display."
   },
   "actions": [
     {

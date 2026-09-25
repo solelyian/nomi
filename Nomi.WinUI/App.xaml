@@ -165,6 +165,17 @@
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk2}" />
             </Style>
 
+            <Style x:Key="NomiChipToggle" TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
+                <Setter Property="Background" Value="{ThemeResource NomiSurface}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiLineStrong}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="7" />
+                <Setter Property="Padding" Value="9,4" />
+                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
+            </Style>
+
             <Style x:Key="NomiExample" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                 <Setter Property="Background" Value="{ThemeResource NomiSurface2}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiLine}" />

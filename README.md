@@ -92,7 +92,7 @@ Dans Nomi, choisir **Télécharger le modèle** : environ 2,5 Go sont téléchar
 vérifiés puis chargés. La progression et le bouton **Arrêter** restent disponibles ;
 un téléchargement interrompu reprend au prochain essai.
 
-Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 4B Instruct 2507,
+Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 4B Thinking 2507,
 quantifié Q4_K_M, est téléchargé séparément depuis Hugging Face (Apache-2.0).
 Le fichier, sa version, sa taille et son SHA-256 sont épinglés dans
 `content/local-model.json`. Nomi n’utilise un modèle qu’après vérification complète.
@@ -115,7 +115,7 @@ ollama pull qwen3:4b-instruct
 ollama list
 ```
 
-Utiliser exactement **`qwen3:4b-instruct`**. Ce modèle Qwen3 4B Instruct 2507
+Utiliser exactement **`qwen3:4b-instruct`**. Ce modèle Qwen3 4B Thinking 2507
 est disponible sous licence Apache 2.0, sans clé API ni abonnement.
 Le téléchargement représente environ 2,5 Go. Prévoir au moins 8 Go de RAM
 pour essayer ce petit modèle ; la vitesse dépend du matériel.
@@ -376,5 +376,5 @@ dotnet build .\Nomi.WinUI\Nomi.WinUI.csproj -c Release -p:Platform=x64 -warnaser
 - [Démarrage WinUI 3](https://learn.microsoft.com/en-us/windows/apps/winui/winui3/create-your-first-winui3-app)
 - [Windows App SDK 1.8.260209005](https://www.nuget.org/packages/Microsoft.WindowsAppSDK/1.8.260209005)
 - [Qwen3 4B Instruct dans Ollama](https://ollama.com/library/qwen3:4b-instruct)
-- [Fiche et licence du modèle](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)
+- [Fiche et licence du modèle](https://huggingface.co/Qwen/Qwen3-4B-Thinking-2507)
 - [LLamaSharp](https://github.com/SciSharp/LLamaSharp)

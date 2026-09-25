@@ -113,7 +113,7 @@
     "incomplete-response": "La réponse est incomplète ou trop longue. Elle n’a pas été affichée ; précisez votre demande puis réessayez.",
     "invalid-response": "La réponse du modèle n’a pas pu être lue. Réessayez.",
     "localModelTitle": "IA intégrée à Nomi",
-    "localModelHelp": "Qwen3 4B · Téléchargement initial de 2,5 Go, puis utilisation hors ligne. Prévoir 4 Go d’espace libre et 8 Go de RAM au minimum (16 Go conseillés). Aucune installation d’Ollama.",
+    "localModelHelp": "Qwen3 4B Thinking · Téléchargement initial de 2,5 Go, puis utilisation hors ligne. Prévoir 4 Go d’espace libre et 8 Go de RAM au minimum (16 Go conseillés). Aucune installation d’Ollama.",
     "downloadLocalModel": "Télécharger le modèle",
     "loadLocalModel": "Charger le modèle",
     "local-model-missing": "Préparez le modèle avec le bouton de téléchargement ou de chargement ci-dessus avant de lancer une demande.",
@@ -163,7 +163,10 @@
     "policyPrefix": "Règles Nomi",
     "conclusion": "Conclusion",
     "spacesHelp": "Un espace pré-règle l’action et les exemples. Il reste modifiable dans le composeur.",
-    "openSpace": "Ouvrir"
+    "openSpace": "Ouvrir",
+    "reasoning": "Raisonnement",
+    "reasoningHelp": "Le modèle réfléchit avant de répondre : plus lent, plus fiable pour les calculs en plusieurs étapes. Ctrl R.",
+    "reasoningProgress": "Nomi raisonne avant de répondre… {0} mots de réflexion. La réponse est ensuite adaptée avant l’affichage."
   },
   "actions": [
     {

@@ -85,7 +85,7 @@ internal static class ModelChecks
     private static async Task LiveAsync()
     {
         var directory = Environment.GetEnvironmentVariable("NOMI_TEST_MODEL_DIR");
-        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(20));
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(40));
         await using var client = new LocalInferenceClient(new ModelStore(directory));
         await client.PrepareAsync(true, null, deadline.Token);
         foreach (var language in new[] { "fr", "en" })
@@ -126,7 +126,19 @@ internal static class ModelChecks
         catch (OperationCanceledException) { }
         var recovery = await client.GenerateNomiAsync("Convert 2 hours to minutes.", "convert", "en", "summary", deadline.Token);
         Check(recovery.Text.Contains("120"), "Embedded recovery after cancellation");
-        Console.WriteLine("Embedded live checks passed: 12 language/action paths, PDF, cancellation and recovery.");
+        foreach (var (language, prompt) in new[] {
+            ("fr", "Un article coûte 80 €. Après une remise de 15 %, puis une TVA de 20 %, quel est le prix final ?"),
+            ("en", "An item costs 80 euros. After a 15% discount and then 20% VAT, what is the final price?") })
+        {
+            var reasoning = new StringBuilder();
+            var reasoned = await client.GenerateNomiAsync(prompt, "verify", language, "summary", deadline.Token,
+                reasoning: true, onReasoning: chunk => reasoning.Append(chunk));
+            Console.WriteLine($"{language}/reasoning ({reasoning.Length} chars of reasoning): {reasoned.Text}");
+            Check(reasoning.Length > 0, $"Embedded reasoning stream {language}");
+            Check(!reasoned.Text.Contains("<think>") && !reasoned.Text.Contains("</think>"), $"Embedded reasoning hidden {language}");
+            Check(reasoned.Text.Contains("81,6") || reasoned.Text.Contains("81.6"), $"Embedded reasoning answer {language}");
+        }
+        Console.WriteLine("Embedded live checks passed: 12 language/action paths, PDF, cancellation, recovery and 2 reasoning paths.");
     }
 
     private static void Check(bool value, string message)

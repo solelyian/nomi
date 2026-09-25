@@ -41,6 +41,8 @@ public sealed partial class MainWindow : Window
     private string? contextId;
     private string view = "workspace";
     private bool summary;
+    private bool reasoning;
+    private int reasoningWords;
     private readonly LocalInferenceClient inference = new();
     private CancellationTokenSource? modelPreparation;
     private ModelProgress modelProgress = new("local-model-missing");
@@ -82,6 +84,15 @@ public sealed partial class MainWindow : Window
         var escape = new KeyboardAccelerator { Key = VirtualKey.Escape };
         escape.Invoked += (_, args) => { if (generation is not null) { args.Handled = true; CancelGeneration(); } };
         RequestBox.KeyboardAccelerators.Add(escape);
+        var reason = new KeyboardAccelerator { Key = VirtualKey.R, Modifiers = VirtualKeyModifiers.Control };
+        reason.Invoked += (_, args) =>
+        {
+            args.Handled = true;
+            if (generation is not null || view != "workspace") return;
+            reasoning = !reasoning;
+            ReasoningToggle.IsChecked = reasoning;
+        };
+        Root.KeyboardAccelerators.Add(reason);
         ApplyChrome();
         Refresh();
         RequestBox.Focus(FocusState.Programmatic);
@@ -311,6 +322,10 @@ public sealed partial class MainWindow : Window
         SummaryToggle.IsChecked = summary;
         AutomationProperties.SetName(StepsToggle, $"{T("response")} : {T("steps")}");
         AutomationProperties.SetName(SummaryToggle, $"{T("response")} : {T("summary")}");
+        ReasoningLabel.Text = T("reasoning");
+        ReasoningToggle.IsChecked = reasoning;
+        AutomationProperties.SetName(ReasoningToggle, T("reasoning"));
+        ToolTipService.SetToolTip(ReasoningToggle, T("reasoningHelp"));
 
         RequestBox.PlaceholderText = action.Prompt;
         RequestBox.Text = draft.Prompt;
@@ -345,12 +360,17 @@ public sealed partial class MainWindow : Window
         StopButton.Visibility = busy && activeDraft == CurrentDraft ? Visibility.Visible : Visibility.Collapsed;
         ExampleButton.IsEnabled = !busy;
         AttachButton.IsEnabled = !busy && documentReading is null;
-        StepsToggle.IsEnabled = SummaryToggle.IsEnabled = !busy;
+        StepsToggle.IsEnabled = SummaryToggle.IsEnabled = ReasoningToggle.IsEnabled = !busy;
         RequestBox.IsReadOnly = busy && activeDraft == CurrentDraft;
         var draft = CurrentDraft;
         StatusText.Foreground = Palette(draft.Status is "stopped" or "timeout" || draft.Status.Contains("error") || draft.Status.Contains("invalid") || draft.Status == "policy-blocked"
             ? "NomiAccent" : "NomiInk2");
-        Announce(StatusText, draft.Status == "idle" ? "" : T(draft.Status));
+        Announce(StatusText, draft.Status switch
+        {
+            "idle" => "",
+            "reasoning" => string.Format(CultureInfo.CurrentCulture, T("reasoningProgress"), reasoningWords),
+            _ => T(draft.Status)
+        });
     }
 
     private void RenderResult(Draft draft)
@@ -372,7 +392,7 @@ public sealed partial class MainWindow : Window
         }
         ResultPanel.BorderBrush = Palette("NomiLine");
         ResultPanel.Background = Palette("NomiSurface");
-        ResultMeta.Text = $"{Action.Title} · {T(summary ? "summary" : "steps")} · {inference.Model}";
+        ResultMeta.Text = $"{Action.Title} · {T(summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {inference.Model}";
         ResultBody.Children.Clear();
         var paragraphs = draft.Output.Split('\n', StringSplitOptions.TrimEntries).Where(line => line.Length > 0).ToArray();
         var lastIndex = paragraphs.Length - 1;
@@ -607,7 +627,7 @@ public sealed partial class MainWindow : Window
         ShortcutList.Children.Clear();
         foreach (var (label, keys) in new[]
         {
-            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutAction"), "Ctrl 1–6"), (T("stop"), "Esc")
+            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutAction"), "Ctrl 1–6"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
         })
         {
             var row = new Grid();
@@ -714,18 +734,34 @@ public sealed partial class MainWindow : Window
             return;
         }
         using var controller = new CancellationTokenSource();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(reasoning ? 15 : 5));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(controller.Token, timeout.Token);
         generation = controller;
         activeDraft = draft;
         draft.Output = "";
         draft.Rules = [];
+        draft.Reasoned = reasoning;
+        reasoningWords = 0;
         RenderResult(draft);
-        SetStatus("generating");
+        SetStatus(reasoning ? "reasoning" : "generating");
         try
         {
+            var reported = 0;
+            var reasoned = new StringBuilder();
             var adapted = await inference.GenerateNomiAsync(draft.Prompt, action.Id, language,
-                summary ? "summary" : "steps", linked.Token, draft.Documents.ToArray());
+                summary ? "summary" : "steps", linked.Token, draft.Documents.ToArray(), reasoning, chunk =>
+                {
+                    reasoned.Append(chunk);
+                    var words = reasoned.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+                    if (words - reported < 20) return;
+                    reported = words;
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (draft.Status != "reasoning") return;
+                        reasoningWords = words;
+                        if (draft == CurrentDraft) UpdateControls();
+                    });
+                });
             linked.Token.ThrowIfCancellationRequested();
             draft.Output = adapted.Text;
             draft.Rules = adapted.Changes;
@@ -955,7 +991,8 @@ public sealed partial class MainWindow : Window
             .Concat(Current.Contexts.Select(context =>
                 new Command(context.Title, context.Description, T("context"), () => Open(context.Action, context.Id))))
             .Append(new Command(T("spaces"), T("spacesIntro"), T("navigation"), () => { view = "spaces"; Refresh(); }))
-            .Append(new Command(T("preferences"), T("preferencesIntro"), T("navigation"), () => { view = "settings"; Refresh(); }));
+            .Append(new Command(T("preferences"), T("preferencesIntro"), T("navigation"), () => { view = "settings"; Refresh(); }))
+            .Append(new Command(T("reasoning"), T("reasoningHelp"), T("action"), () => { reasoning = !reasoning; view = "workspace"; Refresh(); }));
         var terms = Normalize(PaletteSearch.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
         foreach (var command in commands.Where(command =>
             terms.All(term => Normalize($"{command.Title} {command.Description} {command.Kind}").Contains(term))))
@@ -1044,6 +1081,12 @@ public sealed partial class MainWindow : Window
         Refresh();
     }
 
+    private void ReasoningToggled(object sender, RoutedEventArgs args)
+    {
+        if (updating) return;
+        reasoning = ReasoningToggle.IsChecked == true;
+    }
+
     private void FormatToggled(object sender, RoutedEventArgs args)
     {
         if (updating) return;
@@ -1096,6 +1139,7 @@ public sealed partial class MainWindow : Window
         public string Output { get; set; } = "";
         public string Status { get; set; } = "idle";
         public string[] Rules { get; set; } = [];
+        public bool Reasoned { get; set; }
         public List<AttachedDocument> Documents { get; } = [];
         public string DocumentStatus { get; set; } = "";
     }
