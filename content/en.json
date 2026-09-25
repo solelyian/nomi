@@ -135,7 +135,7 @@
     "idle": "Ready for your request.",
     "tagline": "Nyne Technologies · local processing",
     "documentButton": "Document",
-    "documentFormats": "PDF · Word · Excel · PowerPoint · 4 max",
+    "documentFormats": "PDF · Word · Excel · PowerPoint",
     "engineTitle": "Local engine",
     "engineMissing": "Model to prepare",
     "engineDownloading": "Downloading",

@@ -176,13 +176,14 @@
                                         <TextBlock x:Name="AttachLabel" />
                                     </StackPanel>
                                 </Button>
-                                <ScrollViewer Grid.Column="1" HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <StackPanel x:Name="DocumentChips" Orientation="Horizontal" Spacing="8" />
-                                        <TextBlock x:Name="DocumentFormats" FontSize="12" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </ScrollViewer>
+                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                    <ScrollViewer HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Hidden"
+                                                  VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
+                                        <StackPanel x:Name="DocumentChips" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" />
+                                    </ScrollViewer>
+                                    <TextBlock x:Name="DocumentFormats" FontSize="12" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                </Grid>
                                 <ToggleButton x:Name="ReasoningToggle" Grid.Column="2" Style="{StaticResource NomiChipToggle}" Click="ReasoningToggled" MinHeight="36">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <FontIcon Glyph="&#xEA80;" FontSize="12" />
