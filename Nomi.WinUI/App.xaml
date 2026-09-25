@@ -6,66 +6,74 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+                    <ResourceDictionary x:Key="Light">
+                        <SolidColorBrush x:Key="NomiCanvas" Color="#F3F1EE" />
+                        <SolidColorBrush x:Key="NomiSurface" Color="#FFFFFF" />
+                        <SolidColorBrush x:Key="NomiSurface2" Color="#F7F5F2" />
+                        <SolidColorBrush x:Key="NomiLine" Color="#E2DDD6" />
+                        <SolidColorBrush x:Key="NomiLineStrong" Color="#CFC8BF" />
+                        <SolidColorBrush x:Key="NomiInk" Color="#171512" />
+                        <SolidColorBrush x:Key="NomiInk2" Color="#4D4741" />
+                        <SolidColorBrush x:Key="NomiInk3" Color="#857D74" />
+                        <SolidColorBrush x:Key="NomiAccent" Color="#B4482B" />
+                        <SolidColorBrush x:Key="NomiAccentInk" Color="#FFFFFF" />
+                        <SolidColorBrush x:Key="NomiAccentSoft" Color="#F6E6DF" />
+                        <SolidColorBrush x:Key="NomiOk" Color="#2F7D4F" />
+                        <SolidColorBrush x:Key="NomiScrim" Color="#66171512" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#2B2824" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="#2B2824" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#3D3934" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="#3D3934" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#FFFFFF" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FFFFFF" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#FFFFFF" />
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="Default">
+                        <SolidColorBrush x:Key="NomiCanvas" Color="#111110" />
+                        <SolidColorBrush x:Key="NomiSurface" Color="#1F1E1C" />
+                        <SolidColorBrush x:Key="NomiSurface2" Color="#262523" />
+                        <SolidColorBrush x:Key="NomiLine" Color="#2F2D2A" />
+                        <SolidColorBrush x:Key="NomiLineStrong" Color="#3D3A36" />
+                        <SolidColorBrush x:Key="NomiInk" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="NomiInk2" Color="#C9C3BB" />
+                        <SolidColorBrush x:Key="NomiInk3" Color="#8D867D" />
+                        <SolidColorBrush x:Key="NomiAccent" Color="#E8825F" />
+                        <SolidColorBrush x:Key="NomiAccentInk" Color="#1A1210" />
+                        <SolidColorBrush x:Key="NomiAccentSoft" Color="#3A2A23" />
+                        <SolidColorBrush x:Key="NomiOk" Color="#6FBF8A" />
+                        <SolidColorBrush x:Key="NomiScrim" Color="#99000000" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#DDD8D1" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="#DDD8D1" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#C9C3BB" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="#C9C3BB" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#171512" />
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="HighContrast">
+                        <SolidColorBrush x:Key="NomiCanvas" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiSurface" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiSurface2" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiLine" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiLineStrong" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiInk" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiInk2" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiInk3" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiAccent" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiAccentInk" Color="{ThemeResource SystemColorHighlightTextColor}" />
+                        <SolidColorBrush x:Key="NomiAccentSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiOk" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiScrim" Color="{ThemeResource SystemColorWindowColor}" />
+                    </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="NomiCanvas" Color="#F3F1EE" />
-                    <SolidColorBrush x:Key="NomiSurface" Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="NomiSurface2" Color="#F7F5F2" />
-                    <SolidColorBrush x:Key="NomiLine" Color="#E2DDD6" />
-                    <SolidColorBrush x:Key="NomiLineStrong" Color="#CFC8BF" />
-                    <SolidColorBrush x:Key="NomiInk" Color="#171512" />
-                    <SolidColorBrush x:Key="NomiInk2" Color="#4D4741" />
-                    <SolidColorBrush x:Key="NomiInk3" Color="#857D74" />
-                    <SolidColorBrush x:Key="NomiAccent" Color="#B4482B" />
-                    <SolidColorBrush x:Key="NomiAccentInk" Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="NomiAccentSoft" Color="#F6E6DF" />
-                    <SolidColorBrush x:Key="NomiOk" Color="#2F7D4F" />
-                    <SolidColorBrush x:Key="NomiScrim" Color="#66171512" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#171512" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#2B2824" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#3D3934" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#FFFFFF" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush x:Key="NomiCanvas" Color="#111110" />
-                    <SolidColorBrush x:Key="NomiSurface" Color="#1F1E1C" />
-                    <SolidColorBrush x:Key="NomiSurface2" Color="#262523" />
-                    <SolidColorBrush x:Key="NomiLine" Color="#2F2D2A" />
-                    <SolidColorBrush x:Key="NomiLineStrong" Color="#3D3A36" />
-                    <SolidColorBrush x:Key="NomiInk" Color="#F2EFEA" />
-                    <SolidColorBrush x:Key="NomiInk2" Color="#C9C3BB" />
-                    <SolidColorBrush x:Key="NomiInk3" Color="#8D867D" />
-                    <SolidColorBrush x:Key="NomiAccent" Color="#E8825F" />
-                    <SolidColorBrush x:Key="NomiAccentInk" Color="#1A1210" />
-                    <SolidColorBrush x:Key="NomiAccentSoft" Color="#3A2A23" />
-                    <SolidColorBrush x:Key="NomiOk" Color="#6FBF8A" />
-                    <SolidColorBrush x:Key="NomiScrim" Color="#99000000" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#F2EFEA" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#DDD8D1" />
-                    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="#C9C3BB" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="#171512" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="#171512" />
-                    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#171512" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <SolidColorBrush x:Key="NomiCanvas" Color="{ThemeResource SystemColorWindowColor}" />
-                    <SolidColorBrush x:Key="NomiSurface" Color="{ThemeResource SystemColorWindowColor}" />
-                    <SolidColorBrush x:Key="NomiSurface2" Color="{ThemeResource SystemColorWindowColor}" />
-                    <SolidColorBrush x:Key="NomiLine" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiLineStrong" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiInk" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiInk2" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiInk3" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiAccent" Color="{ThemeResource SystemColorHighlightColor}" />
-                    <SolidColorBrush x:Key="NomiAccentInk" Color="{ThemeResource SystemColorHighlightTextColor}" />
-                    <SolidColorBrush x:Key="NomiAccentSoft" Color="{ThemeResource SystemColorWindowColor}" />
-                    <SolidColorBrush x:Key="NomiOk" Color="{ThemeResource SystemColorWindowTextColor}" />
-                    <SolidColorBrush x:Key="NomiScrim" Color="{ThemeResource SystemColorWindowColor}" />
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
 
             <FontFamily x:Key="NomiMono">Cascadia Mono, Consolas</FontFamily>
 

@@ -93,7 +93,8 @@ public sealed partial class MainWindow : Window
 
     private Brush Palette(string key)
     {
-        var theme = (ResourceDictionary)Application.Current.Resources.ThemeDictionaries[Dark ? "Default" : "Light"];
+        var nomi = Application.Current.Resources.MergedDictionaries.Last(dictionary => dictionary.ThemeDictionaries.Count > 0);
+        var theme = (ResourceDictionary)nomi.ThemeDictionaries[Dark ? "Default" : "Light"];
         return (Brush)theme[key];
     }
 
@@ -210,11 +211,12 @@ public sealed partial class MainWindow : Window
         var text = new TextBlock
         {
             Text = label,
-            FontSize = 10.5,
+            FontSize = 10,
             TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.NoWrap,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            MaxWidth = 64,
+            TextWrapping = TextWrapping.Wrap,
+            MaxLines = 2,
+            LineHeight = 12,
+            MaxWidth = 66,
             FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal
         };
         content.Children.Add(text);

@@ -3,6 +3,7 @@ Add-Type -AssemblyName System.Drawing
 Add-Type -Namespace Nomi -Name Native -MemberDefinition @'
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool PrintWindow(System.IntPtr hwnd, System.IntPtr hdc, uint flags);
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool GetWindowRect(System.IntPtr hwnd, out RECT rect);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetForegroundWindow(System.IntPtr hwnd);
 public struct RECT { public int Left, Top, Right, Bottom; }
 '@
 function Capture($process, $path) {
@@ -60,10 +61,11 @@ try {
     Capture $process "artifacts/ui-light.png"
     try {
         $shell = New-Object -ComObject WScript.Shell
+        [void][Nomi.Native]::SetForegroundWindow($process.MainWindowHandle)
         if ($shell.AppActivate($process.Id)) {
-            Start-Sleep -Milliseconds 500
+            Start-Sleep -Seconds 1
             $shell.SendKeys("^k")
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 3
             Capture $process "artifacts/ui-palette.png"
             $shell.SendKeys("{ESC}")
         }
