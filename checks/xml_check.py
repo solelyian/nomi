@@ -15,8 +15,8 @@ for path in paths:
     ET.parse(path)
     print(f"XML valid: {path.name}")
 
-source = (root / "MainWindow.xaml.cs").read_text()
+source = "\n".join(path.read_text() for path in sorted(root.glob("MainWindow*.cs")))
 markup = (root / "MainWindow.xaml").read_text()
-for event, handler in re.findall(r'\b(Click|SelectionChanged|Invoked)="(\w+)"', markup):
+for event, handler in re.findall(r'\b(Click|SelectionChanged|Invoked|Tapped|KeyDown)="(\w+)"', markup):
     assert re.search(rf"\bvoid {handler}\(", source), f"Missing {event}: {handler}"
 print("XAML event handlers resolve in source.")

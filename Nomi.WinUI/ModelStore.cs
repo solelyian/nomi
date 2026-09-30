@@ -8,8 +8,8 @@ namespace Nomi;
 
 public sealed record ModelDefinition(string Name, string FileName, Uri Url, long Bytes, string Sha256)
 {
-    public static ModelDefinition Load() => JsonSerializer.Deserialize<ModelDefinition>(
-        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "content", "local-model.json")),
+    public static ModelDefinition Load(string file = "local-model.json") => JsonSerializer.Deserialize<ModelDefinition>(
+        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "content", file)),
         new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
         ?? throw new InvalidDataException("Invalid local model configuration.");
 }

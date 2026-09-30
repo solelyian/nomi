@@ -6,17 +6,51 @@
     <Grid x:Name="Root" Background="Transparent">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="CommandInvoked" />
-            <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="ActionShortcut" />
-            <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="ActionShortcut" />
-            <KeyboardAccelerator Key="Number3" Modifiers="Control" Invoked="ActionShortcut" />
-            <KeyboardAccelerator Key="Number4" Modifiers="Control" Invoked="ActionShortcut" />
-            <KeyboardAccelerator Key="Number5" Modifiers="Control" Invoked="ActionShortcut" />
-            <KeyboardAccelerator Key="Number6" Modifiers="Control" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number3" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number4" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number1" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number2" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number3" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number4" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number5" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number6" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="N" Modifiers="Control" Invoked="NewTaskInvoked" />
         </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="46" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <!-- Ambient light -->
+        <Grid x:Name="Ambient" Grid.RowSpan="2" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+            <Ellipse x:Name="HaloWarm" Width="760" Height="620" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-160,-220,0,0">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="{ThemeResource NomiHaloWarm}" Offset="0" />
+                        <GradientStop Color="{ThemeResource NomiHaloClear}" Offset="1" />
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse x:Name="HaloSand" Width="820" Height="700" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-120,-260,0">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="{ThemeResource NomiHaloSand}" Offset="0" />
+                        <GradientStop Color="{ThemeResource NomiHaloClear}" Offset="1" />
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Ellipse x:Name="HaloSage" Width="900" Height="640" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,-120,-300">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="{ThemeResource NomiHaloSage}" Offset="0" />
+                        <GradientStop Color="{ThemeResource NomiHaloClear}" Offset="1" />
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Border Background="{ThemeResource NomiCanvasVeil}" Opacity="0.35" />
+        </Grid>
 
         <!-- Title bar -->
         <Grid x:Name="TitleBar" Padding="35,0,0,0" ColumnSpacing="12">
@@ -34,6 +68,13 @@
             </StackPanel>
             <Grid x:Name="DragRegion" Grid.Column="1" Background="Transparent" />
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Button x:Name="FocusPill" Style="{StaticResource NomiChip}" Visibility="Collapsed" Click="FocusPillClicked"
+                        Background="{ThemeResource NomiAccentSoft}" BorderBrush="{ThemeResource NomiAccent}" Padding="10,3" MinHeight="28">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse x:Name="FocusPillDot" Width="7" Height="7" Fill="{ThemeResource NomiAccent}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="FocusPillText" FontSize="12" Foreground="{ThemeResource NomiInk}" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
                 <Border x:Name="LanguageSwitch" BorderBrush="{ThemeResource NomiLineStrong}" BorderThickness="1"
                         CornerRadius="7" Padding="2" Background="{ThemeResource NomiSurface}">
                     <StackPanel Orientation="Horizontal" Spacing="2">
@@ -50,7 +91,7 @@
         <!-- Body -->
         <Grid x:Name="Body" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="88" />
+                <ColumnDefinition x:Name="SidebarColumn" Width="224" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition x:Name="AsideColumn" Width="316" />
             </Grid.ColumnDefinitions>
@@ -77,16 +118,21 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <!-- Rail -->
-            <Border BorderBrush="{ThemeResource NomiLine}" BorderThickness="0,0,1,0" Padding="8,10">
-                <Grid>
+            <!-- Sidebar -->
+            <Border x:Name="Sidebar" Style="{StaticResource NomiCard}" Margin="12,4,0,14" Padding="10,12" Shadow="{StaticResource NomiShadow}" Translation="0,0,12">
+                <Grid RowSpacing="4">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <StackPanel x:Name="RailActions" Spacing="4" />
-                    <StackPanel x:Name="RailFooter" Grid.Row="2" Spacing="4" />
+                    <StackPanel x:Name="NavList" Spacing="2" />
+                    <TextBlock x:Name="ActionsTitle" Grid.Row="1" Style="{StaticResource NomiCardTitle}" Margin="10,18,0,6" />
+                    <ScrollViewer Grid.Row="2" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                        <StackPanel x:Name="RailActions" Spacing="1" />
+                    </ScrollViewer>
+                    <StackPanel x:Name="RailFooter" Grid.Row="3" Spacing="2" Padding="0,8,0,0" BorderBrush="{ThemeResource NomiLine}" BorderThickness="0,1,0,0" />
                 </Grid>
             </Border>
 
@@ -231,6 +277,12 @@
                                     <TextBlock x:Name="ResultMeta" Grid.Column="1" FontSize="12" Foreground="{ThemeResource NomiInk3}"
                                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+                                        <Button x:Name="TaskButton" Style="{StaticResource NomiGhost}" Padding="10,6" Click="TaskClicked">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <FontIcon Glyph="&#xE9D5;" FontSize="13" />
+                                                <TextBlock x:Name="TaskLabel" />
+                                            </StackPanel>
+                                        </Button>
                                         <Button x:Name="CopyButton" Style="{StaticResource NomiGhost}" Padding="10,6" Click="CopyClicked">
                                             <StackPanel Orientation="Horizontal" Spacing="7">
                                                 <FontIcon x:Name="CopyIcon" Glyph="&#xE8C8;" FontSize="13" />
@@ -300,13 +352,30 @@
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SettingsBody" Spacing="14" MaxWidth="620" HorizontalAlignment="Left" />
                 </ScrollViewer>
+                <ScrollViewer x:Name="TodayPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="TodayBody" Spacing="16" MaxWidth="900" HorizontalAlignment="Stretch" Padding="0,0,6,8" />
+                </ScrollViewer>
+                <Grid x:Name="BoardPanel" Visibility="Collapsed" RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid x:Name="BoardHeader" />
+                    <Grid x:Name="BoardColumns" Grid.Row="1" ColumnSpacing="12" />
+                </Grid>
+                <ScrollViewer x:Name="FocusPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="FocusBody" Spacing="16" MaxWidth="900" HorizontalAlignment="Stretch" Padding="0,0,6,8" />
+                </ScrollViewer>
             </Grid>
 
             <!-- Aside -->
             <ScrollViewer x:Name="Aside" Grid.Column="2" Padding="0,18,18,18" HorizontalScrollMode="Disabled"
                           HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
                 <StackPanel Spacing="12">
-                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                    <Border x:Name="CompanionCard" Style="{StaticResource NomiCard}" Padding="16,14" Shadow="{StaticResource NomiShadow}" Translation="0,0,10">
+                        <StackPanel x:Name="CompanionBody" Spacing="8" />
+                    </Border>
+                    <Border x:Name="EngineCard" Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="6">
                             <Grid>
                                 <TextBlock x:Name="EngineTitle" Style="{StaticResource NomiCardTitle}" />
@@ -327,7 +396,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                    <Border x:Name="DocumentsCard" Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="8">
                             <TextBlock x:Name="DocumentsTitle" Style="{StaticResource NomiCardTitle}" />
                             <StackPanel x:Name="DocumentList" Spacing="8" />
@@ -335,7 +404,7 @@
                             <TextBlock x:Name="DocumentNote" Style="{StaticResource NomiMuted}" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                    <Border x:Name="HistoryCard" Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="8">
                             <Grid>
                                 <TextBlock x:Name="HistoryTitle" Style="{StaticResource NomiCardTitle}" VerticalAlignment="Center" />
@@ -346,13 +415,13 @@
                             <TextBlock x:Name="HistoryNote" Style="{StaticResource NomiMuted}" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                    <Border x:Name="ExamplesCard" Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="8">
                             <TextBlock x:Name="ExamplesTitle" Style="{StaticResource NomiCardTitle}" />
                             <StackPanel x:Name="ExampleList" Spacing="6" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                    <Border x:Name="ShortcutsCard" Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="8">
                             <TextBlock x:Name="ShortcutsTitle" Style="{StaticResource NomiCardTitle}" />
                             <StackPanel x:Name="ShortcutList" Spacing="6" />
@@ -361,6 +430,28 @@
                 </StackPanel>
             </ScrollViewer>
         </Grid>
+
+        <!-- Task sheet -->
+        <Grid x:Name="SheetOverlay" Grid.RowSpan="2" Background="{ThemeResource NomiScrim}" Visibility="Collapsed" Tapped="SheetScrimTapped">
+            <Border x:Name="SheetCard" Style="{StaticResource NomiCard}" Background="{ThemeResource NomiGlassStrong}" Width="440"
+                    HorizontalAlignment="Right" Margin="0,54,14,14" Shadow="{StaticResource NomiShadow}" Translation="0,0,40"
+                    Tapped="SheetCardTapped" KeyDown="SheetKeyDown">
+                <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="SheetBody" Spacing="14" Padding="22,20,22,22" />
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Toast -->
+        <Border x:Name="Toast" Grid.RowSpan="2" Style="{StaticResource NomiCard}" Background="{ThemeResource NomiGlassStrong}"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,26" Padding="16,8,8,8"
+                Shadow="{StaticResource NomiShadow}" Translation="0,0,36" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <FontIcon Glyph="&#xE73E;" FontSize="13" Foreground="{ThemeResource NomiSage}" VerticalAlignment="Center" />
+                <TextBlock x:Name="ToastText" FontSize="13" Foreground="{ThemeResource NomiInk}" VerticalAlignment="Center" MaxWidth="420" TextWrapping="Wrap" />
+                <Button x:Name="ToastAction" Style="{StaticResource NomiChip}" Click="ToastActionClicked" />
+            </StackPanel>
+        </Border>
 
         <!-- Command palette -->
         <Grid x:Name="PaletteOverlay" Grid.RowSpan="2" Background="{ThemeResource NomiScrim}" Visibility="Collapsed"

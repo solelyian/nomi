@@ -10,6 +10,28 @@
                     <ResourceDictionary.ThemeDictionaries>
                     <ResourceDictionary x:Key="Light">
                         <SolidColorBrush x:Key="NomiCanvas" Color="#F3F1EE" />
+                        <AcrylicBrush x:Key="NomiGlass" TintColor="#FFFFFF" TintOpacity="0.55" TintLuminosityOpacity="0.82" FallbackColor="#F8F6F3" />
+                        <AcrylicBrush x:Key="NomiGlassStrong" TintColor="#FFFFFF" TintOpacity="0.72" TintLuminosityOpacity="0.9" FallbackColor="#FFFFFF" />
+                        <SolidColorBrush x:Key="NomiGlassSoft" Color="#8CFFFFFF" />
+                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#B8F3F1EE" />
+                        <LinearGradientBrush x:Key="NomiGlassEdge" StartPoint="0,0" EndPoint="0.4,1">
+                            <GradientStop Color="#FFFFFFFF" Offset="0" />
+                            <GradientStop Color="#66D7D0C7" Offset="0.55" />
+                            <GradientStop Color="#99CFC8BF" Offset="1" />
+                        </LinearGradientBrush>
+                        <LinearGradientBrush x:Key="NomiSheen" StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#80FFFFFF" Offset="0" />
+                            <GradientStop Color="#00FFFFFF" Offset="0.38" />
+                        </LinearGradientBrush>
+                        <Color x:Key="NomiHaloWarm">#66E9A184</Color>
+                        <Color x:Key="NomiHaloSand">#5CE6CFA6</Color>
+                        <Color x:Key="NomiHaloSage">#4DA9C4A8</Color>
+                        <Color x:Key="NomiHaloClear">#00F3F1EE</Color>
+                        <SolidColorBrush x:Key="NomiSage" Color="#46684D" />
+                        <SolidColorBrush x:Key="NomiSageSoft" Color="#E1EAE0" />
+                        <SolidColorBrush x:Key="NomiSand" Color="#7F6136" />
+                        <SolidColorBrush x:Key="NomiSandSoft" Color="#F1E7D6" />
+                        <SolidColorBrush x:Key="NomiDrop" Color="#1FB4482B" />
                         <SolidColorBrush x:Key="NomiSurface" Color="#FFFFFF" />
                         <SolidColorBrush x:Key="NomiSurface2" Color="#F7F5F2" />
                         <SolidColorBrush x:Key="NomiLine" Color="#E2DDD6" />
@@ -50,6 +72,28 @@
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="Default">
                         <SolidColorBrush x:Key="NomiCanvas" Color="#111110" />
+                        <AcrylicBrush x:Key="NomiGlass" TintColor="#1C1B19" TintOpacity="0.5" TintLuminosityOpacity="0.78" FallbackColor="#1F1E1C" />
+                        <AcrylicBrush x:Key="NomiGlassStrong" TintColor="#242320" TintOpacity="0.66" TintLuminosityOpacity="0.86" FallbackColor="#262523" />
+                        <SolidColorBrush x:Key="NomiGlassSoft" Color="#14FFFFFF" />
+                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#C7111110" />
+                        <LinearGradientBrush x:Key="NomiGlassEdge" StartPoint="0,0" EndPoint="0.4,1">
+                            <GradientStop Color="#40FFFFFF" Offset="0" />
+                            <GradientStop Color="#14FFFFFF" Offset="0.5" />
+                            <GradientStop Color="#0DFFFFFF" Offset="1" />
+                        </LinearGradientBrush>
+                        <LinearGradientBrush x:Key="NomiSheen" StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#17FFFFFF" Offset="0" />
+                            <GradientStop Color="#00FFFFFF" Offset="0.38" />
+                        </LinearGradientBrush>
+                        <Color x:Key="NomiHaloWarm">#40D26B48</Color>
+                        <Color x:Key="NomiHaloSand">#2EB8965F</Color>
+                        <Color x:Key="NomiHaloSage">#2E6F9474</Color>
+                        <Color x:Key="NomiHaloClear">#00111110</Color>
+                        <SolidColorBrush x:Key="NomiSage" Color="#9CC6A3" />
+                        <SolidColorBrush x:Key="NomiSageSoft" Color="#22302A" />
+                        <SolidColorBrush x:Key="NomiSand" Color="#DDBE8C" />
+                        <SolidColorBrush x:Key="NomiSandSoft" Color="#33291C" />
+                        <SolidColorBrush x:Key="NomiDrop" Color="#26E8825F" />
                         <SolidColorBrush x:Key="NomiSurface" Color="#1F1E1C" />
                         <SolidColorBrush x:Key="NomiSurface2" Color="#262523" />
                         <SolidColorBrush x:Key="NomiLine" Color="#2F2D2A" />
@@ -90,6 +134,21 @@
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="HighContrast">
                         <SolidColorBrush x:Key="NomiCanvas" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiGlass" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiGlassStrong" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiGlassSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiGlassEdge" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiSheen" Color="Transparent" />
+                        <Color x:Key="NomiHaloWarm">#00000000</Color>
+                        <Color x:Key="NomiHaloSand">#00000000</Color>
+                        <Color x:Key="NomiHaloSage">#00000000</Color>
+                        <Color x:Key="NomiHaloClear">#00000000</Color>
+                        <SolidColorBrush x:Key="NomiSage" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiSageSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiSand" Color="{ThemeResource SystemColorWindowTextColor}" />
+                        <SolidColorBrush x:Key="NomiSandSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiDrop" Color="{ThemeResource SystemColorHighlightColor}" />
                         <SolidColorBrush x:Key="NomiSurface" Color="{ThemeResource SystemColorWindowColor}" />
                         <SolidColorBrush x:Key="NomiSurface2" Color="{ThemeResource SystemColorWindowColor}" />
                         <SolidColorBrush x:Key="NomiLine" Color="{ThemeResource SystemColorWindowTextColor}" />
@@ -121,10 +180,38 @@
             </TransitionCollection>
 
             <Style x:Key="NomiCard" TargetType="Border">
-                <Setter Property="Background" Value="{ThemeResource NomiSurface}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource NomiLine}" />
+                <Setter Property="Background" Value="{ThemeResource NomiGlass}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="CornerRadius" Value="16" />
+            </Style>
+
+            <Style x:Key="NomiLane" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="18" />
+                <Setter Property="Padding" Value="10,12,10,10" />
+            </Style>
+
+            <Style x:Key="NomiTaskCard" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource NomiGlassStrong}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="13" />
+                <Setter Property="Padding" Value="13,11,13,11" />
+            </Style>
+
+            <Style x:Key="NomiNav" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="10,7" />
+                <Setter Property="MinHeight" Value="36" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Foreground" Value="{ThemeResource NomiInk2}" />
             </Style>
 
             <Style x:Key="NomiCardTitle" TargetType="TextBlock">

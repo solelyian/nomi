@@ -45,7 +45,7 @@ public abstract class NomiInferenceClient
     public async Task<PolicyResult> GenerateNomiAsync(
         string prompt, string action, string language, string format, CancellationToken cancellationToken,
         IReadOnlyList<AttachedDocument>? documents = null, bool reasoning = false,
-        Action<string>? onReasoning = null)
+        Action<string>? onReasoning = null, string instruction = "")
     {
         for (var attempt = 0; attempt < 2; attempt++)
         {
@@ -55,7 +55,8 @@ public abstract class NomiInferenceClient
             {
                 buffer.Append(token);
                 if (buffer.Length > ResponsePolicy.MaxCharacters) throw new InferenceException("policy-blocked");
-            }, cancellationToken, attempt == 0 ? "" : ResponsePolicy.RegenerationInstruction, documents, reasoning, onReasoning);
+            }, cancellationToken, attempt == 0 ? instruction : $"{instruction}\n\n{ResponsePolicy.RegenerationInstruction}".Trim(),
+                documents, reasoning, onReasoning);
             cancellationToken.ThrowIfCancellationRequested();
             if (truncated) throw new InferenceException("incomplete-response");
             var result = ResponsePolicy.Apply(buffer.ToString(), format);

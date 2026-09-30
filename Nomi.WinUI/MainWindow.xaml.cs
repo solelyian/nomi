@@ -42,7 +42,7 @@ public sealed partial class MainWindow : Window
     private string language = "fr";
     private string actionId = "understand";
     private string? contextId;
-    private string view = "workspace";
+    private string view = "today";
     private bool summary;
     private bool reasoning;
     private int reasoningWords;
@@ -94,7 +94,12 @@ public sealed partial class MainWindow : Window
         {
             CancelGeneration();
             modelPreparation?.Cancel();
+            StopFocus();
+            visionPreparation?.Cancel();
+            ticker?.Stop();
+            board.Save();
             _ = inference.DisposeAsync();
+            _ = vision.DisposeAsync();
         };
         var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
         submit.Invoked += async (_, args) => { args.Handled = true; await Launch(); };
@@ -114,8 +119,7 @@ public sealed partial class MainWindow : Window
         ApplyChrome();
         Refresh();
         SplashTagline.Text = T("tagline");
-        Root.Loaded += (_, _) => DismissSplash();
-        RequestBox.Focus(FocusState.Programmatic);
+        Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartTicker(); };
     }
 
     private void DismissSplash()
@@ -273,7 +277,7 @@ public sealed partial class MainWindow : Window
     {
         updating = true;
         Root.Language = Current.Locale;
-        Title = view == "workspace" ? $"Nomi — {Action.Title}" : $"Nomi — {T(view == "spaces" ? "spaces" : "preferences")}";
+        Title = $"Nomi — {ViewTitle()}";
         Tagline.Text = T("tagline");
         FrenchToggle.IsChecked = language == "fr";
         EnglishToggle.IsChecked = language == "en";
@@ -282,16 +286,29 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(CommandButton, T("openCommand"));
         ToolTipService.SetToolTip(CommandButton, T("openCommand"));
         BuildRail();
-        Workspace.Visibility = view == "workspace" ? Visibility.Visible : Visibility.Collapsed;
-        SpacesPanel.Visibility = view == "spaces" ? Visibility.Visible : Visibility.Collapsed;
-        SettingsPanel.Visibility = view == "settings" ? Visibility.Visible : Visibility.Collapsed;
+        var panels = new Dictionary<string, UIElement>
+        {
+            ["today"] = TodayPanel,
+            ["board"] = BoardPanel,
+            ["focus"] = FocusPanel,
+            ["workspace"] = Workspace,
+            ["spaces"] = SpacesPanel,
+            ["settings"] = SettingsPanel
+        };
+        foreach (var (key, element) in panels) element.Visibility = key == view ? Visibility.Visible : Visibility.Collapsed;
         if (view == "spaces") BuildSpaces();
         else if (view == "settings") BuildSettings();
+        else if (view == "today") BuildToday();
+        else if (view == "board") BuildBoard();
+        else if (view == "focus") BuildFocus();
         RefreshWorkspace();
         RefreshAside();
+        BuildCompanion();
+        UpdateFocusPill();
+        var assistant = view == "workspace" ? Visibility.Visible : Visibility.Collapsed;
+        DocumentsCard.Visibility = HistoryCard.Visibility = ExamplesCard.Visibility = assistant;
         var panel = view == "workspace" ? $"workspace:{actionId}:{contextId}" : view;
-        if (shownPanel.Length > 0 && panel != shownPanel)
-            Reveal(view == "workspace" ? Workspace : view == "spaces" ? SpacesPanel : SettingsPanel, 8);
+        if (shownPanel.Length > 0 && panel != shownPanel) Reveal(panels[view], 10);
         shownPanel = panel;
         PaletteHelp.Text = T("commandHelp");
         PaletteEmpty.Text = T("noResults");
@@ -301,78 +318,122 @@ public sealed partial class MainWindow : Window
         updating = false;
     }
 
+    private string ViewTitle() => view switch
+    {
+        "today" => T("today"),
+        "board" => T("board"),
+        "focus" => T("focus"),
+        "spaces" => T("spaces"),
+        "settings" => T("preferences"),
+        _ => Action.Title
+    };
+
+    private void Show(string target)
+    {
+        if (PaletteOverlay.Visibility == Visibility.Visible) PaletteOverlay.Visibility = Visibility.Collapsed;
+        view = target;
+        Refresh();
+    }
+
     private void BuildRail()
     {
+        NavList.Children.Clear();
         RailActions.Children.Clear();
         RailFooter.Children.Clear();
+        var views = new[]
+        {
+            ("today", T("today"), "\uE8BF", "NavToday"),
+            ("board", T("board"), "\uF0E2", "NavBoard"),
+            ("focus", T("focus"), "\uE7B3", "NavFocus"),
+            ("workspace", T("assistant"), "\uE8BD", "NavAssistant")
+        };
+        for (var index = 0; index < views.Length; index++)
+        {
+            var (id, label, glyph, automation) = views[index];
+            var badge = id switch
+            {
+                "board" => board.Tasks.Count(task => task.Column != Columns.Done).ToString(CultureInfo.CurrentCulture),
+                "focus" when focusState != "idle" => "●",
+                _ => $"Ctrl {index + 1}"
+            };
+            var button = NavButton(label, glyph, view == id, badge, true);
+            AutomationProperties.SetAutomationId(button, automation);
+            AutomationProperties.SetAcceleratorKey(button, $"Ctrl+{index + 1}");
+            button.Click += (_, _) => Show(id);
+            NavList.Children.Add(button);
+        }
+        ActionsTitle.Text = T("functions").ToUpper(CultureInfo.CurrentCulture);
         for (var index = 0; index < Current.Actions.Length; index++)
         {
             var action = Current.Actions[index];
             var selected = view == "workspace" && action.Id == actionId;
-            var button = RailButton(action.Title, RailGlyphs[index], selected, (index + 1).ToString(CultureInfo.InvariantCulture));
+            var button = NavButton(action.Title, RailGlyphs[index], selected, $"Alt {index + 1}", false);
+            AutomationProperties.SetAutomationId(button, $"Action_{action.Id}");
             AutomationProperties.SetHelpText(button, action.Description);
+            AutomationProperties.SetAcceleratorKey(button, $"Alt+{index + 1}");
             var id = action.Id;
             button.Click += (_, _) => Open(id, contextId);
             RailActions.Children.Add(button);
         }
-        var spaces = RailButton(T("spaces"), "\uE8F1", view == "spaces", null);
-        spaces.Click += (_, _) => { view = "spaces"; Refresh(); };
+        var spaces = NavButton(T("spaces"), "\uE8F1", view == "spaces", null, false);
+        spaces.Click += (_, _) => Show("spaces");
         RailFooter.Children.Add(spaces);
-        var settings = RailButton(T("preferences"), "\uE713", view == "settings", null);
-        settings.Click += (_, _) => { view = "settings"; Refresh(); };
+        var settings = NavButton(T("preferences"), "\uE713", view == "settings", null, false);
+        settings.Click += (_, _) => Show("settings");
         RailFooter.Children.Add(settings);
     }
 
-    private Button RailButton(string label, string glyph, bool selected, string? shortcut)
+    private Button NavButton(string label, string glyph, bool selected, string? badge, bool primary)
     {
-        var grid = new Grid();
-        var content = new StackPanel { Spacing = 5, HorizontalAlignment = HorizontalAlignment.Center };
-        content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 18 });
+        var grid = new Grid { ColumnSpacing = 11 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = primary ? 16 : 14,
+            Foreground = Palette(selected ? "NomiAccent" : primary ? "NomiInk2" : "NomiInk3"),
+            VerticalAlignment = VerticalAlignment.Center
+        });
         var text = new TextBlock
         {
             Text = label,
-            FontSize = 10,
-            TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap,
-            MaxLines = 2,
-            LineHeight = 12,
-            MaxWidth = 78,
+            FontSize = primary ? 13.5 : 12.5,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
             FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal
         };
-        content.Children.Add(text);
-        grid.Children.Add(content);
-        if (shortcut is not null)
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(text);
+        if (badge is not null)
         {
-            grid.Children.Add(new TextBlock
+            var hint = new TextBlock
             {
-                Text = shortcut,
-                FontSize = 9,
+                Text = badge,
+                FontSize = 10,
                 FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
-                Foreground = Palette("NomiInk3"),
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, -4, 4, 0)
-            });
-        }
-        if (selected)
-        {
-            grid.Children.Add(new Border
-            {
-                Width = 3,
-                CornerRadius = new CornerRadius(3),
-                Background = Palette("NomiAccent"),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(-2, 10, 0, 10)
-            });
+                Foreground = Palette(badge == "●" ? "NomiAccent" : "NomiInk3"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = selected ? 1 : 0.85
+            };
+            Grid.SetColumn(hint, 2);
+            grid.Children.Add(hint);
         }
         var button = new Button
         {
             Content = grid,
-            Style = (Style)Application.Current.Resources["NomiRail"],
+            Style = (Style)Application.Current.Resources["NomiNav"],
+            MinHeight = primary ? 38 : 32,
+            Padding = primary ? new Thickness(11, 8, 11, 8) : new Thickness(11, 5, 11, 5),
             Foreground = Palette(selected ? "NomiInk" : "NomiInk2"),
-            Background = selected ? Palette("NomiSurface") : new SolidColorBrush(Colors.Transparent)
+            Background = selected ? Palette("NomiGlassStrong") : new SolidColorBrush(Colors.Transparent),
+            BorderBrush = selected ? Palette("NomiGlassEdge") : null,
+            BorderThickness = new Thickness(selected ? 1 : 0)
         };
         AutomationProperties.SetName(button, label);
+        if (selected) AutomationProperties.SetItemStatus(button, T("current"));
+        Springy(button, 1.02f);
         return button;
     }
 
@@ -457,6 +518,9 @@ public sealed partial class MainWindow : Window
         CopyIcon.Foreground = Palette("NomiInk2");
         AutomationProperties.SetName(CopyButton, T("copy"));
         RetryLabel.Text = T("retry");
+        TaskLabel.Text = T("toTasks");
+        AutomationProperties.SetName(TaskButton, T("toTasks"));
+        ToolTipService.SetToolTip(TaskButton, T("toTasksHelp"));
         AutomationProperties.SetName(RetryButton, T("retry"));
         EditLabel.Text = T("editRequest");
         AutomationProperties.SetName(EditButton, T("editRequest"));
@@ -821,7 +885,8 @@ public sealed partial class MainWindow : Window
         ShortcutList.Children.Clear();
         foreach (var (label, keys) in new[]
         {
-            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutAction"), "Ctrl 1–6"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
+            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–4"), (T("shortcutAction"), "Alt 1–6"),
+            (T("newTask"), "Ctrl N"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
         })
         {
             var row = new Grid();
@@ -1195,19 +1260,46 @@ public sealed partial class MainWindow : Window
     private void ClosePalette()
     {
         PaletteOverlay.Visibility = Visibility.Collapsed;
-        RequestBox.Focus(FocusState.Programmatic);
+        if (view == "workspace") RequestBox.Focus(FocusState.Programmatic);
     }
 
     private void PaletteFilter(object sender, TextChangedEventArgs args)
     {
         PaletteResults.Items.Clear();
-        var commands = Current.Actions.Select(action =>
-                new Command(action.Title, action.Description, T("action"), () => Open(action.Id, contextId)))
+        var query = PaletteSearch.Text.Trim();
+        var direct = new List<Command>();
+        if (query.Length >= 2)
+        {
+            direct.Add(new Command($"{T("askNomi")} « {query} »", Action.Description, T("assistant"), () =>
+            {
+                Open(actionId, contextId);
+                RequestBox.Text = query;
+                RequestBox.SelectionStart = query.Length;
+            }));
+            direct.Add(new Command($"{T("createTask")} « {query} »", T("createTaskHelp"), T("board"), () =>
+            {
+                var task = board.Add(query, Columns.Todo, contextId, "palette");
+                ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskAdded"), task.Title), T("open"), () => OpenSheet(task.Id));
+                if (view is "board" or "today") Refresh();
+                else BuildCompanion();
+            }));
+        }
+        var commands = direct.Concat(new[]
+            {
+                new Command(T("today"), T("todayIntro"), T("navigation"), () => Show("today")),
+                new Command(T("board"), T("boardIntro"), T("navigation"), () => Show("board")),
+                new Command(focusState == "idle" ? T("focusStart") : T("focus"), T("focusIntro"), T("focus"), () => Show("focus")),
+                new Command(T("assistant"), T("assistantIntro"), T("navigation"), () => Show("workspace"))
+            })
+            .Concat(Current.Actions.Select(action =>
+                new Command(action.Title, action.Description, T("action"), () => Open(action.Id, contextId))))
             .Concat(Current.Contexts.Select(context =>
                 new Command(context.Title, context.Description, T("context"), () => Open(context.Action, context.Id))))
             .Append(new Command(T("spaces"), T("spacesIntro"), T("navigation"), () => { view = "spaces"; Refresh(); }))
             .Append(new Command(T("preferences"), T("preferencesIntro"), T("navigation"), () => { view = "settings"; Refresh(); }))
-            .Append(new Command(T("reasoning"), T("reasoningHelp"), T("action"), () => { reasoning = !reasoning; view = "workspace"; Refresh(); }));
+            .Append(new Command(T("reasoning"), T("reasoningHelp"), T("action"), () => { reasoning = !reasoning; view = "workspace"; Refresh(); }))
+            .Concat(board.Tasks.Where(task => task.Column != Columns.Done).Take(12).Select(task =>
+                new Command(task.Title, ColumnName(task.Column), T("task"), () => OpenSheet(task.Id))));
         var terms = Normalize(PaletteSearch.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
         foreach (var command in commands.Where(command =>
             terms.All(term => Normalize($"{command.Title} {command.Description} {command.Kind}").Contains(term))))
@@ -1276,6 +1368,24 @@ public sealed partial class MainWindow : Window
         args.Handled = true;
         if (PaletteOverlay.Visibility == Visibility.Visible) ClosePalette();
         else OpenPalette();
+    }
+
+    private void ViewShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        var index = (int)sender.Key - (int)VirtualKey.Number1;
+        string[] views = ["today", "board", "focus", "workspace"];
+        if (index < 0 || index >= views.Length) return;
+        args.Handled = true;
+        CloseSheet();
+        Show(views[index]);
+    }
+
+    private void NewTaskInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        args.Handled = true;
+        CloseSheet();
+        if (view is not ("today" or "board")) Show("board");
+        FocusQuickAdd();
     }
 
     private void ActionShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
