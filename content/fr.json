@@ -166,7 +166,16 @@
     "openSpace": "Ouvrir",
     "reasoning": "Raisonnement",
     "reasoningHelp": "Réflexion approfondie avant la réponse : plus lent, plus fiable pour les calculs en plusieurs étapes. Ctrl R.",
-    "reasoningProgress": "Nomi raisonne avant de répondre… {0} mots de réflexion. La réponse est ensuite adaptée avant l’affichage."
+    "reasoningProgress": "Nomi raisonne avant de répondre… {0} mots de réflexion. La réponse est ensuite adaptée avant l’affichage.",
+    "workingText": "Calcul local sur cet ordinateur. La réponse est vérifiée avant de s’afficher.",
+    "retry": "Relancer",
+    "copiedShort": "Copié",
+    "historyTitle": "Historique",
+    "historyClear": "Effacer",
+    "historyNote": "Conservé sur cet appareil uniquement.",
+    "historyEmpty": "Vos demandes récentes apparaîtront ici.",
+    "historyOpen": "Rouvrir",
+    "history-restored": "Réponse rouverte depuis l’historique."
   },
   "actions": [
     {

@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- Title bar -->
-        <Grid x:Name="TitleBar" Padding="18,0,0,0" ColumnSpacing="12">
+        <Grid x:Name="TitleBar" Padding="35,0,0,0" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -27,6 +27,7 @@
                 <ColumnDefinition Width="140" />
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Image x:Name="TitleLogo" Width="18" Height="18" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
                 <TextBlock Text="nomi." FontSize="17" FontWeight="SemiBold" CharacterSpacing="-20" Foreground="{ThemeResource NomiInk}" />
                 <Border Width="1" Height="16" Background="{ThemeResource NomiLineStrong}" />
                 <TextBlock x:Name="Tagline" FontSize="12" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
@@ -116,7 +117,7 @@
                     </Grid>
 
                     <!-- Composer -->
-                    <Border x:Name="Composer" Grid.Row="1" Style="{StaticResource NomiCard}">
+                    <Border x:Name="Composer" Grid.Row="1" Style="{StaticResource NomiCard}" Shadow="{StaticResource NomiShadow}" Translation="0,0,10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -229,13 +230,56 @@
                                     </StackPanel>
                                     <TextBlock x:Name="ResultMeta" Grid.Column="1" FontSize="12" Foreground="{ThemeResource NomiInk3}"
                                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    <Button x:Name="CopyButton" Grid.Column="2" Style="{StaticResource NomiGhost}" Click="CopyClicked" />
-                                    <Button x:Name="EditButton" Grid.Column="3" Style="{StaticResource NomiGhost}" Click="EditClicked" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+                                        <Button x:Name="CopyButton" Style="{StaticResource NomiGhost}" Padding="10,6" Click="CopyClicked">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <FontIcon x:Name="CopyIcon" Glyph="&#xE8C8;" FontSize="13" />
+                                                <TextBlock x:Name="CopyLabel" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button x:Name="RetryButton" Style="{StaticResource NomiGhost}" Padding="10,6" Click="RetryClicked">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <FontIcon Glyph="&#xE72C;" FontSize="13" />
+                                                <TextBlock x:Name="RetryLabel" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button x:Name="EditButton" Style="{StaticResource NomiGhost}" Padding="10,6" Click="EditClicked">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <FontIcon Glyph="&#xE70F;" FontSize="13" />
+                                                <TextBlock x:Name="EditLabel" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                             <ScrollViewer Grid.Row="1" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                                 <StackPanel x:Name="ResultBody" Padding="26,20,26,24" MaxWidth="760" HorizontalAlignment="Left" Spacing="0" />
                             </ScrollViewer>
+                            <ProgressBar x:Name="WorkingBar" Grid.RowSpan="3" VerticalAlignment="Top" IsIndeterminate="False"
+                                         Foreground="{ThemeResource NomiAccent}" Background="Transparent" Margin="12,0,12,0"
+                                         Visibility="Collapsed" AutomationProperties.AccessibilityView="Raw" />
+                            <StackPanel x:Name="WorkingState" Grid.Row="1" Padding="26,26,26,24" Spacing="12" MaxWidth="760"
+                                        HorizontalAlignment="Stretch" Visibility="Collapsed">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ProgressRing x:Name="WorkingRing" Width="16" Height="16" IsActive="False" Foreground="{ThemeResource NomiAccent}" />
+                                    <TextBlock x:Name="WorkingTitle" Grid.Column="1" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource NomiInk}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="WorkingMeta" Grid.Column="2" FontFamily="{StaticResource NomiMono}" FontSize="11.5"
+                                               Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock x:Name="WorkingText" Style="{StaticResource NomiMuted}" Margin="26,-6,0,0" />
+                                <StackPanel x:Name="Skeleton" Spacing="11" Margin="26,10,0,0" AutomationProperties.AccessibilityView="Raw">
+                                    <Border Height="11" CornerRadius="6" Background="{ThemeResource NomiSurface2}" Margin="0,0,40,0" />
+                                    <Border Height="11" CornerRadius="6" Background="{ThemeResource NomiSurface2}" Margin="0,0,110,0" />
+                                    <Border Height="11" CornerRadius="6" Background="{ThemeResource NomiSurface2}" Margin="0,0,70,0" />
+                                    <Border Height="11" CornerRadius="6" Background="{ThemeResource NomiSurface2}" Margin="0,0,220,0" />
+                                </StackPanel>
+                            </StackPanel>
                             <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
                                         MaxWidth="440" Spacing="8" Padding="24">
                                 <TextBlock x:Name="EmptyTitle" FontSize="17" FontWeight="SemiBold" TextAlignment="Center"
@@ -293,6 +337,17 @@
                     </Border>
                     <Border Style="{StaticResource NomiCard}" Padding="14,12">
                         <StackPanel Spacing="8">
+                            <Grid>
+                                <TextBlock x:Name="HistoryTitle" Style="{StaticResource NomiCardTitle}" VerticalAlignment="Center" />
+                                <Button x:Name="HistoryClear" Style="{StaticResource NomiGhost}" HorizontalAlignment="Right" Padding="8,2"
+                                        MinHeight="24" FontSize="11.5" Margin="0,-4,-6,-4" Click="HistoryClearClicked" />
+                            </Grid>
+                            <StackPanel x:Name="HistoryList" Spacing="4" />
+                            <TextBlock x:Name="HistoryNote" Style="{StaticResource NomiMuted}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource NomiCard}" Padding="14,12">
+                        <StackPanel Spacing="8">
                             <TextBlock x:Name="ExamplesTitle" Style="{StaticResource NomiCardTitle}" />
                             <StackPanel x:Name="ExampleList" Spacing="6" />
                         </StackPanel>
@@ -311,6 +366,7 @@
         <Grid x:Name="PaletteOverlay" Grid.RowSpan="2" Background="{ThemeResource NomiScrim}" Visibility="Collapsed"
               Tapped="PaletteScrimTapped">
             <Border x:Name="PaletteCard" Style="{StaticResource NomiCard}" Width="580" VerticalAlignment="Top" Margin="0,120,0,0"
+                    Shadow="{StaticResource NomiShadow}" Translation="0,0,32"
                     Tapped="PaletteCardTapped">
                 <StackPanel>
                     <Grid Padding="14,10" ColumnSpacing="10" BorderBrush="{ThemeResource NomiLine}" BorderThickness="0,0,0,1">
@@ -339,6 +395,18 @@
                     <TextBlock x:Name="PaletteHelp" Style="{StaticResource NomiMuted}" Padding="14,8" />
                 </StackPanel>
             </Border>
+        </Grid>
+
+        <!-- Launch splash -->
+        <Grid x:Name="Splash" Grid.RowSpan="2" Background="{ThemeResource NomiCanvas}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <Image x:Name="SplashLogo" Width="72" Height="72" HorizontalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+                <TextBlock Text="nomi." FontSize="28" FontWeight="SemiBold" CharacterSpacing="-20" HorizontalAlignment="Center"
+                           Foreground="{ThemeResource NomiInk}" Margin="0,6,0,0" />
+                <TextBlock x:Name="SplashTagline" FontSize="13" Foreground="{ThemeResource NomiInk3}" HorizontalAlignment="Center" />
+                <ProgressBar x:Name="SplashProgress" Width="120" IsIndeterminate="True" Foreground="{ThemeResource NomiAccent}"
+                             Background="Transparent" Margin="0,14,0,0" />
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>

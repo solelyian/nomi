@@ -22,6 +22,22 @@
                         <SolidColorBrush x:Key="NomiAccentSoft" Color="#F6E6DF" />
                         <SolidColorBrush x:Key="NomiOk" Color="#2F7D4F" />
                         <SolidColorBrush x:Key="NomiScrim" Color="#66171512" />
+                        <SolidColorBrush x:Key="NomiHover" Color="#F1EDE8" />
+                        <SolidColorBrush x:Key="NomiPressed" Color="#E8E2DB" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F1EDE8" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#E8E2DB" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#CFC8BF" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CFC8BF" />
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#171512" />
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="#F1EDE8" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="#E8E2DB" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="#CFC8BF" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="#CFC8BF" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver" Color="#171512" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundPressed" Color="#171512" />
+                        <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#B4482B" />
+                        <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#FFFFFF" />
                         <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#171512" />
                         <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#171512" />
                         <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#2B2824" />
@@ -46,6 +62,22 @@
                         <SolidColorBrush x:Key="NomiAccentSoft" Color="#3A2A23" />
                         <SolidColorBrush x:Key="NomiOk" Color="#6FBF8A" />
                         <SolidColorBrush x:Key="NomiScrim" Color="#99000000" />
+                        <SolidColorBrush x:Key="NomiHover" Color="#2A2927" />
+                        <SolidColorBrush x:Key="NomiPressed" Color="#343230" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#2A2927" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#343230" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#4A4641" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#4A4641" />
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="#2A2927" />
+                        <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="#343230" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushPointerOver" Color="#4A4641" />
+                        <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="#4A4641" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="ToggleButtonForegroundPressed" Color="#F2EFEA" />
+                        <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#E8825F" />
+                        <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#111110" />
                         <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="#F2EFEA" />
                         <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="#F2EFEA" />
                         <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="#DDD8D1" />
@@ -70,12 +102,23 @@
                         <SolidColorBrush x:Key="NomiAccentSoft" Color="{ThemeResource SystemColorWindowColor}" />
                         <SolidColorBrush x:Key="NomiOk" Color="{ThemeResource SystemColorWindowTextColor}" />
                         <SolidColorBrush x:Key="NomiScrim" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiHover" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiPressed" Color="{ThemeResource SystemColorHighlightColor}" />
                     </ResourceDictionary>
                     </ResourceDictionary.ThemeDictionaries>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
 
             <FontFamily x:Key="NomiMono">Cascadia Mono, Consolas</FontFamily>
+            <ThemeShadow x:Key="NomiShadow" />
+
+            <TransitionCollection x:Key="NomiEntrance">
+                <EntranceThemeTransition FromVerticalOffset="24" IsStaggeringEnabled="True" />
+            </TransitionCollection>
+            <TransitionCollection x:Key="NomiListTransitions">
+                <AddDeleteThemeTransition />
+                <RepositionThemeTransition IsStaggeringEnabled="False" />
+            </TransitionCollection>
 
             <Style x:Key="NomiCard" TargetType="Border">
                 <Setter Property="Background" Value="{ThemeResource NomiSurface}" />

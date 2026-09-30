@@ -15,6 +15,8 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 using Windows.Storage.Pickers;
@@ -27,6 +29,7 @@ public sealed partial class MainWindow : Window
     private static readonly Regex NumberPattern = new(
         @"(?<![\p{L}\d])[-−+]?\d(?:[\d\u00a0\u202f ]*\d)?(?:[.,]\d+)?(?:\s?(?:%|€|\$|£))?",
         RegexOptions.Compiled);
+    private static readonly Regex BulletPattern = new(@"^\s*[-•*·–]\s+(.+)$", RegexOptions.Compiled);
     private static readonly Regex StepPattern = new(
         @"^\s*(?:(?:étape|step)\s+)?(\d{1,2})\s*[.):\-–—]\s+(.+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -51,6 +54,13 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? documentReading;
     private Draft? activeDraft;
     private bool updating;
+    private readonly bool motion = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+    private readonly List<HistoryEntry> history = HistoryStore.Load();
+    private DispatcherQueueTimer? splashTimer;
+    private DispatcherQueueTimer? copyReset;
+    private DispatcherQueueTimer? elapsedTimer;
+    private Storyboard? pulse;
+    private string shownPanel = "";
     private Catalog Current => catalogs[language];
     private NomiAction Action => Current.Actions.Single(item => item.Id == actionId);
     private WorkContext? Context => Current.Contexts.SingleOrDefault(item => item.Id == contextId);
@@ -71,6 +81,14 @@ public sealed partial class MainWindow : Window
         SetTitleBar(DragRegion);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 860));
         if (MicaController.IsSupported()) SystemBackdrop = new MicaBackdrop();
+        var icon = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "nomi.ico");
+        if (System.IO.File.Exists(icon)) AppWindow.SetIcon(icon);
+        var logo = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "nomi-512.png");
+        if (System.IO.File.Exists(logo))
+        {
+            SplashLogo.Source = new BitmapImage(new Uri(logo));
+            TitleLogo.Source = new BitmapImage(new Uri(logo));
+        }
         Root.ActualThemeChanged += (_, _) => { ApplyChrome(); Refresh(); };
         Closed += (_, _) =>
         {
@@ -95,7 +113,94 @@ public sealed partial class MainWindow : Window
         Root.KeyboardAccelerators.Add(reason);
         ApplyChrome();
         Refresh();
+        SplashTagline.Text = T("tagline");
+        Root.Loaded += (_, _) => DismissSplash();
         RequestBox.Focus(FocusState.Programmatic);
+    }
+
+    private void DismissSplash()
+    {
+        splashTimer = DispatcherQueue.CreateTimer();
+        splashTimer.Interval = TimeSpan.FromMilliseconds(motion ? 650 : 150);
+        splashTimer.IsRepeating = false;
+        splashTimer.Tick += (_, _) =>
+        {
+            splashTimer.Stop();
+            void Done()
+            {
+                Splash.Visibility = Visibility.Collapsed;
+                SplashProgress.IsIndeterminate = false;
+                if (inference.HasModel && !inference.Ready && modelPreparation is null) _ = PrepareModel();
+            }
+            if (!motion) { Done(); return; }
+            var board = new Storyboard();
+            board.Children.Add(Animate(Splash, "Opacity", 1, 0, 240));
+            board.Completed += (_, _) => Done();
+            board.Begin();
+            Reveal(Body, 14);
+        };
+        splashTimer.Start();
+    }
+
+    private static DoubleAnimation Animate(DependencyObject target, string property, double from, double to, int duration, int delay = 0)
+    {
+        var animation = new DoubleAnimation
+        {
+            From = from,
+            To = to,
+            Duration = new Duration(TimeSpan.FromMilliseconds(duration)),
+            BeginTime = TimeSpan.FromMilliseconds(delay),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(animation, target);
+        Storyboard.SetTargetProperty(animation, property);
+        return animation;
+    }
+
+    private void Reveal(UIElement element, double offset = 10, int delay = 0)
+    {
+        if (!motion) return;
+        var transform = new TranslateTransform();
+        element.RenderTransform = transform;
+        element.Opacity = 0;
+        var board = new Storyboard();
+        board.Children.Add(Animate(element, "Opacity", 0, 1, 200, delay));
+        board.Children.Add(Animate(transform, "Y", offset, 0, 280, delay));
+        board.Completed += (_, _) => element.Opacity = 1;
+        board.Begin();
+    }
+
+    private void Pulse(bool active)
+    {
+        if (!active || !motion)
+        {
+            pulse?.Stop();
+            pulse = null;
+            return;
+        }
+        if (pulse is not null) return;
+        var animation = new DoubleAnimation
+        {
+            From = 1,
+            To = 0.4,
+            Duration = new Duration(TimeSpan.FromMilliseconds(900)),
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+        };
+        Storyboard.SetTarget(animation, Skeleton);
+        Storyboard.SetTargetProperty(animation, "Opacity");
+        pulse = new Storyboard();
+        pulse.Children.Add(animation);
+        pulse.Begin();
+    }
+
+    private string Elapsed(double seconds)
+    {
+        var total = (int)Math.Round(seconds);
+        return total < 60
+            ? $"{total} s"
+            : $"{total / 60} min {total % 60:00} s";
     }
 
     private string T(string key) => Current.Labels[key];
@@ -184,6 +289,10 @@ public sealed partial class MainWindow : Window
         else if (view == "settings") BuildSettings();
         RefreshWorkspace();
         RefreshAside();
+        var panel = view == "workspace" ? $"workspace:{actionId}:{contextId}" : view;
+        if (shownPanel.Length > 0 && panel != shownPanel)
+            Reveal(view == "workspace" ? Workspace : view == "spaces" ? SpacesPanel : SettingsPanel, 8);
+        shownPanel = panel;
         PaletteHelp.Text = T("commandHelp");
         PaletteEmpty.Text = T("noResults");
         PaletteSearch.PlaceholderText = T("commandHint");
@@ -343,8 +452,15 @@ public sealed partial class MainWindow : Window
         ToolTipService.SetToolTip(LaunchButton, T("requestHelp"));
 
         ResultTag.Text = T("responseTag");
-        CopyButton.Content = T("copy");
-        EditButton.Content = T("editRequest");
+        CopyLabel.Text = T("copy");
+        CopyIcon.Glyph = "\uE8C8";
+        CopyIcon.Foreground = Palette("NomiInk2");
+        AutomationProperties.SetName(CopyButton, T("copy"));
+        RetryLabel.Text = T("retry");
+        AutomationProperties.SetName(RetryButton, T("retry"));
+        EditLabel.Text = T("editRequest");
+        AutomationProperties.SetName(EditButton, T("editRequest"));
+        AutomationProperties.SetLiveSetting(WorkingTitle, AutomationLiveSetting.Polite);
         EmptyAction.Content = T(inference.HasModel ? "loadLocalModel" : "downloadWithSize");
         AutomationProperties.SetName(EmptyAction, (string)EmptyAction.Content);
         AutomationProperties.SetLiveSetting(StatusText, AutomationLiveSetting.Polite);
@@ -359,25 +475,46 @@ public sealed partial class MainWindow : Window
         LaunchButton.IsEnabled = inference.Ready && !busy;
         StopButton.Visibility = busy && activeDraft == CurrentDraft ? Visibility.Visible : Visibility.Collapsed;
         ExampleButton.IsEnabled = !busy;
+        RetryButton.IsEnabled = inference.Ready && !busy;
         AttachButton.IsEnabled = !busy && documentReading is null;
         StepsToggle.IsEnabled = SummaryToggle.IsEnabled = ReasoningToggle.IsEnabled = !busy;
         RequestBox.IsReadOnly = busy && activeDraft == CurrentDraft;
         var draft = CurrentDraft;
         StatusText.Foreground = Palette(draft.Status is "stopped" or "timeout" || draft.Status.Contains("error") || draft.Status.Contains("invalid") || draft.Status == "policy-blocked"
             ? "NomiAccent" : "NomiInk2");
-        Announce(StatusText, draft.Status switch
+        var message = draft.Status switch
         {
             "idle" => "",
             "reasoning" => string.Format(CultureInfo.CurrentCulture, T("reasoningProgress"), reasoningWords),
             _ => T(draft.Status)
-        });
+        };
+        var working = WorkingState.Visibility == Visibility.Visible;
+        Announce(StatusText, working ? "" : message);
+        if (working && message.Length > 0) Announce(WorkingTitle, message);
     }
 
-    private void RenderResult(Draft draft)
+    private void RenderResult(Draft draft, bool animate = false)
     {
         var hasOutput = draft.Output.Length > 0;
+        var working = !hasOutput && generation is not null && activeDraft == draft;
+        var wasWorking = WorkingState.Visibility == Visibility.Visible;
+        WorkingState.Visibility = working ? Visibility.Visible : Visibility.Collapsed;
+        WorkingBar.Visibility = working ? Visibility.Visible : Visibility.Collapsed;
+        WorkingBar.IsIndeterminate = working;
+        WorkingRing.IsActive = working;
+        Pulse(working);
         ResultBody.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
-        EmptyState.Visibility = hasOutput ? Visibility.Collapsed : Visibility.Visible;
+        EmptyState.Visibility = hasOutput || working ? Visibility.Collapsed : Visibility.Visible;
+        if (working)
+        {
+            WorkingText.Text = T("workingText");
+            WorkingMeta.Text = Elapsed((DateTime.UtcNow - draft.Started).TotalSeconds);
+            ResultHead.Visibility = ResultFoot.Visibility = Visibility.Collapsed;
+            ResultPanel.BorderBrush = Palette("NomiLine");
+            ResultPanel.Background = Palette("NomiSurface");
+            if (!wasWorking) Reveal(WorkingState, 8);
+            return;
+        }
         ResultHead.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
         ResultFoot.Visibility = hasOutput ? Visibility.Visible : Visibility.Collapsed;
         if (!hasOutput)
@@ -392,7 +529,8 @@ public sealed partial class MainWindow : Window
         }
         ResultPanel.BorderBrush = Palette("NomiLine");
         ResultPanel.Background = Palette("NomiSurface");
-        ResultMeta.Text = $"{Action.Title} · {T(summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {inference.Model}";
+        var seconds = draft.Seconds > 0 ? $" · {Elapsed(draft.Seconds)}" : "";
+        ResultMeta.Text = $"{Action.Title} · {T(draft.Summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {inference.Model}{seconds}";
         ResultBody.Children.Clear();
         var paragraphs = draft.Output.Split('\n', StringSplitOptions.TrimEntries).Where(line => line.Length > 0).ToArray();
         var lastIndex = paragraphs.Length - 1;
@@ -402,23 +540,64 @@ public sealed partial class MainWindow : Window
             var step = StepPattern.Match(line);
             if (step.Success)
             {
-                var row = new Grid { ColumnSpacing = 10, Padding = new Thickness(0, 8, 0, 8) };
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
+                var row = new Grid { ColumnSpacing = 14, Padding = new Thickness(0, 10, 0, 10) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(26) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                var number = new TextBlock
+                var number = new Border
                 {
-                    Text = step.Groups[1].Value.PadLeft(2, '0'),
-                    FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
-                    FontSize = 12,
-                    Foreground = Palette("NomiInk3"),
-                    Margin = new Thickness(0, 4, 0, 0)
+                    Width = 26,
+                    Height = 26,
+                    CornerRadius = new CornerRadius(13),
+                    Background = Palette("NomiAccentSoft"),
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(0, 0, 0, 0),
+                    Child = new TextBlock
+                    {
+                        Text = step.Groups[1].Value,
+                        FontSize = 12,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = Palette("NomiAccent"),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
                 };
                 var body = RichText(step.Groups[2].Value, 15);
                 Grid.SetColumn(body, 1);
                 row.Children.Add(number);
                 row.Children.Add(body);
                 ResultBody.Children.Add(row);
-                ResultBody.Children.Add(new Border { Height = 1, Background = Palette("NomiLine"), Opacity = 0.9 });
+                if (index < lastIndex && StepPattern.IsMatch(paragraphs[index + 1]))
+                    ResultBody.Children.Add(new Border { Height = 1, Background = Palette("NomiLine"), Margin = new Thickness(40, 0, 0, 0) });
+                continue;
+            }
+            var bullet = BulletPattern.Match(line);
+            if (bullet.Success)
+            {
+                var row = new Grid { ColumnSpacing = 12, Margin = new Thickness(0, 0, 0, 6) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.Children.Add(new Border
+                {
+                    Width = 6,
+                    Height = 6,
+                    CornerRadius = new CornerRadius(3),
+                    Background = Palette("NomiAccent"),
+                    VerticalAlignment = VerticalAlignment.Top,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 10, 0, 0)
+                });
+                var body = RichText(bullet.Groups[1].Value, 15);
+                Grid.SetColumn(body, 1);
+                row.Children.Add(body);
+                ResultBody.Children.Add(row);
+                continue;
+            }
+            if (line.EndsWith(':') && line.Length <= 80 && !IsConclusion(line))
+            {
+                var heading = RichText(line.TrimEnd(':').Trim('*', '#', ' '), 15);
+                heading.FontWeight = FontWeights.SemiBold;
+                heading.Margin = new Thickness(0, index == 0 ? 0 : 10, 0, 4);
+                ResultBody.Children.Add(heading);
                 continue;
             }
             var conclusion = index == lastIndex && index > 0 && paragraphs.Length > 1
@@ -433,7 +612,7 @@ public sealed partial class MainWindow : Window
                     CharacterSpacing = 80,
                     Foreground = Palette("NomiInk3")
                 });
-                block.Children.Add(RichText(StripConclusion(line), 15));
+                block.Children.Add(RichText(StripConclusion(line), 17));
                 ResultBody.Children.Add(new Border
                 {
                     Child = block,
@@ -454,6 +633,9 @@ public sealed partial class MainWindow : Window
             ? $"{T("policyPrefix")} : {string.Join(" · ", draft.Rules.Select(rule => T($"policy-{rule}")))}     "
             : "";
         ResultFootText.Text = rules + T("resultReminder");
+        if (!animate) return;
+        for (var index = 0; index < ResultBody.Children.Count; index++)
+            Reveal(ResultBody.Children[index], 10, Math.Min(index * 40, 360));
     }
 
     private static bool IsConclusion(string line)
@@ -485,15 +667,25 @@ public sealed partial class MainWindow : Window
             Foreground = Palette("NomiInk")
         };
         Typography.SetNumeralAlignment(block, FontNumeralAlignment.Tabular);
-        var position = 0;
-        foreach (Match match in NumberPattern.Matches(text))
+        var segments = text.Split("**");
+        if (segments.Length % 2 == 0) segments = [text];
+        for (var segment = 0; segment < segments.Length; segment++)
         {
-            if (match.Index > position) block.Inlines.Add(new Run { Text = text[position..match.Index] });
-            block.Inlines.Add(new Run { Text = match.Value, FontWeight = FontWeights.SemiBold });
-            position = match.Index + match.Length;
+            var part = segments[segment];
+            var strong = segment % 2 == 1;
+            var position = 0;
+            foreach (Match match in NumberPattern.Matches(part))
+            {
+                if (match.Index > position) block.Inlines.Add(Span(part[position..match.Index], strong));
+                block.Inlines.Add(new Run { Text = match.Value, FontWeight = FontWeights.SemiBold });
+                position = match.Index + match.Length;
+            }
+            if (position < part.Length) block.Inlines.Add(Span(part[position..], strong));
         }
-        if (position < text.Length) block.Inlines.Add(new Run { Text = text[position..] });
         return block;
+
+        static Run Span(string value, bool strong) =>
+            strong ? new Run { Text = value, FontWeight = FontWeights.SemiBold } : new Run { Text = value };
     }
 
     private void RenderDocuments(Draft draft)
@@ -599,6 +791,8 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(EngineProgress, T("engineTitle"));
         PrepareCancel.Content = T("stop");
         UpdateEngine();
+
+        RenderHistory(false);
 
         ExamplesTitle.Text = $"{T("examplesTitle")} · {Action.Title}";
         ExampleList.Children.Clear();
@@ -720,6 +914,7 @@ public sealed partial class MainWindow : Window
         if (generation is not null || view != "workspace") return;
         var draft = CurrentDraft;
         var action = Action;
+        var contextKey = contextId;
         void SetStatus(string value)
         {
             draft.Status = value;
@@ -741,9 +936,20 @@ public sealed partial class MainWindow : Window
         draft.Output = "";
         draft.Rules = [];
         draft.Reasoned = reasoning;
+        draft.Summary = summary;
+        draft.Seconds = 0;
+        draft.Started = DateTime.UtcNow;
         reasoningWords = 0;
         RenderResult(draft);
         SetStatus(reasoning ? "reasoning" : "generating");
+        elapsedTimer?.Stop();
+        elapsedTimer = DispatcherQueue.CreateTimer();
+        elapsedTimer.Interval = TimeSpan.FromSeconds(1);
+        elapsedTimer.Tick += (_, _) =>
+        {
+            if (draft == CurrentDraft) WorkingMeta.Text = Elapsed((DateTime.UtcNow - draft.Started).TotalSeconds);
+        };
+        elapsedTimer.Start();
         try
         {
             var reported = 0;
@@ -765,6 +971,12 @@ public sealed partial class MainWindow : Window
             linked.Token.ThrowIfCancellationRequested();
             draft.Output = adapted.Text;
             draft.Rules = adapted.Changes;
+            draft.Seconds = (DateTime.UtcNow - draft.Started).TotalSeconds;
+            history.Insert(0, new HistoryEntry(action.Id, contextKey, draft.Prompt, draft.Output, draft.Rules,
+                draft.Reasoned, draft.Summary, DateTimeOffset.Now, draft.Seconds));
+            if (history.Count > HistoryStore.Limit) history.RemoveRange(HistoryStore.Limit, history.Count - HistoryStore.Limit);
+            HistoryStore.Save(history);
+            RenderHistory(true);
             SetStatus(adapted.Changes.Length > 0 ? "policy-adjusted" : "policy-applied");
         }
         catch (OperationCanceledException) { SetStatus(timeout.IsCancellationRequested ? "timeout" : "stopped"); }
@@ -782,9 +994,10 @@ public sealed partial class MainWindow : Window
         {
             generation = null;
             activeDraft = null;
+            elapsedTimer?.Stop();
             if (draft == CurrentDraft && view == "workspace")
             {
-                RenderResult(draft);
+                RenderResult(draft, draft.Output.Length > 0);
                 UpdateControls();
                 if (draft.Output.Length > 0) CopyButton.Focus(FocusState.Programmatic);
             }
@@ -975,6 +1188,8 @@ public sealed partial class MainWindow : Window
         PaletteSearch.Text = "";
         PaletteFilter(PaletteSearch, null!);
         PaletteSearch.Focus(FocusState.Programmatic);
+        Reveal(PaletteOverlay, 0);
+        Reveal(PaletteCard, -10);
     }
 
     private void ClosePalette()
@@ -1121,8 +1336,102 @@ public sealed partial class MainWindow : Window
     {
         var draft = CurrentDraft;
         if (draft.Output.Length == 0) return;
-        draft.Status = CopyResponse(draft.Output) == T("copied") ? "copied" : "copyError";
+        var copied = CopyResponse(draft.Output) == T("copied");
+        draft.Status = copied ? "copied" : "copyError";
         UpdateControls();
+        if (!copied) return;
+        CopyIcon.Glyph = "\uE73E";
+        CopyIcon.Foreground = Palette("NomiOk");
+        CopyLabel.Text = T("copiedShort");
+        copyReset?.Stop();
+        copyReset = DispatcherQueue.CreateTimer();
+        copyReset.Interval = TimeSpan.FromSeconds(2);
+        copyReset.IsRepeating = false;
+        copyReset.Tick += (_, _) =>
+        {
+            copyReset?.Stop();
+            CopyIcon.Glyph = "\uE8C8";
+            CopyIcon.Foreground = Palette("NomiInk2");
+            CopyLabel.Text = T("copy");
+        };
+        copyReset.Start();
+    }
+
+    private async void RetryClicked(object sender, RoutedEventArgs args) => await Launch();
+
+    private void HistoryClearClicked(object sender, RoutedEventArgs args)
+    {
+        history.Clear();
+        HistoryStore.Save(history);
+        RenderHistory(false);
+        RequestBox.Focus(FocusState.Programmatic);
+    }
+
+    private void RenderHistory(bool animateFirst)
+    {
+        HistoryTitle.Text = T("historyTitle");
+        HistoryClear.Content = T("historyClear");
+        AutomationProperties.SetName(HistoryClear, $"{T("historyClear")} · {T("historyTitle")}");
+        HistoryClear.Visibility = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        HistoryNote.Text = T(history.Count > 0 ? "historyNote" : "historyEmpty");
+        HistoryList.Children.Clear();
+        var culture = new CultureInfo(Current.Locale);
+        foreach (var entry in history.Take(6))
+        {
+            var title = Current.Actions.FirstOrDefault(item => item.Id == entry.Action)?.Title ?? entry.Action;
+            var label = (entry.Prompt.Length > 0 ? entry.Prompt : entry.Output).ReplaceLineEndings(" ");
+            var time = entry.Time.Date == DateTimeOffset.Now.Date
+                ? entry.Time.ToString("t", culture)
+                : entry.Time.ToString("d MMM", culture);
+            var content = new Grid { RowSpacing = 2 };
+            content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            content.Children.Add(new TextBlock { Text = title, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = Palette("NomiInk2") });
+            content.Children.Add(new TextBlock
+            {
+                Text = time,
+                FontSize = 11,
+                FontFamily = (FontFamily)Application.Current.Resources["NomiMono"],
+                Foreground = Palette("NomiInk3"),
+                HorizontalAlignment = HorizontalAlignment.Right
+            });
+            var prompt = new TextBlock
+            {
+                Text = label,
+                FontSize = 12.5,
+                Foreground = Palette("NomiInk"),
+                TextWrapping = TextWrapping.Wrap,
+                MaxLines = 2,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            Grid.SetRow(prompt, 1);
+            content.Children.Add(prompt);
+            var button = new Button { Content = content, Style = (Style)Application.Current.Resources["NomiExample"] };
+            AutomationProperties.SetName(button, $"{T("historyOpen")} · {title} · {time} · {label}");
+            var item = entry;
+            button.Click += (_, _) => RestoreHistory(item);
+            HistoryList.Children.Add(button);
+        }
+        if (animateFirst && HistoryList.Children.Count > 0) Reveal(HistoryList.Children[0], -6);
+    }
+
+    private void RestoreHistory(HistoryEntry entry)
+    {
+        if (generation is not null || Current.Actions.All(item => item.Id != entry.Action)) return;
+        actionId = entry.Action;
+        contextId = Current.Contexts.Any(item => item.Id == entry.Context) ? entry.Context : null;
+        view = "workspace";
+        var draft = CurrentDraft;
+        draft.Prompt = entry.Prompt;
+        draft.Output = entry.Output;
+        draft.Rules = entry.Rules;
+        draft.Reasoned = entry.Reasoned;
+        draft.Summary = entry.Summary;
+        draft.Seconds = entry.Seconds;
+        draft.Status = "history-restored";
+        Refresh();
+        RenderResult(draft, true);
+        CopyButton.Focus(FocusState.Programmatic);
     }
 
     private void EditClicked(object sender, RoutedEventArgs args)
@@ -1140,6 +1449,9 @@ public sealed partial class MainWindow : Window
         public string Status { get; set; } = "idle";
         public string[] Rules { get; set; } = [];
         public bool Reasoned { get; set; }
+        public bool Summary { get; set; }
+        public double Seconds { get; set; }
+        public DateTime Started { get; set; }
         public List<AttachedDocument> Documents { get; } = [];
         public string DocumentStatus { get; set; } = "";
     }
