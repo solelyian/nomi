@@ -106,6 +106,14 @@ jobs:
             throw "Embedded native llama library missing from publish output"
           }
           dotnet run --project checks/Nomi.Inference.Checks -c Release -- --embedded-live
+      - name: Verify answer, copy and history in the installed application
+        run: ./checks/windows-result.ps1
+      - name: Upload result screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-screens
+          path: artifacts/ui-*.png
       - name: Zip portable build
         run: Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
       - uses: actions/upload-artifact@v4
