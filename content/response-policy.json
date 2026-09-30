@@ -21,6 +21,11 @@
       "pattern": "^\\*\\*([^*\\n]+)\\*\\*(?=$|[ \\t.,:;!?])",
       "replacement": "$1"
     },
+    {
+      "id": "layout",
+      "pattern": "(?<![*\\w])\\*([^*\\s][^*\\n]*?)\\*(?![*\\w])",
+      "replacement": "$1"
+    },
     { "id": "layout", "pattern": "\\n{3,}", "replacement": "\n\n" },
     {
       "id": "professional-tone",

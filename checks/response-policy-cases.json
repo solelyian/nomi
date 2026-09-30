@@ -246,5 +246,21 @@
     "expected": "",
     "changes": [],
     "reasons": ["empty-response"]
+  },
+  {
+    "name": "Remove single-asterisk emphasis around labels",
+    "source": "Prix final : 81,60 €.\n*Hypothèse* : la TVA s'applique après la remise.",
+    "format": "summary",
+    "expected": "Prix final : 81,60 €.\nHypothèse : la TVA s'applique après la remise.",
+    "changes": ["layout"],
+    "reasons": []
+  },
+  {
+    "name": "Keep multiplication asterisks",
+    "source": "2 * 3 * 4 = 24 et 2*3*4 = 24.",
+    "format": "summary",
+    "expected": "2 * 3 * 4 = 24 et 2*3*4 = 24.",
+    "changes": [],
+    "reasons": []
   }
 ]
