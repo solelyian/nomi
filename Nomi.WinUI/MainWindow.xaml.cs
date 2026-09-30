@@ -56,9 +56,9 @@ public sealed partial class MainWindow : Window
     private bool updating;
     private readonly bool motion = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
     private readonly List<HistoryEntry> history = HistoryStore.Load();
-    private DispatcherQueueTimer? splashTimer;
-    private DispatcherQueueTimer? copyReset;
-    private DispatcherQueueTimer? elapsedTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? splashTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? copyReset;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? elapsedTimer;
     private Storyboard? pulse;
     private string shownPanel = "";
     private Catalog Current => catalogs[language];
