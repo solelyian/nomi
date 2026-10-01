@@ -127,6 +127,13 @@ la tâche en cours et repérer un total ou un pourcentage incohérent. Les image
 restent en mémoire, sont effacées après chaque analyse et ne sont jamais écrites
 sur disque ni envoyées hors de la machine.
 
+Chaque capture est ramenée à 1 600 px au plus sur son grand côté, et les petites
+fenêtres sont agrandies pour atteindre environ 1 100 jetons d’image : en dessous,
+le modèle saute des lignes de tableau. Lorsqu’un tableau chiffré est visible, Nomi
+le fait recopier ligne par ligne puis recalcule lui-même totaux, pourcentages et
+produits (par exemple CA × taux) ; un écart n’est signalé que s’il ressort de ce
+calcul, et reste une suggestion à vérifier.
+
 Cette fonction utilise un second modèle, téléchargé à part depuis l’espace Focus :
 Qwen3-VL 4B Instruct (Q4_K_M) et son projecteur vision (Q8_0), environ 2,95 Go
 au total, épinglés avec taille et SHA-256 dans `content/vision-model.json` et
@@ -393,6 +400,17 @@ Ce contrôle télécharge et vérifie le modèle si nécessaire, exerce les six 
 dans les deux langues, l’extraction d’un PDF et l’annulation suivie d’une nouvelle
 demande. `NOMI_TEST_MODEL_DIR` permet d’utiliser un dossier de modèle dédié pour
 ces contrôles uniquement.
+
+Pour vérifier le modèle vision sur une capture de tableur jointe au dépôt
+(`checks/vision`), en français et en anglais :
+
+```sh
+dotnet run --project checks/Nomi.Inference.Checks -- --vision-live
+```
+
+Ce contrôle télécharge et vérifie le modèle vision et son projecteur si nécessaire,
+puis exige la tâche reconnue, le tableau entier recopié et l’écart de commission
+de la ligne C. Roux, sans faux écart de total.
 
 Les contrôles du projet Windows, à exécuter sur Windows :
 
