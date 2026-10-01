@@ -689,7 +689,9 @@ public sealed partial class MainWindow
             boardButton.Click += (_, _) => Show("board");
             actions.Children.Add(boardButton);
             stack.Children.Add(actions);
-            return Glass(stack, 20, true);
+            var idle = Glass(stack, 20, true);
+            Mark(idle, "ActiveTask", T("activeTask"));
+            return idle;
         }
         var title = Text(task.Title, 20);
         title.FontWeight = FontWeights.SemiBold;
@@ -745,7 +747,9 @@ public sealed partial class MainWindow
         if (plan.Count == 0)
         {
             stack.Children.Add(Text(T("planEmpty"), 12.5, "NomiInk3"));
-            return Glass(stack, 18);
+            var empty = Glass(stack, 18);
+            Mark(empty, "DayPlan", T("dayPlan"));
+            return empty;
         }
         var cursor = now;
         foreach (var task in plan.Take(8))
