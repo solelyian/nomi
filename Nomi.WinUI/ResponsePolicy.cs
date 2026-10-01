@@ -16,6 +16,7 @@ public static class ResponsePolicy
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant;
     public static int MaxCharacters => Config.MaxCharacters;
     public static string RegenerationInstruction => Config.RegenerationInstruction;
+    public static readonly string[] RetriedReasons = ["conflicting-result", "wrong-arithmetic"];
 
     private static Regex Pattern(string pattern) => new(pattern, Options, TimeSpan.FromSeconds(1));
     private static PolicyResult Blocked(params string[] reasons) => new("", Config.Version, [], reasons, false);
@@ -54,6 +55,68 @@ public static class ResponsePolicy
         return false;
     }
 
+    private static readonly Regex Grouped = new("^[0-9]{1,3}[.,][0-9]{3}$", RegexOptions.CultureInvariant);
+
+    private static double DecimalValue(string value, bool grouped) => double.Parse(
+        grouped && Grouped.IsMatch(value) ? value.Replace(".", "").Replace(",", "") : value.Replace(',', '.'),
+        CultureInfo.InvariantCulture);
+
+    private static int DecimalPlaces(string value, bool grouped)
+    {
+        if (grouped && Grouped.IsMatch(value)) return 0;
+        var separator = value.LastIndexOfAny(['.', ',']);
+        return separator < 0 ? 0 : value.Length - separator - 1;
+    }
+
+    private static bool Holds(string left, string right, bool grouped)
+    {
+        var token = Pattern(Config.Arithmetic.Token);
+        var terms = new List<(double Value, bool Percent)>();
+        var operators = new List<string>();
+        foreach (Match match in token.Matches(left))
+        {
+            if (match.Groups["operator"].Success) operators.Add(match.Groups["operator"].Value);
+            else if (match.Groups["number"].Success)
+                terms.Add((DecimalValue(match.Groups["number"].Value, grouped), match.Groups["unit"].Value.Contains('%')));
+        }
+        var result = token.Matches(right).FirstOrDefault(match => match.Groups["number"].Success);
+        if (result is null || terms.Count != operators.Count + 1) return true;
+        var negative = Pattern(@"^[ \t]*[-−]").IsMatch(right);
+        static bool Additive(string op) => op is "+" or "-" or "−";
+        var additive = operators.Any(Additive);
+        var resultPercent = result.Groups["unit"].Value.Contains('%');
+        var percents = terms.Count(term => term.Percent) + (resultPercent ? 1 : 0);
+        if (percents > 0 && additive && percents < terms.Count + 1) return true;
+        static double Scale(bool percent) => percent ? 0.01 : 1;
+        double sum = 0, sign = 1, product = terms[0].Value * Scale(terms[0].Percent);
+        for (var index = 0; index < operators.Count; index++)
+        {
+            var op = operators[index];
+            var value = terms[index + 1].Value * Scale(terms[index + 1].Percent);
+            if (Additive(op))
+            {
+                sum += sign * product;
+                sign = op == "+" ? 1 : -1;
+                product = value;
+            }
+            else if (op is "/" or "÷")
+            {
+                if (value == 0) return true;
+                product /= value;
+            }
+            else product *= value;
+        }
+        var expected = sum + sign * product;
+        var shown = (negative ? -1 : 1) * DecimalValue(result.Groups["number"].Value, grouped) * Scale(resultPercent);
+        var places = DecimalPlaces(result.Groups["number"].Value, grouped) + (resultPercent ? 2 : 0);
+        return Math.Abs(expected - shown) <= 0.5 * Math.Pow(10, -places) + 1e-9 * Math.Max(1, Math.Abs(expected));
+    }
+
+    private static bool HasWrongArithmetic(string text) =>
+        new Regex(Config.Arithmetic.Expression, RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)).Matches(text)
+            .Any(match => !Holds(match.Groups["left"].Value, match.Groups["right"].Value, false)
+                && !Holds(match.Groups["left"].Value, match.Groups["right"].Value, true));
+
     public static PolicyResult Apply(string source, string format)
     {
         if (source.Length > Config.MaxCharacters) return Blocked("length");
@@ -75,6 +138,7 @@ public static class ResponsePolicy
             .Select(rule => rule.Id).ToArray();
         if (reasons.Length > 0) return Blocked(reasons);
         if (HasConflictingResult(text.Normalize())) return Blocked("conflicting-result");
+        if (HasWrongArithmetic(text.Normalize())) return Blocked("wrong-arithmetic");
         if (format == "steps")
         {
             var spaced = Pattern(@"\n+").Replace(text, "\n\n");
@@ -87,6 +151,7 @@ public static class ResponsePolicy
 
     private sealed record Normalization(string Id, string Pattern, string Replacement);
     private sealed record BlockPattern(string Id, string Pattern);
+    private sealed record ArithmeticRules(string Expression, string Token);
     private sealed record ResultConsistency(string HeadingPrefix, string ConclusionPrefix, string[] Quantities);
-    private sealed record PolicyConfig(string Version, int MaxCharacters, string RegenerationInstruction, string ForbiddenCharacters, string NumbersPattern, ResultConsistency ResultConsistency, Normalization[] Normalizations, BlockPattern[] BlockedPatterns);
+    private sealed record PolicyConfig(string Version, int MaxCharacters, string RegenerationInstruction, string ForbiddenCharacters, string NumbersPattern, ResultConsistency ResultConsistency, ArithmeticRules Arithmetic, Normalization[] Normalizations, BlockPattern[] BlockedPatterns);
 }

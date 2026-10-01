@@ -233,7 +233,7 @@
   },
   {
     "name": "Reject concealed text",
-    "source": "Quel est votre dia\u200bgnostic ?",
+    "source": "Quel est votre dia​gnostic ?",
     "format": "summary",
     "expected": "",
     "changes": [],
@@ -246,5 +246,77 @@
     "expected": "",
     "changes": [],
     "reasons": ["empty-response"]
+  },
+  {
+    "name": "Remove single-asterisk emphasis around labels",
+    "source": "Prix final : 81,60 €.\n*Hypothèse* : la TVA s'applique après la remise.",
+    "format": "summary",
+    "expected": "Prix final : 81,60 €.\nHypothèse : la TVA s'applique après la remise.",
+    "changes": ["layout"],
+    "reasons": []
+  },
+  {
+    "name": "Keep multiplication asterisks",
+    "source": "2 * 3 * 4 = 24 et 2*3*4 = 24.",
+    "format": "summary",
+    "expected": "2 * 3 * 4 = 24 et 2*3*4 = 24.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Reject the wrong subtraction observed in live reasoning output",
+    "source": "The item starts at 80 euros. After a 15% discount: 15% of 80 is 12 euros, so the discounted price is 80 - 12 = 72 euros. Then 20% VAT is applied: 20% of 72 is 14.40 euros. Adding VAT gives 72 + 14.40 = 86.40 euros.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["wrong-arithmetic"]
+  },
+  {
+    "name": "Reject a wrong product with decimal commas",
+    "source": "Le prix remisé est de 68 €. Avec la TVA : 68 × 1,20 = 86,40 €.",
+    "format": "summary",
+    "expected": "",
+    "changes": [],
+    "reasons": ["wrong-arithmetic"]
+  },
+  {
+    "name": "Accept correct chained operations with precedence",
+    "source": "Prix final : 80 × 0,85 = 68 €, puis 68 × 1,20 = 81,60 €. Contrôle : 100 - 15 + 2 × 5 = 95.",
+    "format": "summary",
+    "expected": "Prix final : 80 × 0,85 = 68 €, puis 68 × 1,20 = 81,60 €. Contrôle : 100 - 15 + 2 × 5 = 95.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Accept results rounded to their displayed precision",
+    "source": "20 / 3 = 6,67 et 2 ÷ 3 = 0,7.",
+    "format": "summary",
+    "expected": "20 / 3 = 6,67 et 2 ÷ 3 = 0,7.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Accept English thousands separators",
+    "source": "1,200 + 300 = 1,500 units, so $1,500 - $250 = $1,250.",
+    "format": "summary",
+    "expected": "1,200 + 300 = 1,500 units, so $1,500 - $250 = $1,250.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Accept percentages of an amount",
+    "source": "80 × 15 % = 12 € et 100 % − 15 % = 85 %.",
+    "format": "summary",
+    "expected": "80 × 15 % = 12 € et 100 % − 15 % = 85 %.",
+    "changes": [],
+    "reasons": []
+  },
+  {
+    "name": "Ignore expressions that need context to evaluate",
+    "source": "(80 - 12) × 1,2 = 81,6 ; 1 h 30 + 45 min = 2 h 15 ; 80 € + 20 % = 96 €.",
+    "format": "summary",
+    "expected": "(80 - 12) × 1,2 = 81,6 ; 1 h 30 + 45 min = 2 h 15 ; 80 € + 20 % = 96 €.",
+    "changes": [],
+    "reasons": []
   }
 ]

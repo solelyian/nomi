@@ -84,6 +84,8 @@ using (var client = new OllamaClient(new FakeHandler(async (_, token) =>
 Console.WriteLine($"{count} C# inference checks passed.");
 await ResponsePolicyChecks.RunAsync(args);
 await DocumentChecks.RunAsync();
+WorkChecks.Run();
+await ModelChecks.RunAsync(args);
 
 if (args.Contains("--live"))
 {

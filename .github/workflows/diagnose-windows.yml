@@ -1,0 +1,31 @@
+name: Diagnose installed Windows release
+on:
+  push:
+    branches: ["devin/*-integrated-windows-ai"]
+    paths: [".github/workflows/diagnose-windows.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  launch:
+    runs-on: windows-latest
+    steps:
+      - name: Download and install released build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release download v0.2.0 --repo solelyian/nomi --pattern 'Nomi-Setup-*.exe'
+          $setup = Get-ChildItem Nomi-Setup-*.exe | Select-Object -First 1
+          $app = Join-Path $env:RUNNER_TEMP "Nomi"
+          $install = Start-Process $setup.FullName -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /DIR=`"$app`"" -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer exit: $($install.ExitCode)" }
+          Get-ChildItem $app | Select-Object Name,Length
+          $since = Get-Date
+          $process = Start-Process "$app\Nomi.WinUI.exe" -WorkingDirectory $env:WINDIR -PassThru
+          Start-Sleep -Seconds 20
+          $process.Refresh()
+          Write-Host "Exited: $($process.HasExited); exit code: $($process.ExitCode); window: $($process.MainWindowHandle)"
+          Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=$since} -ErrorAction SilentlyContinue |
+            Select-Object TimeCreated,ProviderName,Id,Message | Format-List
+          if (!$process.HasExited) { Stop-Process -Id $process.Id }

@@ -8,6 +8,7 @@ import { readDocument } from "./document-upload.js";
 import {
   adaptResponse,
   regenerationInstruction,
+  retriedReasons,
   responseLimit,
 } from "./response-policy.js";
 
@@ -199,7 +200,10 @@ export function createNomiServer(options = {}) {
           controller.signal.throwIfAborted();
           if (truncated) throw new Error("incomplete-response");
           const adapted = adaptResponse(raw, input.format);
-          if (attempt === 0 && adapted.reasons.includes("conflicting-result"))
+          if (
+            attempt === 0 &&
+            adapted.reasons.some((reason) => retriedReasons.includes(reason))
+          )
             continue;
           if (!adapted.accepted) throw new Error("policy-blocked");
           response.end(
