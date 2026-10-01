@@ -38,12 +38,12 @@ foreach ($theme in 1, 0) {
         [void](WaitFor $process "DayPlan" 30)
         [void](WaitFor $process "Suggestions" 30)
         Capture $process "artifacts/ui-v3-today-$name.png"
-        Invoke (Find $process "NavBoard")
+        Invoke (WaitFor $process "NavBoard" 30)
         $box = WaitFor $process "BoardQuickAdd" 30
         foreach ($column in "todo", "doing", "review", "done") { [void](WaitFor $process "Lane_$column" 30) }
         if ($theme -eq 1) {
             $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("Vérifier les commissions de septembre")
-            Invoke (Find $process "BoardAdd")
+            Invoke (WaitFor $process "BoardAdd" 30)
             Start-Sleep -Seconds 2
             if (!(Test-Path $tasks)) { throw "Task board was not saved locally." }
             $saved = Get-Content $tasks -Raw -Encoding UTF8
@@ -57,7 +57,7 @@ foreach ($theme in 1, 0) {
         if (@($cards).Count -lt 1) { throw "No task card exposed to UI Automation." }
         Write-Host "Board lanes and $(@($cards).Count) task card(s) exposed to UI Automation."
         Capture $process "artifacts/ui-v3-board-$name.png"
-        Invoke (Find $process "NavFocus")
+        Invoke (WaitFor $process "NavFocus" 30)
         [void](WaitFor $process "FocusPrivacy" 30)
         [void](WaitFor $process "VisionCard" 30)
         [void](WaitFor $process "VisionStatus" 30)
