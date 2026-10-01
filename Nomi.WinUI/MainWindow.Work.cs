@@ -621,7 +621,7 @@ public sealed partial class MainWindow
         var available = Math.Max(0, (endOfDay - now).TotalMinutes);
         var doneToday = board.Tasks.Where(task => task.Completed is { } done && done.Date == now.Date).ToArray();
         var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
-        var metrics = new Grid { ColumnSpacing = 12 };
+        var metrics = new Grid { ColumnSpacing = 12, RowSpacing = 12 };
         var tiles = new (string Label, string Value, string Detail, string Id)[]
         {
             (T("metricPlanned"), Minutes(planned * ratio), string.Format(CultureInfo.CurrentCulture, T("metricPlannedDetail"), plan.Count), "MetricPlanned"),
@@ -631,11 +631,11 @@ public sealed partial class MainWindow
         };
         for (var index = 0; index < tiles.Length; index++)
         {
-            metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var (label, value, detail, id) = tiles[index];
             var stack = new StackPanel { Spacing = 3 };
             stack.Children.Add(Eyebrow(label));
-            var number = Text(value, 26);
+            var number = Text(value, 24);
+            number.TextWrapping = TextWrapping.NoWrap;
             number.FontWeight = FontWeights.SemiBold;
             number.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
             stack.Children.Add(number);
@@ -648,10 +648,11 @@ public sealed partial class MainWindow
             }
             var tile = Glass(stack, 16);
             Mark(tile, id, $"{label} : {value}, {detail}");
-            Grid.SetColumn(tile, index);
             metrics.Children.Add(tile);
             Reveal(tile, 10, index * 50);
         }
+        Tile(metrics, 4);
+        metrics.SizeChanged += (_, args) => Tile(metrics, args.NewSize.Width >= 620 ? 4 : 2);
         TodayBody.Children.Add(metrics);
 
         var columns = new Grid { ColumnSpacing = 14 };
@@ -666,6 +667,22 @@ public sealed partial class MainWindow
         columns.Children.Add(right);
         TodayBody.Children.Add(columns);
         Reveal(columns, 12, 160);
+    }
+
+    private static void Tile(Grid grid, int columns)
+    {
+        if (grid.ColumnDefinitions.Count == columns) return;
+        grid.ColumnDefinitions.Clear();
+        grid.RowDefinitions.Clear();
+        for (var column = 0; column < columns; column++)
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (var row = 0; row < (grid.Children.Count + columns - 1) / columns; row++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (var index = 0; index < grid.Children.Count; index++)
+        {
+            Grid.SetColumn((FrameworkElement)grid.Children[index], index % columns);
+            Grid.SetRow((FrameworkElement)grid.Children[index], index / columns);
+        }
     }
 
     private Border ActiveHero(DateTimeOffset now, double ratio)
