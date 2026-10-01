@@ -53,7 +53,7 @@ public sealed partial class MainWindow
         privacyText.MaxWidth = 760;
         privacy.Children.Add(privacyText);
         var privacyCard = new Border { Background = Palette("NomiSageSoft"), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10, 14, 10), Child = privacy };
-        AutomationProperties.SetAutomationId(privacyCard, "FocusPrivacy");
+        Mark(privacyCard, "FocusPrivacy");
         FocusBody.Children.Add(privacyCard);
 
         FocusBody.Children.Add(VisionCard());
@@ -133,7 +133,7 @@ public sealed partial class MainWindow
             stack.Children.Add(Text(Label(visionProgress.Stage), 12, "NomiAccent"));
         if (!vision.HasModel) stack.Children.Add(Text(T("visionNote"), 11.5, "NomiInk3"));
         var card = Glass(stack, 16);
-        AutomationProperties.SetAutomationId(card, "VisionCard");
+        Mark(card, "VisionCard");
         return card;
     }
 
@@ -212,7 +212,7 @@ public sealed partial class MainWindow
             stack.Children.Add(scroller);
         }
         var card = Glass(stack, 18, true);
-        AutomationProperties.SetAutomationId(card, "FocusSetup");
+        Mark(card, "FocusSetup");
         return card;
     }
 
@@ -271,7 +271,7 @@ public sealed partial class MainWindow
         buttons.Children.Add(stop);
         stack.Children.Add(buttons);
         var card = Glass(stack, 18, true);
-        AutomationProperties.SetAutomationId(card, "FocusSession");
+        Mark(card, "FocusSession");
         return card;
     }
 
@@ -356,11 +356,11 @@ public sealed partial class MainWindow
             };
             check.Children.Add(toTask);
             var border = new Border { Background = Palette("NomiAccentSoft"), CornerRadius = new CornerRadius(12), Child = check };
-            AutomationProperties.SetAutomationId(border, "InsightCheck");
+            Mark(border, "InsightCheck");
             stack.Children.Add(border);
         }
         var card = Glass(stack, 18);
-        AutomationProperties.SetAutomationId(card, "FocusInsight");
+        Mark(card, "FocusInsight");
         return card;
     }
 

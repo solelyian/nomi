@@ -105,6 +105,36 @@ Le modèle reste dans `%LOCALAPPDATA%\Nyne\Nomi\models` après une mise à jour
 ou une désinstallation, pour éviter un nouveau téléchargement. Ce dossier peut
 être supprimé manuellement si Nomi n’est plus utilisé.
 
+### Espaces de travail
+
+Nomi s’ouvre sur **Aujourd’hui** : plan de la journée, tâche active, temps écoulé
+et restant, fin probable, capacité restante et suggestions. **Tableau** est un Kanban
+local (À faire, En cours, À relire, Terminé) : glisser-déposer ou `Alt+←` / `Alt+→`.
+Passer une carte en cours démarre son suivi, la passer en Terminé l’arrête ; Nomi
+apprend progressivement l’écart entre estimation et temps réel. Les suggestions
+(replanifier, découper, faire une pause) sont toujours proposées, jamais appliquées
+sans clic. **Assistant** regroupe les six actions. `Ctrl+K` ouvre la palette
+(demander à Nomi, créer une tâche, naviguer), `Ctrl+1` à `Ctrl+4` changent d’espace,
+`Ctrl+N` crée une tâche. Les tâches restent dans `%LOCALAPPDATA%\Nyne\Nomi\tasks.json`.
+
+### Focus écran et modèle vision
+
+**Focus écran** suit une fenêtre que vous choisissez explicitement dans la liste ;
+rien n’est capturé avant ce choix. Un indicateur reste visible, avec **Pause** et
+**Arrêter**. Nomi capture uniquement cette fenêtre, ignore les images inchangées,
+et analyse localement le texte, les graphiques et la mise en page pour reconnaître
+la tâche en cours et repérer un total ou un pourcentage incohérent. Les images
+restent en mémoire, sont effacées après chaque analyse et ne sont jamais écrites
+sur disque ni envoyées hors de la machine.
+
+Cette fonction utilise un second modèle, téléchargé à part depuis l’espace Focus :
+Qwen3-VL 4B Instruct (Q4_K_M) et son projecteur vision (Q8_0), environ 2,95 Go
+au total, épinglés avec taille et SHA-256 dans `content/vision-model.json` et
+`content/vision-projector.json` (Apache-2.0). Le téléchargement reprend après
+interruption, puis tout fonctionne hors ligne. Sur CPU, une analyse prend de
+l’ordre d’une à deux minutes selon la machine. Prévoir alors 16 Go de RAM et
+environ 7 Go d’espace libre pour les deux modèles.
+
 ## Modèle pour l’aperçu web uniquement
 
 Installer [Ollama](https://ollama.com/download/windows) et ouvrir l’application.

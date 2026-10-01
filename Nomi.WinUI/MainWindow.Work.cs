@@ -142,9 +142,22 @@ public sealed partial class MainWindow
         element.PointerReleased += (_, _) => element.Scale = new Vector3(scale, scale, 1);
     }
 
+    private static void Mark(Border card, string id)
+    {
+        if (card.Child is not Region region)
+        {
+            var content = card.Child;
+            card.Child = null;
+            region = new Region();
+            if (content is not null) region.Children.Add(content);
+            card.Child = region;
+        }
+        AutomationProperties.SetAutomationId(region, id);
+    }
+
     private Border Glass(UIElement child, double padding = 18, bool raised = false)
     {
-        var sheen = new Grid();
+        var sheen = new Region();
         sheen.Children.Add(new Border
         {
             Background = Palette("NomiSheen"),
@@ -633,7 +646,7 @@ public sealed partial class MainWindow
                 stack.Children.Add(bar);
             }
             var tile = Glass(stack, 16);
-            AutomationProperties.SetAutomationId(tile, id);
+            Mark(tile, id);
             AutomationProperties.SetName(tile, $"{label} : {value}, {detail}");
             Grid.SetColumn(tile, index);
             metrics.Children.Add(tile);
@@ -717,7 +730,7 @@ public sealed partial class MainWindow
         buttons.Children.Add(open);
         stack.Children.Add(buttons);
         var hero = Glass(stack, 20, true);
-        AutomationProperties.SetAutomationId(hero, "ActiveTask");
+        Mark(hero, "ActiveTask");
         return hero;
     }
 
@@ -763,7 +776,7 @@ public sealed partial class MainWindow
             cursor = cursor.AddMinutes(minutes);
         }
         var card = Glass(stack, 18);
-        AutomationProperties.SetAutomationId(card, "DayPlan");
+        Mark(card, "DayPlan");
         return card;
     }
 
@@ -832,7 +845,7 @@ public sealed partial class MainWindow
         }
         stack.Children.Add(Text(T("suggestionsNote"), 11.5, "NomiInk3"));
         var card = Glass(stack, 18);
-        AutomationProperties.SetAutomationId(card, "Suggestions");
+        Mark(card, "Suggestions");
         return card;
     }
 
