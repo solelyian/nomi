@@ -27,6 +27,7 @@ $personalize = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personali
 Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value 1 -Type DWord
 $process = Launch $app $logs
 try {
+    Invoke (WaitFor $process "NavAssistant" 60 { param($e) $e.Current.IsEnabled })
     $launch = WaitFor $process "LaunchButton" 300 { param($e) $e.Current.IsEnabled }
     Write-Host "Installed application loaded the downloaded model."
     $request = Find $process "RequestBox"
@@ -52,6 +53,7 @@ try {
     Stop-Process -Id $process.Id
     Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value 0 -Type DWord
     $process = Launch $app $logs
+    Invoke (WaitFor $process "NavAssistant" 60 { param($e) $e.Current.IsEnabled })
     $deadline = (Get-Date).AddSeconds(60)
     do {
         Start-Sleep -Seconds 2

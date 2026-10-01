@@ -5,11 +5,13 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Shapes;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 using Windows.UI.Core;
@@ -662,17 +664,17 @@ public sealed partial class MainWindow
         {
             stack.Children.Add(Text(T("noActive"), 16));
             stack.Children.Add(Text(T("noActiveHelp"), 12.5, "NomiInk3"));
-            var next = board.Plan(now).FirstOrDefault();
+            var upcoming = board.Plan(now).FirstOrDefault();
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            if (next is not null)
+            if (upcoming is not null)
             {
-                var start = Primary(string.Format(CultureInfo.CurrentCulture, T("startNamed"), Short(next.Title, 36)), "TodayStartNext");
-                start.Click += (_, _) => { board.Start(next, Now); Refresh(); };
+                var start = Primary(string.Format(CultureInfo.CurrentCulture, T("startNamed"), Short(upcoming.Title, 36)), "TodayStartNext");
+                start.Click += (_, _) => { board.Start(upcoming, Now); Refresh(); };
                 actions.Children.Add(start);
             }
-            var open = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
-            open.Click += (_, _) => Show("board");
-            actions.Children.Add(open);
+            var boardButton = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
+            boardButton.Click += (_, _) => Show("board");
+            actions.Children.Add(boardButton);
             stack.Children.Add(actions);
             return Glass(stack, 20, true);
         }
