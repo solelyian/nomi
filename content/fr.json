@@ -98,7 +98,7 @@
     "policy-applied": "Réponse prête · règles Nomi appliquées.",
     "policy-adjusted": "Réponse adaptée selon les règles Nomi.",
     "policy-blocked": "Nomi a écarté cette réponse car elle ne respecte pas ses règles de présentation, de formulation ou de cohérence. Reformulez votre demande ou réessayez.",
-    "policy-regenerated": "Nouvelle réponse après détection d’une contradiction",
+    "policy-regenerated": "Nouvelle réponse après détection d’une incohérence",
     "policy-layout": "Mise en forme simplifiée",
     "policy-professional-tone": "Formule familière retirée",
     "policy-reading-spacing": "Étapes aérées",

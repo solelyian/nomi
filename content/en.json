@@ -98,7 +98,7 @@
     "policy-applied": "Response ready · Nomi rules applied.",
     "policy-adjusted": "Response adapted using Nomi rules.",
     "policy-blocked": "Nomi withheld this response because it does not meet its presentation, wording or consistency rules. Rephrase your request or try again.",
-    "policy-regenerated": "New response after a detected contradiction",
+    "policy-regenerated": "New response after a detected inconsistency",
     "policy-layout": "Formatting simplified",
     "policy-professional-tone": "Overfamiliar wording removed",
     "policy-reading-spacing": "Steps spaced for reading",

@@ -9,6 +9,7 @@ const policy = JSON.parse(
 );
 export const responseLimit = policy.maxCharacters;
 export const regenerationInstruction = policy.regenerationInstruction;
+export const retriedReasons = ["conflicting-result", "wrong-arithmetic"];
 
 /** @param {string} text */
 function numbers(text) {
@@ -61,6 +62,88 @@ function hasConflictingResult(text) {
   return false;
 }
 
+/** @param {string} value @param {boolean} grouped */
+function decimalValue(value, grouped) {
+  return Number(
+    grouped && /^[0-9]{1,3}[.,][0-9]{3}$/u.test(value)
+      ? value.replace(/[.,]/u, "")
+      : value.replace(",", "."),
+  );
+}
+
+/** @param {string} value @param {boolean} grouped */
+function decimalPlaces(value, grouped) {
+  if (grouped && /^[0-9]{1,3}[.,][0-9]{3}$/u.test(value)) return 0;
+  return /[.,]([0-9]+)$/u.exec(value)?.[1].length ?? 0;
+}
+
+/** @param {string} left @param {string} right @param {boolean} grouped */
+function holds(left, right, grouped) {
+  /** @type {{ value: number, percent: boolean }[]} */
+  const terms = [];
+  /** @type {string[]} */
+  const operators = [];
+  const token = new RegExp(policy.arithmetic.token, "gu");
+  for (const match of left.matchAll(token)) {
+    if (match.groups?.operator) operators.push(match.groups.operator);
+    else if (match.groups?.number)
+      terms.push({
+        value: decimalValue(match.groups.number, grouped),
+        percent: match.groups.unit.includes("%"),
+      });
+  }
+  const result = [...right.matchAll(token)].find(
+    (match) => match.groups?.number,
+  );
+  if (!result?.groups || terms.length !== operators.length + 1) return true;
+  const negative = /^[ \t]*[-−]/u.test(right);
+  const additive = operators.some((operator) => /[+\-−]/u.test(operator));
+  const resultPercent = result.groups.unit.includes("%");
+  const percents =
+    terms.filter((term) => term.percent).length + (resultPercent ? 1 : 0);
+  if (percents > 0 && additive && percents < terms.length + 1) return true;
+  const scale = (/** @type {boolean} */ percent) => (percent ? 0.01 : 1);
+  let sum = 0;
+  let sign = 1;
+  let product = terms[0].value * scale(terms[0].percent);
+  for (let index = 0; index < operators.length; index++) {
+    const operator = operators[index];
+    const value = terms[index + 1].value * scale(terms[index + 1].percent);
+    if (/[+\-−]/u.test(operator)) {
+      sum += sign * product;
+      sign = operator === "+" ? 1 : -1;
+      product = value;
+    } else if (operator === "/" || operator === "÷") {
+      if (value === 0) return true;
+      product /= value;
+    } else product *= value;
+  }
+  const expected = sum + sign * product;
+  const shown =
+    (negative ? -1 : 1) *
+    decimalValue(result.groups.number, grouped) *
+    scale(resultPercent);
+  const places =
+    decimalPlaces(result.groups.number, grouped) + (resultPercent ? 2 : 0);
+  return (
+    Math.abs(expected - shown) <=
+    0.5 * 10 ** -places + 1e-9 * Math.max(1, Math.abs(expected))
+  );
+}
+
+/** @param {string} text */
+function hasWrongArithmetic(text) {
+  for (const match of text.matchAll(
+    new RegExp(policy.arithmetic.expression, "gu"),
+  )) {
+    const { left, right } = /** @type {{ left: string, right: string }} */ (
+      match.groups
+    );
+    if (!holds(left, right, false) && !holds(left, right, true)) return true;
+  }
+  return false;
+}
+
 /** @param {string} source @param {string} format @returns {import("../preview/types").PolicyResult} */
 export function adaptResponse(source, format) {
   /** @type {string[]} */
@@ -97,6 +180,8 @@ export function adaptResponse(source, format) {
   if (reasons.length) return blocked(reasons);
   if (hasConflictingResult(text.normalize("NFC")))
     return blocked(["conflicting-result"]);
+  if (hasWrongArithmetic(text.normalize("NFC")))
+    return blocked(["wrong-arithmetic"]);
   if (format === "steps") {
     const spaced = text.split(/\n+/u).join("\n\n");
     if (spaced !== text) changes.push("reading-spacing");

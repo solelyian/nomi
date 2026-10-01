@@ -60,7 +60,7 @@ public abstract class NomiInferenceClient
             cancellationToken.ThrowIfCancellationRequested();
             if (truncated) throw new InferenceException("incomplete-response");
             var result = ResponsePolicy.Apply(buffer.ToString(), format);
-            if (attempt == 0 && result.Reasons.Contains("conflicting-result")) continue;
+            if (attempt == 0 && result.Reasons.Any(ResponsePolicy.RetriedReasons.Contains)) continue;
             if (!result.Accepted) throw new InferenceException("policy-blocked");
             return attempt == 0 ? result : result with { Changes = ["regenerated", .. result.Changes] };
         }

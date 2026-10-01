@@ -67,6 +67,7 @@ export interface ResponsePolicyConfig {
     conclusionPrefix: string;
     quantities: string[];
   };
+  arithmetic: { expression: string; token: string };
   normalizations: { id: string; pattern: string; replacement: string }[];
   blockedPatterns: { id: string; pattern: string }[];
 }

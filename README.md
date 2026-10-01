@@ -46,7 +46,12 @@ applique ensuite les règles de `content/response-policy.json` :
    les symboles €, £ et $, placés avant ou après un montant à deux décimales maximum,
    et les formulations françaises–anglaises du catalogue. Les espaces de milliers
    et les variantes décimales sont comparés sans changer le texte affiché.
-6. Si cette comparaison détecte une contradiction, demander au même modèle une
+6. Recalculer localement chaque opération écrite en entier (`80 - 12 = 68`,
+   `68 × 1,20 = 81,60 €`, `80 × 15 % = 12 €`) avec la priorité usuelle des
+   opérateurs, à la précision affichée du résultat. Les expressions ambiguës
+   (parenthèses, unités de durée, pourcentage ajouté à un montant, résultat
+   enchaîné) sont ignorées plutôt que devinées.
+7. Si l’une de ces deux vérifications échoue, demander au même modèle une
    seule nouvelle réponse à la demande originale. Le brouillon rejeté n’est pas
    renvoyé au modèle. La nouvelle réponse repasse par toutes les règles ; un
    deuxième échec est bloqué. Les autres motifs de rejet ne déclenchent pas de

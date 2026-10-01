@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "maxCharacters": 24000,
-  "regenerationInstruction": "The previous draft was rejected because its opening amount contradicted its final conclusion. Recalculate the original request independently, without reusing that draft. Give one consistent final answer and check that all statements of the final amount agree. Do not mention the rejected draft or invent new assumptions.",
+  "regenerationInstruction": "The previous draft was rejected because a calculation in it does not hold or its opening amount contradicted its final conclusion. Recalculate the original request independently, without reusing that draft. Check every intermediate operation, give one consistent final answer and make sure all statements of the final amount agree. Do not mention the rejected draft or invent new assumptions.",
   "forbiddenCharacters": "[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2069\\ufeff]",
   "numbersPattern": "[+−-]?[0-9]+(?:[.,][0-9]+)*(?:e[+-]?[0-9]+)?",
   "resultConsistency": {
@@ -12,10 +12,26 @@
       "(?<unit>[€£$])[ \\t]*(?<amount>[+−-]?[0-9]+(?:[   ][0-9]{3})*(?:[.,][0-9]{1,2})?)"
     ]
   },
+  "arithmetic": {
+    "expression": "(?<![0-9.,()€$£+\\-−×*/÷·=x]|[0-9)+\\-−×*/÷·=][ \\t\\u00a0\\u202f]+)(?<left>(?:[€$£][ \\t]*)?[0-9]+(?:[.,][0-9]+)?(?:[ \\t]*(?:%|€|\\$|£|euros?(?![a-z])|EUR(?![A-Z])))?(?:(?:[ \\t]*[+\\-−×*/÷·][ \\t]*|[ \\t]+x[ \\t]+)(?:[€$£][ \\t]*)?[0-9]+(?:[.,][0-9]+)?(?:[ \\t]*(?:%|€|\\$|£|euros?(?![a-z])|EUR(?![A-Z])))?)+)[ \\t]*=[ \\t]*(?<right>[+\\-−]?(?:[€$£][ \\t]*)?[0-9]+(?:[.,][0-9]+)?(?:[ \\t]*(?:%|€|\\$|£|euros?(?![a-z])|EUR(?![A-Z])))?)(?![.,]?[0-9]|[ \\t\\u00a0\\u202f]+[0-9]|[ \\t]*[+\\-−×*/÷·(^])",
+    "token": "(?<number>[0-9]+(?:[.,][0-9]+)?)(?<unit>(?:[ \\t]*(?:%|€|\\$|£|euros?(?![a-z])|EUR(?![A-Z])))?)|(?<operator>[+\\-−×*/÷·]|(?<![^ \\t])x(?![^ \\t]))"
+  },
   "normalizations": [
-    { "id": "layout", "pattern": "\\r\\n?", "replacement": "\n" },
-    { "id": "layout", "pattern": "[ \\t]+$", "replacement": "" },
-    { "id": "layout", "pattern": "^ {0,3}#{1,6}[ \\t]+", "replacement": "" },
+    {
+      "id": "layout",
+      "pattern": "\\r\\n?",
+      "replacement": "\n"
+    },
+    {
+      "id": "layout",
+      "pattern": "[ \\t]+$",
+      "replacement": ""
+    },
+    {
+      "id": "layout",
+      "pattern": "^ {0,3}#{1,6}[ \\t]+",
+      "replacement": ""
+    },
     {
       "id": "layout",
       "pattern": "^\\*\\*([^*\\n]+)\\*\\*(?=$|[ \\t.,:;!?])",
@@ -26,7 +42,11 @@
       "pattern": "(?<![*\\w])\\*([^*\\s][^*\\n]*?)\\*(?![*\\w])",
       "replacement": "$1"
     },
-    { "id": "layout", "pattern": "\\n{3,}", "replacement": "\n\n" },
+    {
+      "id": "layout",
+      "pattern": "\\n{3,}",
+      "replacement": "\n\n"
+    },
     {
       "id": "professional-tone",
       "pattern": "^(?:bravo[ ,]+(?:mon[ ]+)?(?:petit[ ]+)?champion(?:ne)?|(?:mon[ ]+)?petit[ ]+génie|good[ ]+(?:boy|girl)|well[ ]+done[ ,]+(?:little[ ]+)?(?:buddy|champ))[ !.,:;—-]+",
