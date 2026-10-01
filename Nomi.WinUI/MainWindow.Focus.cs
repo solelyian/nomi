@@ -133,7 +133,7 @@ public sealed partial class MainWindow
             stack.Children.Add(Text(Label(visionProgress.Stage), 12, "NomiAccent"));
         if (!vision.HasModel) stack.Children.Add(Text(T("visionNote"), 11.5, "NomiInk3"));
         var card = Glass(stack, 16);
-        Mark(card, "VisionCard");
+        Mark(card, "VisionCard", T("visionTitle"));
         return card;
     }
 
@@ -356,7 +356,7 @@ public sealed partial class MainWindow
             };
             check.Children.Add(toTask);
             var border = new Border { Background = Palette("NomiAccentSoft"), CornerRadius = new CornerRadius(12), Child = check };
-            Mark(border, "InsightCheck");
+            Mark(border, "InsightCheck", T("toVerify"));
             stack.Children.Add(border);
         }
         var card = Glass(stack, 18);

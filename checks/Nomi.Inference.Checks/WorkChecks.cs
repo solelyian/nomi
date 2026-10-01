@@ -32,6 +32,9 @@ internal static class WorkChecks
             Total | 5 | 2,000.00
             """.Split('\n')), "en");
         Check(wrongTotal.Issues.Count == 1 && wrongTotal.Issues[0].Expected == 1990.5m, "Column total gap detected");
+        var folded = TableCheck.ParseRows(["Commercial | CA (€) | Taux | Commission (€) | A. Martin | 48 200 | 5 % | 2 410 | C. Roux | 31 900 | 5 % | 1 276 | Total | 80 100 | | 3 686"]);
+        Check(folded.Count == 4 && folded[2][0] == "C. Roux" && folded[3][3] == "3 686", "Table written on one line unfolded into rows");
+        Check(TableCheck.ParseRows(["Note | 12 | x"]).Count == 1, "Short single row kept as is");
         Check(TableCheck.Check(TableCheck.ParseRows(["a | b", "x | 1"]), "fr").Issues.Count == 0, "Small table has no issue");
         Check(TableCheck.TryNumber("12,5 %", "fr", out var rate, out var percent) && rate == 0.125m && percent, "Percent parsing");
         Check(TableCheck.TryNumber("$1,234", "en", out var dollars, out _) && dollars == 1234m, "English thousands");
@@ -103,6 +106,9 @@ internal static class WorkChecks
         Check(bitmap[0] == 'B' && bitmap[1] == 'M' && BitConverter.ToInt32(bitmap, 18) == 2 && BitConverter.ToInt32(bitmap, 22) == 1,
             "Frames resized and encoded");
         Check(new ScreenFrame(2, 2, new byte[16]).IsBlank() && !frame.IsBlank(), "Blank capture detected");
+        var enlarged = frame.Fit(16, 32);
+        Check(enlarged.Width == 8 && enlarged.Height == 4 && enlarged.Pixels.Length == 128, "Small captures enlarged for the vision model");
+        Check(frame.Fit(6, 1000).Width == 6, "Enlargement capped by the longest side");
         var print = frame.Thumbprint();
         var changed = new ScreenFrame(4, 2, Enumerable.Range(0, 32).Select(index => (byte)(255 - index * 7)).ToArray()).Thumbprint();
         Check(print.Length == 8 && ScreenFrame.Difference(print, frame.Thumbprint()) == 0, "Identical frames share a thumbprint");

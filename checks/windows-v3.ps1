@@ -14,6 +14,11 @@ function WaitFor($process, $id, $seconds) {
         if ($element -and -not $element.Current.IsOffscreen) { return $element }
         Start-Sleep -Seconds 1
     } while ((Get-Date) -lt $deadline)
+    $root = $A::FromHandle($process.MainWindowHandle)
+    $seen = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) |
+        Where-Object { $_.Current.AutomationId } |
+        ForEach-Object { "$($_.Current.AutomationId)[$($_.Current.ControlType.ProgrammaticName)$(if ($_.Current.IsOffscreen) { ',offscreen' })]" }
+    Write-Host "Automation ids: $($seen -join ', ')"
     throw "Timed out waiting for $id"
 }
 function Invoke($element) {

@@ -110,6 +110,8 @@ jobs:
           dotnet run --project checks/Nomi.Inference.Checks -c Release -- --embedded-live
       - name: Verify answer, copy and history in the installed application
         run: ./checks/windows-result.ps1
+      - name: Verify local vision model on a captured spreadsheet
+        run: dotnet run --project checks/Nomi.Inference.Checks -c Release -- --vision-live
       - name: Upload result screenshots
         if: always()
         uses: actions/upload-artifact@v4

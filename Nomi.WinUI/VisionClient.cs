@@ -14,7 +14,8 @@ public sealed class VisionClient : IAsyncDisposable
 {
     private const int ContextTokens = 6144;
     private const int AnswerTokens = 640;
-    private const int ImageSide = 1280;
+    private const int ImageSide = 1600;
+    private const int ImagePixels = 1100 * 32 * 32;
     private const string Marker = "<__media__>";
     private static readonly Regex Field = new(@"^\s*(TASK|WHERE|CHECK|NEXT|MATCH)\s*[:：]\s*(.*)$",
         RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -99,7 +100,7 @@ public sealed class VisionClient : IAsyncDisposable
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (weights is null || clip is null) throw new InferenceException("vision-missing");
-            var image = frame.Fit(ImageSide).ToBitmap();
+            var image = frame.Fit(ImageSide, ImagePixels).ToBitmap();
             return await Task.Run(async () =>
             {
                 using var context = weights.CreateContext(Parameters());

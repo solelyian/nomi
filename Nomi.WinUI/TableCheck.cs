@@ -14,13 +14,29 @@ public static class TableCheck
     private static readonly Regex NumberCell = new(@"^[\s(]*[-−+]?[\s€$£]*\d[\d\s\u00a0\u202f.,']*\s*(%|€|\$|£|eur|usd|k€)?[\s)]*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    public static IReadOnlyList<string[]> ParseRows(IEnumerable<string> lines) => lines
-        .Select(line => line.Trim().Trim('|').Trim())
-        .Where(line => line.Contains('|', StringComparison.Ordinal))
-        .Where(line => !Regex.IsMatch(line, @"^[\s|:\-–—]+$"))
-        .Select(line => line.Split('|').Select(cell => cell.Trim()).ToArray())
-        .Take(16)
-        .ToArray();
+    public static IReadOnlyList<string[]> ParseRows(IEnumerable<string> lines)
+    {
+        var rows = lines
+            .Select(line => line.Trim().Trim('|').Trim())
+            .Where(line => line.Contains('|', StringComparison.Ordinal))
+            .Where(line => !Regex.IsMatch(line, @"^[\s|:\-–—]+$"))
+            .Select(line => line.Split('|').Select(cell => cell.Trim()).ToArray())
+            .Take(16)
+            .ToArray();
+        return rows.Length == 1 ? Unfold(rows[0]) : rows;
+    }
+
+    private static IReadOnlyList<string[]> Unfold(string[] cells)
+    {
+        var first = Array.FindIndex(cells, cell => NumberCell.IsMatch(cell));
+        foreach (var width in new[] { first - 1, first })
+        {
+            if (width < 2 || cells.Length < width * 3 || cells.Length % width != 0) continue;
+            var rows = cells.Chunk(width).Take(16).ToArray();
+            if (rows.Skip(1).All(row => row.Any(cell => NumberCell.IsMatch(cell)))) return rows;
+        }
+        return [cells];
+    }
 
     public static bool TryNumber(string cell, string language, out decimal value, out bool percent)
     {

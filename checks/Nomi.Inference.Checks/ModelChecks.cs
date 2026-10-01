@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -80,6 +81,38 @@ internal static class ModelChecks
         finally { Directory.Delete(directory, true); }
 
         if (args.Contains("--embedded-live")) await LiveAsync();
+        if (args.Contains("--vision-live")) await VisionLiveAsync();
+    }
+
+    private static async Task VisionLiveAsync()
+    {
+        var directory = Environment.GetEnvironmentVariable("NOMI_TEST_MODEL_DIR");
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(60));
+        await using var vision = new VisionClient(
+            new ModelStore(directory, ModelDefinition.Load("vision-model.json")),
+            new ModelStore(directory, ModelDefinition.Load("vision-projector.json")));
+        await vision.PrepareAsync(true, null, deadline.Token);
+        await using var packed = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "vision", "commissions-1400x820.bgra.gz"));
+        await using var unpacked = new GZipStream(packed, CompressionMode.Decompress);
+        using var buffer = new MemoryStream();
+        await unpacked.CopyToAsync(buffer, deadline.Token);
+        var frame = new ScreenFrame(1400, 820, buffer.ToArray());
+        foreach (var language in new[] { "fr", "en" })
+        {
+            var insight = await vision.AnalyzeAsync(frame, language, ["Vérifier les commissions de septembre", "Réviser le chapitre 4"],
+                deadline.Token);
+            var report = TableCheck.Check(insight.Rows, language);
+            Console.WriteLine($"{language} vision ({insight.Seconds:0}s): {insight.Task} | {insight.Place} | {insight.Check} | {insight.Next} | match {insight.Match}");
+            foreach (var row in insight.Rows) Console.WriteLine($"  {string.Join(" | ", row)}");
+            foreach (var issue in report.Issues) Console.WriteLine($"  issue: {issue.Row} {issue.Formula} expected {issue.Expected} shown {issue.Shown}");
+            Check(insight.Task.Length > 0 && insight.Match == 1, $"Vision task understood {language}");
+            Check(insight.Rows.Count >= 6, $"Vision table read {language}");
+            Check(report.Issues.Any(issue => issue.Row.Contains("Roux") && issue.Expected == 1595m && issue.Shown == 1276m),
+                $"Vision commission gap found {language}");
+            Check(report.Issues.All(issue => !issue.Formula.StartsWith('Σ')), $"Vision totals not misreported {language}");
+        }
+        Array.Clear(frame.Pixels);
+        Console.WriteLine("Vision live checks passed: model and projector verified, task matched, table read and commission gap found in FR and EN.");
     }
 
     private static async Task LiveAsync()

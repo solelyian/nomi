@@ -15,10 +15,13 @@ public sealed class ScreenFrame
         Pixels = pixels;
     }
 
-    public ScreenFrame Fit(int maxSide)
+    public ScreenFrame Fit(int maxSide, int minPixels = 0)
     {
-        var scale = Math.Min(1.0, (double)maxSide / Math.Max(Width, Height));
-        if (scale >= 1) return this;
+        var limit = (double)maxSide / Math.Max(Width, Height);
+        var scale = Math.Min(1.0, limit);
+        var area = (double)Width * Height;
+        if (area * scale * scale < minPixels) scale = Math.Min(limit, Math.Sqrt(minPixels / area));
+        if (Math.Abs(scale - 1) < 0.001) return this;
         var width = Math.Max(1, (int)Math.Round(Width * scale));
         var height = Math.Max(1, (int)Math.Round(Height * scale));
         var output = new byte[width * height * 4];
