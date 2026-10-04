@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main, "devin/*-integrated-windows-ai"]
+    branches: [main, "devin/*-integrated-windows-ai", "devin/*-mockup-fidelity"]
     tags: ["v*"]
   workflow_dispatch:
 
