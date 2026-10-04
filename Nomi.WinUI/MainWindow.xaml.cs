@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -79,8 +78,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(DragRegion);
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 860));
-        if (MicaController.IsSupported()) SystemBackdrop = new MicaBackdrop();
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 820));
         var icon = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "nomi.ico");
         if (System.IO.File.Exists(icon)) AppWindow.SetIcon(icon);
         var logo = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "nomi-512.png");
@@ -228,7 +226,7 @@ public sealed partial class MainWindow : Window
         bar.ButtonInactiveForegroundColor = ((SolidColorBrush)Palette("NomiInk3")).Color;
         bar.ButtonHoverBackgroundColor = ((SolidColorBrush)Palette("NomiSurface2")).Color;
         bar.ButtonHoverForegroundColor = ((SolidColorBrush)Palette("NomiInk")).Color;
-        foreach (var button in new[] { LaunchButton, EmptyAction, PrepareButton })
+        foreach (var button in new[] { LaunchButton, EmptyAction, PrepareButton, TaskButton })
         {
             var accent = ((SolidColorBrush)Palette("NomiAccent")).Color;
             var hover = Dark ? Blend(accent, 0.12, Colors.White) : Blend(accent, 0.12, Colors.Black);
@@ -285,6 +283,10 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(EnglishToggle, "English");
         AutomationProperties.SetName(CommandButton, T("openCommand"));
         ToolTipService.SetToolTip(CommandButton, T("openCommand"));
+        CommandText.Text = T("commandBar");
+        WorkTitle.Text = T("work").ToUpper(CultureInfo.CurrentCulture);
+        RailNoteTitle.Text = T("railNoteTitle");
+        RailNoteText.Text = T("railNoteText");
         BuildRail();
         var panels = new Dictionary<string, UIElement>
         {
@@ -451,22 +453,36 @@ public sealed partial class MainWindow : Window
         var action = Action;
         var context = Context;
         var draft = CurrentDraft;
-        ActionTitle.Text = action.Title;
+        ActionTitle.Text = T("assistant");
         ActionDescription.Text = action.Description;
         ContextTag.Visibility = context is null ? Visibility.Collapsed : Visibility.Visible;
         ContextTagText.Text = context?.Title ?? "";
 
-        ActionChip.Content = $"{action.Title}  ▾";
-        AutomationProperties.SetName(ActionChip, $"{T("action")} : {action.Title}");
-        var actionMenu = new MenuFlyout { Placement = FlyoutPlacementMode.BottomEdgeAlignedLeft };
-        foreach (var item in Current.Actions)
+        ActionChips.Children.Clear();
+        AutomationProperties.SetName(ActionChips, T("action"));
+        for (var index = 0; index < Current.Actions.Length; index++)
         {
-            var entry = new ToggleMenuFlyoutItem { Text = item.Title, IsChecked = item.Id == actionId };
+            var item = Current.Actions[index];
+            var chip = new ToggleButton
+            {
+                Content = item.Title,
+                IsChecked = item.Id == actionId,
+                Style = (Style)Application.Current.Resources["NomiChipToggle"],
+                CornerRadius = new CornerRadius(999)
+            };
+            AutomationProperties.SetName(chip, $"{T("action")} : {item.Title}");
+            AutomationProperties.SetHelpText(chip, item.Description);
+            AutomationProperties.SetAutomationId(chip, $"Chip_{item.Id}");
+            AutomationProperties.SetAcceleratorKey(chip, $"Alt+{index + 1}");
+            ToolTipService.SetToolTip(chip, $"{item.Description} · Alt {index + 1}");
             var id = item.Id;
-            entry.Click += (_, _) => Open(id, contextId);
-            actionMenu.Items.Add(entry);
+            chip.Click += (_, _) =>
+            {
+                chip.IsChecked = true;
+                if (id != actionId) Open(id, contextId);
+            };
+            ActionChips.Children.Add(chip);
         }
-        ActionChip.Flyout = actionMenu;
 
         ContextChip.Content = $"{context?.Title ?? T("noContext")}  ▾";
         ContextChip.Foreground = Palette(context is null ? "NomiInk3" : "NomiInk");
@@ -574,8 +590,8 @@ public sealed partial class MainWindow : Window
             WorkingText.Text = T("workingText");
             WorkingMeta.Text = Elapsed((DateTime.UtcNow - draft.Started).TotalSeconds);
             ResultHead.Visibility = ResultFoot.Visibility = Visibility.Collapsed;
-            ResultPanel.BorderBrush = Palette("NomiLine");
-            ResultPanel.Background = Palette("NomiSurface");
+            ResultPanel.BorderBrush = Palette("NomiGlassEdge");
+            ResultPanel.Background = Palette("NomiGlass");
             if (!wasWorking) Reveal(WorkingState, 8);
             return;
         }
@@ -587,12 +603,12 @@ public sealed partial class MainWindow : Window
             EmptyTitle.Text = T(firstRun ? "firstRunTitle" : "emptyTitle");
             EmptyText.Text = T(firstRun ? "firstRunText" : "emptyText");
             EmptyAction.Visibility = firstRun && modelPreparation is null ? Visibility.Visible : Visibility.Collapsed;
-            ResultPanel.BorderBrush = Palette("NomiLine");
-            ResultPanel.Background = new SolidColorBrush(Colors.Transparent);
+            ResultPanel.BorderBrush = Palette("NomiGlassEdge");
+            ResultPanel.Background = Palette("NomiGlassSoft");
             return;
         }
-        ResultPanel.BorderBrush = Palette("NomiLine");
-        ResultPanel.Background = Palette("NomiSurface");
+        ResultPanel.BorderBrush = Palette("NomiGlassEdge");
+        ResultPanel.Background = Palette("NomiGlass");
         var seconds = draft.Seconds > 0 ? $" · {Elapsed(draft.Seconds)}" : "";
         ResultMeta.Text = $"{Action.Title} · {T(draft.Summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {inference.Model}{seconds}";
         ResultBody.Children.Clear();
@@ -880,25 +896,6 @@ public sealed partial class MainWindow : Window
             card.Click += (_, _) => Open(actionId, id);
             ExampleList.Children.Add(card);
         }
-
-        ShortcutsTitle.Text = T("shortcutsTitle");
-        ShortcutList.Children.Clear();
-        foreach (var (label, keys) in new[]
-        {
-            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–4"), (T("shortcutAction"), "Alt 1–6"),
-            (T("newTask"), "Ctrl N"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
-        })
-        {
-            var row = new Grid();
-            row.Children.Add(Text(label, 12.5, "NomiInk2"));
-            row.Children.Add(new Border
-            {
-                Style = (Style)Application.Current.Resources["NomiKbd"],
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Child = new TextBlock { Text = keys, Style = (Style)Application.Current.Resources["NomiKbdText"] }
-            });
-            ShortcutList.Children.Add(row);
-        }
     }
 
     private void UpdateEngine()
@@ -911,6 +908,10 @@ public sealed partial class MainWindow : Window
         else status = T("engineMissing");
         Announce(EngineStatus, status);
         EngineDot.Fill = Palette(inference.Ready ? "NomiOk" : preparing ? "NomiAccent" : "NomiInk3");
+        EnginePillDot.Fill = EngineDot.Fill;
+        EnginePillText.Text = inference.Ready ? $"{T("engineReady")} · Qwen3 4B" : status;
+        AutomationProperties.SetName(EnginePill, $"{T("engineTitle")} : {status}");
+        EngineCard.Visibility = !inference.Ready || view == "workspace" ? Visibility.Visible : Visibility.Collapsed;
         EngineProgress.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
         EngineProgress.IsIndeterminate = modelProgress.Stage != "model-downloading";
         EngineProgress.Value = modelProgress.Fraction * 100;
@@ -1214,6 +1215,29 @@ public sealed partial class MainWindow : Window
             StepsToggle.IsChecked = !summary;
             SummaryToggle.IsChecked = summary;
         });
+        var keys = new StackPanel { Spacing = 8 };
+        var keysTitle = Text(T("shortcutsTitle"), 14);
+        keysTitle.FontWeight = FontWeights.SemiBold;
+        AutomationProperties.SetHeadingLevel(keysTitle, AutomationHeadingLevel.Level2);
+        keys.Children.Add(keysTitle);
+        keys.Children.Add(Text(T("shortcutsHelp"), 12, "NomiInk3"));
+        foreach (var (label, combo) in new[]
+        {
+            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–4"), (T("shortcutAction"), "Alt 1–6"),
+            (T("newTask"), "Ctrl N"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
+        })
+        {
+            var row = new Grid();
+            row.Children.Add(Text(label, 12.5, "NomiInk2"));
+            row.Children.Add(new Border
+            {
+                Style = (Style)Application.Current.Resources["NomiKbd"],
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Child = new TextBlock { Text = combo, Style = (Style)Application.Current.Resources["NomiKbdText"] }
+            });
+            keys.Children.Add(row);
+        }
+        SettingsBody.Children.Add(new Border { Style = (Style)Application.Current.Resources["NomiCard"], Padding = new Thickness(18, 14, 18, 14), Child = keys });
         SettingsBody.Children.Add(Text(T("nativePreferences"), 12, "NomiInk3"));
         SettingsBody.Children.Add(Text(T("nativeLocalNotice"), 12, "NomiInk3"));
     }
@@ -1428,7 +1452,7 @@ public sealed partial class MainWindow : Window
 
     private void ComposerFocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiAccent");
 
-    private void ComposerUnfocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiLine");
+    private void ComposerUnfocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiGlassEdge");
 
     private async void AttachClicked(object sender, RoutedEventArgs args) => await AttachDocuments();
 

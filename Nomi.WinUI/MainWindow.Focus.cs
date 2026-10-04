@@ -56,10 +56,18 @@ public sealed partial class MainWindow
         Mark(privacyCard, "FocusPrivacy");
         FocusBody.Children.Add(privacyCard);
 
-        FocusBody.Children.Add(VisionCard());
-        if (focusState == "idle") FocusBody.Children.Add(ChooseCard());
-        else FocusBody.Children.Add(SessionCard());
-        if (insight is not null) FocusBody.Children.Add(InsightCard(insight));
+        if (focusState == "idle")
+        {
+            FocusBody.Children.Add(ChooseCard());
+            FocusBody.Children.Add(VisionCard());
+            if (insight is not null) FocusBody.Children.Add(InsightCard(insight));
+        }
+        else
+        {
+            FocusBody.Children.Insert(1, SessionCard());
+            if (insight is not null) FocusBody.Children.Insert(2, InsightCard(insight));
+            FocusBody.Children.Add(VisionCard());
+        }
         if (focusMessage.Length > 0)
         {
             var message = Text(focusMessage, 12.5, "NomiAccent");

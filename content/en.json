@@ -327,7 +327,21 @@
     "visionMissing": "to download ({0} GB)",
     "visionNote": "One-time download, verified by SHA-256. Analysis then works offline. On a CPU, allow about a minute per analysis.",
     "visionReady": "loaded",
-    "visionTitle": "Local vision model"
+    "visionTitle": "Local vision model",
+    "work": "Work",
+    "commandBar": "Ask Nomi, create a task, start a Focus…",
+    "railNoteTitle": "Everything stays on this PC",
+    "railNoteText": "Tasks, history and screen analyses stay on this computer.",
+    "yourDay": "Your day",
+    "dayBalance": "{0} planned · {1} free before 6 pm",
+    "nowTitle": "Do this now",
+    "startFocus": "Start in Focus",
+    "companionTitle": "Nomi follows your work",
+    "timeTitle": "Time",
+    "elapsed": "Elapsed",
+    "nextSteps": "Next steps",
+    "contextEmpty": "Start a screen Focus so Nomi can link the window you follow to your tasks.",
+    "shortcutsHelp": "Available everywhere in Nomi."
   },
   "actions": [
     {

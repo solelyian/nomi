@@ -327,7 +327,21 @@
     "visionMissing": "à télécharger ({0} Go)",
     "visionNote": "Téléchargement unique, vérifié par SHA-256. Ensuite, l’analyse fonctionne hors ligne. Sur processeur, comptez environ une minute par analyse.",
     "visionReady": "chargé",
-    "visionTitle": "Modèle vision local"
+    "visionTitle": "Modèle vision local",
+    "work": "Travail",
+    "commandBar": "Demander à Nomi, créer une tâche, démarrer un Focus…",
+    "railNoteTitle": "Tout reste sur ce PC",
+    "railNoteText": "Tâches, historique et analyses d’écran restent sur cet ordinateur.",
+    "yourDay": "Votre journée",
+    "dayBalance": "{0} planifiées · {1} libres avant 18 h",
+    "nowTitle": "À faire maintenant",
+    "startFocus": "Démarrer en Focus",
+    "companionTitle": "Nomi suit votre travail",
+    "timeTitle": "Temps",
+    "elapsed": "Écoulé",
+    "nextSteps": "Prochaines étapes",
+    "contextEmpty": "Lancez un Focus écran pour que Nomi relie la fenêtre suivie à vos tâches.",
+    "shortcutsHelp": "Disponibles partout dans Nomi."
   },
   "actions": [
     {
