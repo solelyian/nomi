@@ -24,7 +24,6 @@ namespace Nomi;
 
 public sealed partial class MainWindow : Window
 {
-    private static readonly string[] RailGlyphs = ["\uE721", "\uE73E", "\uE8AB", "\uE787", "\uE8BD", "\uE8F1"];
     private static readonly Regex NumberPattern = new(
         @"(?<![\p{L}\d])[-−+]?\d(?:[\d\u00a0\u202f ]*\d)?(?:[.,]\d+)?(?:\s?(?:%|€|\$|£))?",
         RegexOptions.Compiled);
@@ -356,7 +355,7 @@ public sealed partial class MainWindow : Window
             {
                 "board" => board.Tasks.Count(task => task.Column != Columns.Done).ToString(CultureInfo.CurrentCulture),
                 "focus" when focusState != "idle" => "●",
-                _ => $"Ctrl {index + 1}"
+                _ => $"{index + 1}"
             };
             var button = NavButton(label, glyph, view == id, badge, true);
             AutomationProperties.SetAutomationId(button, automation);
@@ -364,17 +363,16 @@ public sealed partial class MainWindow : Window
             button.Click += (_, _) => Show(id);
             NavList.Children.Add(button);
         }
-        ActionsTitle.Text = T("functions").ToUpper(CultureInfo.CurrentCulture);
-        for (var index = 0; index < Current.Actions.Length; index++)
+        ActionsTitle.Text = T("railSpaces").ToUpper(CultureInfo.CurrentCulture);
+        foreach (var context in Current.Contexts)
         {
-            var action = Current.Actions[index];
-            var selected = view == "workspace" && action.Id == actionId;
-            var button = NavButton(action.Title, RailGlyphs[index], selected, $"Alt {index + 1}", false);
-            AutomationProperties.SetAutomationId(button, $"Action_{action.Id}");
-            AutomationProperties.SetHelpText(button, action.Description);
-            AutomationProperties.SetAcceleratorKey(button, $"Alt+{index + 1}");
-            var id = action.Id;
-            button.Click += (_, _) => Open(id, contextId);
+            var open = board.Tasks.Count(task => task.Space == context.Id && task.Column != Columns.Done);
+            var selected = view == "board" && boardSpace == context.Id;
+            var button = NavButton(context.Title, "\uE91F", selected, open > 0 ? open.ToString(CultureInfo.CurrentCulture) : null, false);
+            AutomationProperties.SetAutomationId(button, $"Space_{context.Id}");
+            AutomationProperties.SetHelpText(button, context.Description);
+            var id = context.Id;
+            button.Click += (_, _) => { boardSpace = id; Show("board"); };
             RailActions.Children.Add(button);
         }
         var spaces = NavButton(T("spaces"), "\uE8F1", view == "spaces", null, false);
@@ -394,7 +392,7 @@ public sealed partial class MainWindow : Window
         grid.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontSize = primary ? 16 : 14,
+            FontSize = primary ? 16 : glyph == "\uE91F" ? 7 : 14,
             Foreground = Palette(selected ? "NomiAccent" : primary ? "NomiInk2" : "NomiInk3"),
             VerticalAlignment = VerticalAlignment.Center
         });
@@ -522,6 +520,7 @@ public sealed partial class MainWindow : Window
         ToolTipService.SetToolTip(AttachButton, T("documentHelp"));
         DocumentFormats.Text = T("documentFormats");
         ExampleButton.Content = T("loadExample");
+        ExampleButton.Visibility = draft.Prompt.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         AutomationProperties.SetName(ExampleButton, T("loadExample"));
         StopButton.Content = T("stop");
         LaunchLabel.Text = T("send");
@@ -1408,7 +1407,7 @@ public sealed partial class MainWindow : Window
     {
         args.Handled = true;
         CloseSheet();
-        if (view is not ("today" or "board")) Show("board");
+        if (view != "board") Show("board");
         FocusQuickAdd();
     }
 
@@ -1448,6 +1447,7 @@ public sealed partial class MainWindow : Window
     {
         if (updating) return;
         CurrentDraft.Prompt = RequestBox.Text;
+        ExampleButton.Visibility = RequestBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ComposerFocused(object sender, RoutedEventArgs args) => Composer.BorderBrush = Palette("NomiAccent");

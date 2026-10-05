@@ -47,10 +47,12 @@ public sealed partial class MainWindow
         header.Children.Add(Text(T("focusIntro"), 13.5, "NomiInk2"));
         FocusBody.Children.Add(header);
 
-        var privacy = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        var privacy = new Grid { ColumnSpacing = 10 };
+        privacy.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        privacy.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         privacy.Children.Add(new FontIcon { Glyph = "\uE72E", FontSize = 14, Foreground = Palette("NomiSage"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) });
         var privacyText = Text(T("focusPrivacy"), 12.5, "NomiInk2");
-        privacyText.MaxWidth = 760;
+        Grid.SetColumn(privacyText, 1);
         privacy.Children.Add(privacyText);
         var privacyCard = new Border { Background = Palette("NomiSageSoft"), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10, 14, 10), Child = privacy };
         Mark(privacyCard, "FocusPrivacy");

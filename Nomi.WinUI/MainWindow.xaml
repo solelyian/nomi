@@ -113,7 +113,7 @@
                     </VisualState>
                     <VisualState>
                         <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="1000" />
+                            <AdaptiveTrigger MinWindowWidth="1180" />
                         </VisualState.StateTriggers>
                         <VisualState.Setters>
                             <Setter Target="Aside.Visibility" Value="Visible" />
@@ -178,16 +178,9 @@
                     <Border x:Name="Composer" Grid.Row="1" Style="{StaticResource NomiCard}" CornerRadius="22" Padding="14"
                             Shadow="{StaticResource NomiShadow}" Translation="0,0,10">
                         <StackPanel Spacing="8">
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ScrollViewer HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Hidden" VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
-                                    <StackPanel x:Name="ActionChips" Orientation="Horizontal" Spacing="6" AutomationProperties.Name="Action" />
-                                </ScrollViewer>
-                                <DropDownButton x:Name="ContextChip" Grid.Column="1" Style="{StaticResource NomiChip}" CornerRadius="999" Padding="11,4" MinHeight="30" />
-                            </Grid>
+                            <ScrollViewer HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Hidden" VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="ActionChips" Orientation="Horizontal" Spacing="6" AutomationProperties.Name="Action" />
+                            </ScrollViewer>
                             <TextBox x:Name="RequestBox" AcceptsReturn="True" TextWrapping="Wrap"
                                      MaxLength="6000" MinHeight="74" MaxHeight="220" FontSize="16"
                                      BorderThickness="0" Background="Transparent" Padding="4,8,4,6"
@@ -206,6 +199,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
@@ -231,16 +225,17 @@
                                     <TextBlock x:Name="DocumentFormats" FontSize="11.5" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center"
                                                TextTrimming="CharacterEllipsis" Margin="2,0,8,0" />
                                 </Grid>
-                                <Border Grid.Column="3" Style="{StaticResource NomiPill}" Padding="2" VerticalAlignment="Center">
+                                <DropDownButton x:Name="ContextChip" Grid.Column="3" Style="{StaticResource NomiChip}" CornerRadius="999" Padding="11,4" MinHeight="30" />
+                                <Border Grid.Column="4" Style="{StaticResource NomiPill}" Padding="2" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="FormatLabel" Visibility="Collapsed" />
                                         <ToggleButton x:Name="StepsToggle" Style="{StaticResource NomiSegment}" CornerRadius="999" MinHeight="24" Padding="9,1" Click="FormatToggled" />
                                         <ToggleButton x:Name="SummaryToggle" Style="{StaticResource NomiSegment}" CornerRadius="999" MinHeight="24" Padding="9,1" Click="FormatToggled" />
                                     </StackPanel>
                                 </Border>
-                                <Button x:Name="ExampleButton" Grid.Column="4" Style="{StaticResource NomiGhost}" Padding="9,6" FontSize="12.5" Click="ExampleClicked" />
-                                <Button x:Name="StopButton" Grid.Column="5" Style="{StaticResource NomiChip}" Click="StopClicked" Visibility="Collapsed" />
-                                <Button x:Name="LaunchButton" Grid.Column="6" Style="{StaticResource NomiPrimary}" Click="LaunchClicked">
+                                <Button x:Name="ExampleButton" Grid.Column="5" Style="{StaticResource NomiGhost}" Padding="9,6" FontSize="12.5" Click="ExampleClicked" />
+                                <Button x:Name="StopButton" Grid.Column="6" Style="{StaticResource NomiChip}" Click="StopClicked" Visibility="Collapsed" />
+                                <Button x:Name="LaunchButton" Grid.Column="7" Style="{StaticResource NomiPrimary}" Click="LaunchClicked">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <TextBlock x:Name="LaunchLabel" VerticalAlignment="Center" />
                                         <Border BorderBrush="#59FFFFFF" Background="#2EFFFFFF" BorderThickness="1" CornerRadius="6" Padding="5,0">
@@ -354,7 +349,9 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid x:Name="BoardHeader" />
-                    <Grid x:Name="BoardColumns" Grid.Row="1" ColumnSpacing="12" />
+                    <ScrollViewer Grid.Row="1" HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Auto" VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
+                        <Grid x:Name="BoardColumns" ColumnSpacing="12" MinWidth="640" />
+                    </ScrollViewer>
                 </Grid>
                 <ScrollViewer x:Name="FocusPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="FocusBody" Spacing="12" HorizontalAlignment="Stretch" Padding="4,0,4,10" />

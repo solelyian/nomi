@@ -27,6 +27,7 @@ public sealed partial class MainWindow
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? toastTimer;
     private Action? toastAction;
     private string? boardSpace;
+    private string addColumn = Columns.Todo;
     private string? sheetTaskId;
     private TextBox? quickAdd;
     private string suggestionSignature = "";
@@ -268,7 +269,8 @@ public sealed partial class MainWindow
 
     private void AddTask(string title)
     {
-        var task = board.Add(title, Columns.Todo, view == "board" ? boardSpace : contextId);
+        var task = board.Add(title, view == "board" ? addColumn : Columns.Todo, view == "board" ? boardSpace : contextId);
+        addColumn = Columns.Todo;
         Refresh();
         FocusQuickAdd();
         ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskAdded"), task.Title), T("open"), () => OpenSheet(task.Id));
@@ -292,26 +294,36 @@ public sealed partial class MainWindow
         BoardHeader.ColumnDefinitions.Clear();
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var scope = Current.Contexts.FirstOrDefault(item => item.Id == boardSpace);
         var titles = new StackPanel { Spacing = 4 };
+        titles.Children.Add(Text(scope is null ? T("boardScopeAll") : string.Format(CultureInfo.CurrentCulture, T("boardScope"), scope.Title), 13, "NomiInk3"));
         titles.Children.Add(Heading(T("board"), 28));
-        titles.Children.Add(Text(T("boardIntro"), 13.5, "NomiInk2"));
-        var filters = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0) };
-        foreach (var (id, label) in new[] { ((string?)null, T("allSpaces")) }.Concat(Current.Contexts.Select(item => ((string?)item.Id, item.Title))))
-        {
-            var toggle = new ToggleButton
-            {
-                Content = label,
-                IsChecked = boardSpace == id,
-                Style = (Style)Application.Current.Resources["NomiChipToggle"]
-            };
-            AutomationProperties.SetAutomationId(toggle, $"BoardFilter_{id ?? "all"}");
-            toggle.Click += (_, _) => { boardSpace = id; BuildBoard(); };
-            filters.Children.Add(toggle);
-        }
-        titles.Children.Add(filters);
         BoardHeader.Children.Add(titles);
+        AutomationProperties.SetHelpText(BoardColumns, T("boardIntro"));
+        ToolTipService.SetToolTip(BoardColumns, T("boardIntro"));
+        var filters = new MenuFlyout();
+        foreach (var (id, label) in new[] { ((string?)null, T("boardScopeAll")) }.Concat(Current.Contexts.Select(item => ((string?)item.Id, item.Title))))
+        {
+            var option = new RadioMenuFlyoutItem { Text = label, IsChecked = boardSpace == id, GroupName = "BoardFilter" };
+            AutomationProperties.SetAutomationId(option, $"BoardFilter_{id ?? "all"}");
+            option.Click += (_, _) => { boardSpace = id; BuildBoard(); BuildRail(); };
+            filters.Items.Add(option);
+        }
+        var filter = new DropDownButton
+        {
+            Content = T("filter"),
+            Flyout = filters,
+            Style = (Style)Application.Current.Resources["NomiChip"],
+            CornerRadius = new CornerRadius(12),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        AutomationProperties.SetAutomationId(filter, "BoardFilter");
+        AutomationProperties.SetName(filter, T("filter"));
         var add = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Bottom };
+        add.Children.Add(filter);
         var box = QuickAdd("BoardQuickAdd");
+        box.MinWidth = 220;
+        box.VerticalAlignment = VerticalAlignment.Center;
         add.Children.Add(box);
         var button = Primary(T("addTask"), "BoardAdd");
         button.Click += (_, _) => { if (box.Text.Trim().Length > 0) AddTask(box.Text); else box.Focus(FocusState.Programmatic); };
@@ -338,6 +350,7 @@ public sealed partial class MainWindow
         var grid = new Grid { RowSpacing = 10 };
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var head = new Grid { ColumnSpacing = 8, Padding = new Thickness(4, 0, 4, 0) };
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -351,6 +364,8 @@ public sealed partial class MainWindow
         });
         var name = Text(ColumnName(column), 13);
         name.FontWeight = FontWeights.SemiBold;
+        name.TextWrapping = TextWrapping.NoWrap;
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
         AutomationProperties.SetHeadingLevel(name, AutomationHeadingLevel.Level2);
         Grid.SetColumn(name, 1);
         head.Children.Add(name);
@@ -435,6 +450,11 @@ public sealed partial class MainWindow
         };
         Grid.SetRow(list, 1);
         grid.Children.Add(list);
+        var more = Chip(T("addTask"), "NomiGhost", "\uE710", $"LaneAdd_{column}");
+        more.HorizontalAlignment = HorizontalAlignment.Stretch;
+        more.Click += (_, _) => { addColumn = column; FocusQuickAdd(); };
+        Grid.SetRow(more, 2);
+        grid.Children.Add(more);
         return new Border { Style = (Style)Application.Current.Resources["NomiLane"], Child = grid };
     }
 
@@ -614,12 +634,13 @@ public sealed partial class MainWindow
         var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
         titles.Children.Add(Heading(T("yourDay"), 28));
         var over = planned * ratio > available;
-        titles.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13.5, over ? "NomiAccent" : "NomiInk2"));
         header.Children.Add(titles);
-        var add = QuickAdd("TodayQuickAdd");
-        add.VerticalAlignment = VerticalAlignment.Bottom;
-        Grid.SetColumn(add, 1);
-        header.Children.Add(add);
+        var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
+        balance.TextWrapping = TextWrapping.NoWrap;
+        balance.VerticalAlignment = VerticalAlignment.Bottom;
+        balance.Margin = new Thickness(0, 0, 0, 6);
+        Grid.SetColumn(balance, 1);
+        header.Children.Add(balance);
         TodayBody.Children.Add(header);
 
         var metrics = new Grid { ColumnSpacing = 14 };
@@ -632,15 +653,15 @@ public sealed partial class MainWindow
         for (var index = 0; index < tiles.Length; index++)
         {
             var (label, value, detail, id) = tiles[index];
-            var stack = new StackPanel { Spacing = 4 };
-            stack.Children.Add(Eyebrow(label));
+            var stack = new StackPanel { Spacing = 2 };
             var number = Text(value, 30);
             number.TextWrapping = TextWrapping.NoWrap;
             number.FontWeight = FontWeights.SemiBold;
             number.CharacterSpacing = -20;
             number.FontFamily = (FontFamily)Application.Current.Resources["NomiDisplay"];
             stack.Children.Add(number);
-            stack.Children.Add(Text(detail, 12, index == 0 && over ? "NomiAccent" : "NomiInk3"));
+            stack.Children.Add(Text(label, 12.5, "NomiInk2"));
+            stack.Children.Add(Text(detail, 11.5, index == 0 && over ? "NomiAccent" : "NomiInk3"));
             if (index == 0)
             {
                 var bar = new ProgressBar { Maximum = Math.Max(1, available), Value = Math.Min(available, planned * ratio), Height = 4, MinHeight = 4, Margin = new Thickness(0, 6, 0, 0) };
