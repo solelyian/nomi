@@ -733,10 +733,10 @@ public sealed partial class MainWindow
             {
                 stack.Children.Add(Text(T("noActive"), 16));
                 stack.Children.Add(Text(T("noActiveHelp"), 12.5, "NomiInk3"));
+                var boardButton = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
+                boardButton.Click += (_, _) => Show("board");
+                actions.Children.Add(boardButton);
             }
-            var boardButton = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
-            boardButton.Click += (_, _) => Show("board");
-            actions.Children.Add(boardButton);
             stack.Children.Add(actions);
             var idle = Glass(stack, 20, true);
             Mark(idle, "ActiveTask", T("activeTask"));

@@ -349,9 +349,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid x:Name="BoardHeader" />
-                    <ScrollViewer Grid.Row="1" HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Auto" VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
-                        <Grid x:Name="BoardColumns" ColumnSpacing="12" MinWidth="640" />
-                    </ScrollViewer>
+                    <Grid x:Name="BoardColumns" Grid.Row="1" ColumnSpacing="12" />
                 </Grid>
                 <ScrollViewer x:Name="FocusPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="FocusBody" Spacing="12" HorizontalAlignment="Stretch" Padding="4,0,4,10" />
