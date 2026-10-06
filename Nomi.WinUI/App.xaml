@@ -9,11 +9,11 @@
                 <ResourceDictionary>
                     <ResourceDictionary.ThemeDictionaries>
                     <ResourceDictionary x:Key="Light">
-                        <SolidColorBrush x:Key="NomiCanvas" Color="#F3F1EE" />
+                        <SolidColorBrush x:Key="NomiCanvas" Color="#ECE6DE" />
                         <AcrylicBrush x:Key="NomiGlass" TintColor="#FFFFFF" TintOpacity="0.55" TintLuminosityOpacity="0.82" FallbackColor="#F8F6F3" />
                         <AcrylicBrush x:Key="NomiGlassStrong" TintColor="#FFFFFF" TintOpacity="0.72" TintLuminosityOpacity="0.9" FallbackColor="#FFFFFF" />
                         <SolidColorBrush x:Key="NomiGlassSoft" Color="#8CFFFFFF" />
-                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#B8F3F1EE" />
+                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#80ECE6DE" />
                         <LinearGradientBrush x:Key="NomiGlassEdge" StartPoint="0,0" EndPoint="0.4,1">
                             <GradientStop Color="#FFFFFFFF" Offset="0" />
                             <GradientStop Color="#66D7D0C7" Offset="0.55" />
@@ -23,10 +23,12 @@
                             <GradientStop Color="#80FFFFFF" Offset="0" />
                             <GradientStop Color="#00FFFFFF" Offset="0.38" />
                         </LinearGradientBrush>
-                        <Color x:Key="NomiHaloWarm">#66E9A184</Color>
-                        <Color x:Key="NomiHaloSand">#5CE6CFA6</Color>
-                        <Color x:Key="NomiHaloSage">#4DA9C4A8</Color>
-                        <Color x:Key="NomiHaloClear">#00F3F1EE</Color>
+                        <Color x:Key="NomiHaloWarm">#BFE7A98B</Color>
+                        <Color x:Key="NomiHaloSand">#A6E9CFA0</Color>
+                        <Color x:Key="NomiHaloSage">#8CB9CDB5</Color>
+                        <Color x:Key="NomiHaloClear">#00ECE6DE</Color>
+                        <Color x:Key="NomiOrbLight">#FFE07A57</Color>
+                        <Color x:Key="NomiOrbDeep">#FFB4482B</Color>
                         <SolidColorBrush x:Key="NomiSage" Color="#46684D" />
                         <SolidColorBrush x:Key="NomiSageSoft" Color="#E1EAE0" />
                         <SolidColorBrush x:Key="NomiSand" Color="#7F6136" />
@@ -71,11 +73,11 @@
                         <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="#FFFFFF" />
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="Default">
-                        <SolidColorBrush x:Key="NomiCanvas" Color="#111110" />
+                        <SolidColorBrush x:Key="NomiCanvas" Color="#0F0E0D" />
                         <AcrylicBrush x:Key="NomiGlass" TintColor="#1C1B19" TintOpacity="0.5" TintLuminosityOpacity="0.78" FallbackColor="#1F1E1C" />
                         <AcrylicBrush x:Key="NomiGlassStrong" TintColor="#242320" TintOpacity="0.66" TintLuminosityOpacity="0.86" FallbackColor="#262523" />
                         <SolidColorBrush x:Key="NomiGlassSoft" Color="#14FFFFFF" />
-                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#C7111110" />
+                        <SolidColorBrush x:Key="NomiCanvasVeil" Color="#990F0E0D" />
                         <LinearGradientBrush x:Key="NomiGlassEdge" StartPoint="0,0" EndPoint="0.4,1">
                             <GradientStop Color="#40FFFFFF" Offset="0" />
                             <GradientStop Color="#14FFFFFF" Offset="0.5" />
@@ -85,10 +87,12 @@
                             <GradientStop Color="#17FFFFFF" Offset="0" />
                             <GradientStop Color="#00FFFFFF" Offset="0.38" />
                         </LinearGradientBrush>
-                        <Color x:Key="NomiHaloWarm">#40D26B48</Color>
-                        <Color x:Key="NomiHaloSand">#2EB8965F</Color>
-                        <Color x:Key="NomiHaloSage">#2E6F9474</Color>
-                        <Color x:Key="NomiHaloClear">#00111110</Color>
+                        <Color x:Key="NomiHaloWarm">#66B4482B</Color>
+                        <Color x:Key="NomiHaloSand">#4D8A6A3C</Color>
+                        <Color x:Key="NomiHaloSage">#4D4F6E56</Color>
+                        <Color x:Key="NomiHaloClear">#000F0E0D</Color>
+                        <Color x:Key="NomiOrbLight">#FFF0A07F</Color>
+                        <Color x:Key="NomiOrbDeep">#FFE8825F</Color>
                         <SolidColorBrush x:Key="NomiSage" Color="#9CC6A3" />
                         <SolidColorBrush x:Key="NomiSageSoft" Color="#22302A" />
                         <SolidColorBrush x:Key="NomiSand" Color="#DDBE8C" />
@@ -144,6 +148,8 @@
                         <Color x:Key="NomiHaloSand">#00000000</Color>
                         <Color x:Key="NomiHaloSage">#00000000</Color>
                         <Color x:Key="NomiHaloClear">#00000000</Color>
+                        <Color x:Key="NomiOrbLight">#00000000</Color>
+                        <Color x:Key="NomiOrbDeep">#00000000</Color>
                         <SolidColorBrush x:Key="NomiSage" Color="{ThemeResource SystemColorWindowTextColor}" />
                         <SolidColorBrush x:Key="NomiSageSoft" Color="{ThemeResource SystemColorWindowColor}" />
                         <SolidColorBrush x:Key="NomiSand" Color="{ThemeResource SystemColorWindowTextColor}" />
@@ -170,6 +176,7 @@
 
             <FontFamily x:Key="NomiMono">Cascadia Mono, Consolas</FontFamily>
             <ThemeShadow x:Key="NomiShadow" />
+            <FontFamily x:Key="NomiDisplay">Segoe UI Variable Display, Segoe UI</FontFamily>
 
             <TransitionCollection x:Key="NomiEntrance">
                 <EntranceThemeTransition FromVerticalOffset="24" IsStaggeringEnabled="True" />
@@ -183,34 +190,51 @@
                 <Setter Property="Background" Value="{ThemeResource NomiGlass}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="20" />
+            </Style>
+
+            <Style x:Key="NomiInner" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
+                <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="14,12" />
+            </Style>
+
+            <Style x:Key="NomiPill" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="13" />
+                <Setter Property="Padding" Value="10,4" />
+                <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
 
             <Style x:Key="NomiLane" TargetType="Border">
                 <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="18" />
-                <Setter Property="Padding" Value="10,12,10,10" />
+                <Setter Property="CornerRadius" Value="20" />
+                <Setter Property="Padding" Value="10" />
             </Style>
 
             <Style x:Key="NomiTaskCard" TargetType="Border">
                 <Setter Property="Background" Value="{ThemeResource NomiGlassStrong}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="13" />
-                <Setter Property="Padding" Value="13,11,13,11" />
+                <Setter Property="CornerRadius" Value="14" />
+                <Setter Property="Padding" Value="12,11" />
             </Style>
 
             <Style x:Key="NomiNav" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="10,7" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="10,9" />
                 <Setter Property="MinHeight" Value="36" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="13.5" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk2}" />
             </Style>
 
@@ -243,20 +267,20 @@
             </Style>
 
             <Style x:Key="NomiChip" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-                <Setter Property="Background" Value="{ThemeResource NomiSurface}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource NomiLineStrong}" />
+                <Setter Property="Background" Value="{ThemeResource NomiGlassStrong}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="7" />
-                <Setter Property="Padding" Value="9,4" />
-                <Setter Property="MinHeight" Value="30" />
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="MinHeight" Value="32" />
+                <Setter Property="FontSize" Value="12.5" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
             <Style x:Key="NomiGhost" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="12,7" />
                 <Setter Property="MinHeight" Value="34" />
                 <Setter Property="FontSize" Value="13" />
@@ -267,7 +291,7 @@
                 <Setter Property="Background" Value="{ThemeResource NomiAccent}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiAccent}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="14,8" />
                 <Setter Property="MinHeight" Value="36" />
                 <Setter Property="FontSize" Value="13" />
@@ -296,21 +320,21 @@
             </Style>
 
             <Style x:Key="NomiChipToggle" TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
-                <Setter Property="Background" Value="{ThemeResource NomiSurface}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource NomiLineStrong}" />
+                <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="7" />
-                <Setter Property="Padding" Value="9,4" />
+                <Setter Property="CornerRadius" Value="15" />
+                <Setter Property="Padding" Value="11,5" />
                 <Setter Property="MinHeight" Value="30" />
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="12.5" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
             <Style x:Key="NomiExample" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-                <Setter Property="Background" Value="{ThemeResource NomiSurface2}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource NomiLine}" />
+                <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="12,9" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />

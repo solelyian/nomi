@@ -2,7 +2,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main, "devin/*-integrated-windows-ai"]
+    branches: [main, "devin/*-integrated-windows-ai", "devin/*-mockup-fidelity"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -89,6 +89,11 @@ jobs:
       - name: Verify installer signature
         if: env.NOMI_SIGN == '1'
         run: ./checks/windows-verify-signature.ps1 (Get-ChildItem artifacts/Nomi-Setup-*.exe).FullName
+      - name: Use a 1920x1080 display for UI checks
+        continue-on-error: true
+        run: |
+          Set-DisplayResolution -Width 1920 -Height 1080 -Force
+          Get-CimInstance Win32_VideoController | Format-Table Name, CurrentHorizontalResolution, CurrentVerticalResolution
       - name: Verify installed application starts
         run: ./checks/windows-startup.ps1
       - name: Upload startup diagnostics

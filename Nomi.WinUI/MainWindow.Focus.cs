@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using WinRT.Interop;
@@ -22,7 +23,7 @@ public sealed partial class MainWindow
     private bool focusBusy;
     private WindowChoice? focusWindow;
     private IReadOnlyList<WindowChoice> focusChoices = [];
-    private bool choosingWindow;
+    private bool focusListed;
     private CancellationTokenSource? focusLoop;
     private readonly SemaphoreSlim focusWake = new(0);
     private byte[]? lastPrint;
@@ -42,24 +43,64 @@ public sealed partial class MainWindow
     {
         FocusBody.Children.Clear();
         focusCountdown = null;
-        var header = new StackPanel { Spacing = 4 };
-        header.Children.Add(Heading(T("focus")));
-        header.Children.Add(Text(T("focusIntro"), 13.5, "NomiInk2"));
+        var live = focusState != "idle";
+        var header = new Grid { ColumnSpacing = 12 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var titles = new StackPanel { Spacing = 2 };
+        titles.Children.Add(Text(T("focusEyebrow"), 13, "NomiInk3"));
+        titles.Children.Add(Heading(T("focus"), 28));
+        header.Children.Add(titles);
+        FrameworkElement side;
+        if (live)
+        {
+            var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Bottom };
+            var pill = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7, VerticalAlignment = VerticalAlignment.Center };
+            pill.Children.Add(new Ellipse { Width = 7, Height = 7, Fill = Palette(focusState == "paused" ? "NomiInk3" : "NomiOk"), VerticalAlignment = VerticalAlignment.Center });
+            pill.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("focusLocal"), FocusInterval), 12, "NomiInk2"));
+            var local = new Border { Style = (Style)Application.Current.Resources["NomiPill"], Padding = new Thickness(11, 5, 11, 5), Child = pill, VerticalAlignment = VerticalAlignment.Center };
+            Capsule(local);
+            controls.Children.Add(local);
+            var pause = Chip(focusState == "paused" ? T("resume") : T("pauseTimer"), "NomiChip", null, "FocusPause");
+            pause.Click += (_, _) => PauseFocus(focusState != "paused");
+            controls.Children.Add(pause);
+            var stop = Chip(T("focusStopShare"), "NomiChip", null, "FocusStop");
+            stop.Click += (_, _) => { StopFocus(); Refresh(); };
+            controls.Children.Add(stop);
+            side = controls;
+        }
+        else
+        {
+            var none = Text(focusWindow is null ? T("focusNoShare") : $"{focusWindow.Process} — {focusWindow.Title}", 13, "NomiInk3");
+            none.MaxWidth = 260;
+            none.MaxLines = 1;
+            none.TextTrimming = TextTrimming.CharacterEllipsis;
+            none.VerticalAlignment = VerticalAlignment.Bottom;
+            none.Margin = new Thickness(0, 0, 0, 6);
+            side = none;
+        }
+        Grid.SetColumn(side, 1);
+        header.Children.Add(side);
         FocusBody.Children.Add(header);
 
-        var privacy = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        privacy.Children.Add(new FontIcon { Glyph = "\uE72E", FontSize = 14, Foreground = Palette("NomiSage"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) });
-        var privacyText = Text(T("focusPrivacy"), 12.5, "NomiInk2");
-        privacyText.MaxWidth = 760;
+        var privacy = new Grid { ColumnSpacing = 8 };
+        privacy.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        privacy.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        privacy.Children.Add(new FontIcon { Glyph = "\uE72E", FontSize = 12, Foreground = Palette("NomiSage"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) });
+        var privacyText = Text(T("focusPrivacy"), 12.5, "NomiInk3");
+        Grid.SetColumn(privacyText, 1);
         privacy.Children.Add(privacyText);
-        var privacyCard = new Border { Background = Palette("NomiSageSoft"), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10, 14, 10), Child = privacy };
-        Mark(privacyCard, "FocusPrivacy");
-        FocusBody.Children.Add(privacyCard);
+        var privacyLine = new Border { Child = privacy, Margin = new Thickness(0, -4, 0, 0) };
+        Mark(privacyLine, "FocusPrivacy");
+        FocusBody.Children.Add(privacyLine);
 
+        if (live) FocusBody.Children.Add(Stage());
+        else
+        {
+            FocusBody.Children.Add(WindowPicker());
+            if (insight is not null) FocusBody.Children.Add(InsightCard(insight));
+        }
         FocusBody.Children.Add(VisionCard());
-        if (focusState == "idle") FocusBody.Children.Add(ChooseCard());
-        else FocusBody.Children.Add(SessionCard());
-        if (insight is not null) FocusBody.Children.Add(InsightCard(insight));
         if (focusMessage.Length > 0)
         {
             var message = Text(focusMessage, 12.5, "NomiAccent");
@@ -137,26 +178,67 @@ public sealed partial class MainWindow
         return card;
     }
 
-    private Border ChooseCard()
+    private Border WindowPicker()
     {
+        if (!focusListed) LoadWindows();
         var stack = new StackPanel { Spacing = 12 };
-        stack.Children.Add(Eyebrow(T("focusWindow")));
-        if (focusWindow is not null)
+        var top = new Grid();
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var eyebrow = Eyebrow(T("focusWindow"));
+        eyebrow.VerticalAlignment = VerticalAlignment.Center;
+        top.Children.Add(eyebrow);
+        var refresh = Chip(T("focusRefresh"), "NomiGhost", "\uE72C", "FocusRefresh");
+        refresh.Click += (_, _) => { LoadWindows(); BuildFocus(); };
+        Grid.SetColumn(refresh, 1);
+        top.Children.Add(refresh);
+        stack.Children.Add(top);
+
+        if (focusChoices.Count == 0) stack.Children.Add(Text(T("focusNoWindows"), 13, "NomiInk3"));
+        var grid = new Grid { ColumnSpacing = 12, RowSpacing = 12 };
+        for (var column = 0; column < 3; column++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var shown = focusChoices.Take(9).ToArray();
+        for (var index = 0; index < shown.Length; index++)
         {
-            var chosen = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-            chosen.Children.Add(new FontIcon { Glyph = "\uE737", FontSize = 15, Foreground = Palette("NomiAccent") });
-            var title = Text(focusWindow.Title, 14);
-            title.FontWeight = FontWeights.SemiBold;
-            title.MaxLines = 1;
-            title.TextTrimming = TextTrimming.CharacterEllipsis;
-            chosen.Children.Add(title);
-            chosen.Children.Add(Text(focusWindow.Process, 12, "NomiInk3"));
-            stack.Children.Add(chosen);
+            if (index % 3 == 0) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var choice = shown[index];
+            var selected = focusWindow?.Handle == choice.Handle;
+            var content = new StackPanel { Spacing = 10 };
+            content.Children.Add(Thumbnail(choice.Process));
+            var label = new TextBlock { FontSize = 12.5, TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = Palette("NomiInk") };
+            label.Inlines.Add(new Run { Text = choice.Process, FontWeight = FontWeights.SemiBold });
+            label.Inlines.Add(new Run { Text = $" — {choice.Title}" });
+            content.Children.Add(label);
+            var card = new Button
+            {
+                Content = content,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Top,
+                Padding = new Thickness(10, 10, 10, 12),
+                CornerRadius = new CornerRadius(16),
+                Background = Palette("NomiGlassStrong"),
+                BorderBrush = Palette(selected ? "NomiAccent" : "NomiGlassEdge"),
+                BorderThickness = new Thickness(selected ? 2 : 1)
+            };
+            AutomationProperties.SetName(card, $"{choice.Process}, {choice.Title}");
+            AutomationProperties.SetAutomationId(card, $"FocusWindow_{index}");
+            card.Click += (_, _) =>
+            {
+                focusWindow = choice;
+                focusMessage = "";
+                BuildFocus();
+            };
+            Springy(card, 1.02f);
+            Grid.SetRow(card, index / 3);
+            Grid.SetColumn(card, index % 3);
+            grid.Children.Add(card);
         }
-        else stack.Children.Add(Text(T("focusChooseHelp"), 13, "NomiInk2"));
+        stack.Children.Add(grid);
 
         var tasks = board.Tasks.Where(task => task.Column is Columns.Todo or Columns.Doing).OrderBy(task => task.Column == Columns.Doing ? 0 : 1).ThenBy(task => task.Order).ToArray();
-        var link = new ComboBox { MinWidth = 280, PlaceholderText = T("focusLinkNone") };
+        var link = new ComboBox { MinWidth = 240, PlaceholderText = T("focusLinkNone"), VerticalAlignment = VerticalAlignment.Center };
         link.Items.Add(T("focusLinkNone"));
         foreach (var task in tasks) link.Items.Add(task.Title);
         var linked = Array.FindIndex(tasks, task => task.Id == (focusTaskId ?? board.Active?.Id));
@@ -165,68 +247,72 @@ public sealed partial class MainWindow
         AutomationProperties.SetName(link, T("focusLink"));
         AutomationProperties.SetAutomationId(link, "FocusLink");
         link.SelectionChanged += (_, _) => focusTaskId = link.SelectedIndex <= 0 ? null : tasks[link.SelectedIndex - 1].Id;
-        stack.Children.Add(Field(T("focusLink"), link));
-
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        var choose = Chip(focusWindow is null ? T("focusChoose") : T("focusChange"), "NomiChip", "\uE7C4", "FocusChoose");
-        choose.Click += (_, _) => ListWindows();
-        buttons.Children.Add(choose);
+        var row = new Grid { ColumnSpacing = 10 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var linkLabel = Text(T("focusLink"), 12.5, "NomiInk2");
+        linkLabel.VerticalAlignment = VerticalAlignment.Center;
+        row.Children.Add(linkLabel);
+        Grid.SetColumn(link, 1);
+        link.HorizontalAlignment = HorizontalAlignment.Left;
+        row.Children.Add(link);
         var start = Primary(T("focusStart"), "FocusStart");
         start.IsEnabled = focusWindow is not null && vision.HasModel && visionPreparation is null;
         start.Click += async (_, _) => await StartFocus();
-        buttons.Children.Add(start);
-        stack.Children.Add(buttons);
+        Grid.SetColumn(start, 2);
+        row.Children.Add(start);
+        stack.Children.Add(row);
         if (!vision.HasModel) stack.Children.Add(Text(T("focusNeedsVision"), 12, "NomiInk3"));
+        else if (focusWindow is null && focusChoices.Count > 0) stack.Children.Add(Text(T("focusChooseHelp"), 12, "NomiInk3"));
 
-        if (choosingWindow)
-        {
-            var list = new StackPanel { Spacing = 4 };
-            if (focusChoices.Count == 0) list.Children.Add(Text(T("focusNoWindows"), 12.5, "NomiInk3"));
-            for (var index = 0; index < focusChoices.Count; index++)
-            {
-                var choice = focusChoices[index];
-                var grid = new Grid { ColumnSpacing = 10 };
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var title = Text(choice.Title, 13);
-                title.MaxLines = 1;
-                title.TextTrimming = TextTrimming.CharacterEllipsis;
-                grid.Children.Add(title);
-                var process = Text(choice.Process, 11.5, "NomiInk3");
-                process.VerticalAlignment = VerticalAlignment.Center;
-                Grid.SetColumn(process, 1);
-                grid.Children.Add(process);
-                var item = new Button { Content = grid, Style = (Style)Application.Current.Resources["NomiExample"] };
-                AutomationProperties.SetName(item, $"{choice.Title}, {choice.Process}");
-                AutomationProperties.SetAutomationId(item, $"FocusWindow_{index}");
-                item.Click += (_, _) =>
-                {
-                    focusWindow = choice;
-                    choosingWindow = false;
-                    focusMessage = "";
-                    BuildFocus();
-                };
-                list.Children.Add(item);
-            }
-            var scroller = new ScrollViewer { Content = list, MaxHeight = 280, HorizontalScrollMode = ScrollMode.Disabled };
-            stack.Children.Add(scroller);
-        }
-        var card = Glass(stack, 18, true);
-        Mark(card, "FocusSetup");
-        return card;
+        var picker = new Border { Child = stack };
+        Mark(picker, "FocusSetup");
+        return picker;
     }
 
-    private void ListWindows()
+    private Border Thumbnail(string process)
+    {
+        var sheet = process.Contains("excel", StringComparison.OrdinalIgnoreCase) || process.Contains("calc", StringComparison.OrdinalIgnoreCase);
+        var lines = new Grid { Margin = new Thickness(10, 8, 10, 8), IsHitTestVisible = false };
+        var ink = Palette(sheet ? "NomiSage" : "NomiInk3");
+        for (var index = 0; index < 6; index++)
+        {
+            lines.Children.Add(new Border
+            {
+                Height = 1,
+                Background = ink,
+                Opacity = sheet ? 0.45 : 0.25,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, index * 13, sheet ? 0 : (index % 3) * 22, 0)
+            });
+        }
+        if (sheet)
+        {
+            for (var index = 1; index < 5; index++)
+                lines.Children.Add(new Border { Width = 1, Background = ink, Opacity = 0.45, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(index * 40, 0, 0, 0) });
+        }
+        var thumb = new Border
+        {
+            Height = 86,
+            CornerRadius = new CornerRadius(10),
+            Background = Palette(sheet ? "NomiSageSoft" : "NomiSurface"),
+            Child = lines
+        };
+        AutomationProperties.SetAccessibilityView(thumb, AccessibilityView.Raw);
+        return thumb;
+    }
+
+    private void LoadWindows()
     {
         focusChoices = WindowCapture.List(WindowNative.GetWindowHandle(this));
-        choosingWindow = true;
-        BuildFocus();
-        if (FocusBody.FindName("FocusWindow_0") is Control first) first.Focus(FocusState.Programmatic);
+        focusListed = true;
+        if (focusWindow is not null && focusChoices.All(choice => choice.Handle != focusWindow.Handle)) focusWindow = null;
     }
 
-    private Border SessionCard()
+    private Grid Stage()
     {
-        var stack = new StackPanel { Spacing = 12 };
+        var stack = new StackPanel { Spacing = 12, Padding = new Thickness(18, 16, 18, 18) };
         var top = new Grid { ColumnSpacing = 12 };
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -258,21 +344,49 @@ public sealed partial class MainWindow
             AutomationProperties.SetName(bar, T("focusAnalyzing"));
             stack.Children.Add(bar);
         }
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        var pause = Chip(focusState == "paused" ? T("resume") : T("pauseTimer"), "NomiChip", focusState == "paused" ? "\uE768" : "\uE769", "FocusPause");
-        pause.Click += (_, _) => PauseFocus(focusState != "paused");
-        buttons.Children.Add(pause);
         var now = Chip(T("focusNow"), "NomiChip", "\uE72C", "FocusAnalyze");
         now.IsEnabled = !focusBusy && focusState == "watching";
+        now.HorizontalAlignment = HorizontalAlignment.Left;
         now.Click += (_, _) => { lastPrint = null; focusWake.Release(); };
-        buttons.Children.Add(now);
-        var stop = Primary(T("focusStop"), "FocusStop");
-        stop.Click += (_, _) => { StopFocus(); Refresh(); };
-        buttons.Children.Add(stop);
-        stack.Children.Add(buttons);
-        var card = Glass(stack, 18, true);
-        Mark(card, "FocusSession");
-        return card;
+        stack.Children.Add(now);
+        if (insight is null) stack.Children.Add(Text(T("focusIntro"), 12.5, "NomiInk3"));
+
+        var title = Text($"{focusWindow?.Title ?? ""} — {focusWindow?.Process ?? ""}", 12.5, "NomiAccentInk");
+        title.MaxLines = 1;
+        title.TextTrimming = TextTrimming.CharacterEllipsis;
+        var bar2 = new Border { Background = Palette("NomiAccent"), Padding = new Thickness(14, 8, 14, 8), Child = title };
+        var frame = new Grid();
+        frame.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        frame.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        frame.Children.Add(bar2);
+        Grid.SetRow(stack, 1);
+        frame.Children.Add(stack);
+        var window = new Border
+        {
+            Background = Palette("NomiGlassStrong"),
+            BorderBrush = Palette("NomiGlassEdge"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(18),
+            MinHeight = 400,
+            Child = frame,
+            Shadow = (Shadow)Application.Current.Resources["NomiShadow"],
+            Translation = new System.Numerics.Vector3(0, 0, 14)
+        };
+        Mark(window, "FocusSession", focusWindow?.Title);
+        var stage = new Grid();
+        stage.Children.Add(window);
+        if (insight is not null)
+        {
+            var hud = InsightCard(insight);
+            hud.Width = 360;
+            hud.HorizontalAlignment = HorizontalAlignment.Right;
+            hud.VerticalAlignment = VerticalAlignment.Bottom;
+            hud.Margin = new Thickness(16, 150, 16, 16);
+            hud.Shadow = (Shadow)Application.Current.Resources["NomiShadow"];
+            hud.Translation = new System.Numerics.Vector3(0, 0, 28);
+            stage.Children.Add(hud);
+        }
+        return stage;
     }
 
     private string FocusFacts()
