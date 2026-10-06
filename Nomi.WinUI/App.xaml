@@ -205,7 +205,7 @@
                 <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="CornerRadius" Value="13" />
                 <Setter Property="Padding" Value="10,4" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
@@ -323,7 +323,7 @@
                 <Setter Property="Background" Value="{ThemeResource NomiGlassSoft}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource NomiGlassEdge}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="CornerRadius" Value="15" />
                 <Setter Property="Padding" Value="11,5" />
                 <Setter Property="MinHeight" Value="30" />
                 <Setter Property="FontSize" Value="12.5" />

@@ -143,6 +143,16 @@ public sealed partial class MainWindow
         element.PointerReleased += (_, _) => element.Scale = new Vector3(scale, scale, 1);
     }
 
+    private static void Capsule(FrameworkElement element)
+    {
+        element.SizeChanged += (_, args) =>
+        {
+            var radius = new CornerRadius(Math.Floor(args.NewSize.Height) / 2);
+            if (element is Border border) border.CornerRadius = radius;
+            else if (element is Control control) control.CornerRadius = radius;
+        };
+    }
+
     private static void Mark(Border card, string id, string? name = null)
     {
         if (card.Child is not Region region)
@@ -1102,6 +1112,7 @@ public sealed partial class MainWindow
         foreach (var column in Columns.All)
         {
             var toggle = new ToggleButton { Content = ColumnName(column), IsChecked = task.Column == column, Style = (Style)Application.Current.Resources["NomiChipToggle"] };
+            Capsule(toggle);
             AutomationProperties.SetAutomationId(toggle, $"SheetColumn_{column}");
             toggle.Click += (_, _) => { Move(task, column); BuildSheet(task); };
             columns.Children.Add(toggle);

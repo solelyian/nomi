@@ -58,7 +58,9 @@ public sealed partial class MainWindow
             var pill = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7, VerticalAlignment = VerticalAlignment.Center };
             pill.Children.Add(new Ellipse { Width = 7, Height = 7, Fill = Palette(focusState == "paused" ? "NomiInk3" : "NomiOk"), VerticalAlignment = VerticalAlignment.Center });
             pill.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("focusLocal"), FocusInterval), 12, "NomiInk2"));
-            controls.Children.Add(new Border { Style = (Style)Application.Current.Resources["NomiPill"], Padding = new Thickness(11, 5, 11, 5), Child = pill, VerticalAlignment = VerticalAlignment.Center });
+            var local = new Border { Style = (Style)Application.Current.Resources["NomiPill"], Padding = new Thickness(11, 5, 11, 5), Child = pill, VerticalAlignment = VerticalAlignment.Center };
+            Capsule(local);
+            controls.Children.Add(local);
             var pause = Chip(focusState == "paused" ? T("resume") : T("pauseTimer"), "NomiChip", null, "FocusPause");
             pause.Click += (_, _) => PauseFocus(focusState != "paused");
             controls.Children.Add(pause);

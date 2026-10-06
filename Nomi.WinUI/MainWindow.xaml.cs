@@ -75,6 +75,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        foreach (var element in new FrameworkElement[] { FocusPill, EnginePill, LanguageSwitch, FrenchToggle, EnglishToggle, ContextTag, ContextChip, FormatSwitch, StepsToggle, SummaryToggle }) Capsule(element);
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(DragRegion);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 820));
@@ -465,9 +466,9 @@ public sealed partial class MainWindow : Window
             {
                 Content = item.Title,
                 IsChecked = item.Id == actionId,
-                Style = (Style)Application.Current.Resources["NomiChipToggle"],
-                CornerRadius = new CornerRadius(999)
+                Style = (Style)Application.Current.Resources["NomiChipToggle"]
             };
+            Capsule(chip);
             AutomationProperties.SetName(chip, $"{T("action")} : {item.Title}");
             AutomationProperties.SetHelpText(chip, item.Description);
             AutomationProperties.SetAutomationId(chip, $"Chip_{item.Id}");
