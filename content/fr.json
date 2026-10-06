@@ -345,7 +345,12 @@
     "elapsed": "Écoulé",
     "nextSteps": "Prochaines étapes",
     "contextEmpty": "Lancez un Focus écran pour que Nomi relie la fenêtre suivie à vos tâches.",
-    "shortcutsHelp": "Disponibles partout dans Nomi."
+    "shortcutsHelp": "Disponibles partout dans Nomi.",
+    "focusEyebrow": "Nomi suit la fenêtre choisie",
+    "focusNoShare": "Aucune fenêtre partagée",
+    "focusStopShare": "Arrêter le partage",
+    "focusRefresh": "Actualiser",
+    "focusLocal": "Analyse locale · {0} s"
   },
   "actions": [
     {

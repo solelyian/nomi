@@ -345,7 +345,12 @@
     "elapsed": "Elapsed",
     "nextSteps": "Next steps",
     "contextEmpty": "Start a screen Focus so Nomi can link the window you follow to your tasks.",
-    "shortcutsHelp": "Available everywhere in Nomi."
+    "shortcutsHelp": "Available everywhere in Nomi.",
+    "focusEyebrow": "Nomi follows the chosen window",
+    "focusNoShare": "No window shared",
+    "focusStopShare": "Stop sharing",
+    "focusRefresh": "Refresh",
+    "focusLocal": "Local analysis · {0} s"
   },
   "actions": [
     {
