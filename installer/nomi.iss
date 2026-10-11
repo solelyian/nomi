@@ -26,7 +26,7 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 DisableProgramGroupPage=yes
-MinVersion=10.0.17763
+MinVersion=10.0.18362
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
