@@ -5,7 +5,7 @@ using LLama.Sampling;
 
 namespace Nomi;
 
-public sealed class LocalInferenceClient : NomiInferenceClient, IAsyncDisposable
+public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
 {
     private const int ContextTokens = 16384;
     private const int AnswerTokens = 768;
@@ -20,6 +20,8 @@ public sealed class LocalInferenceClient : NomiInferenceClient, IAsyncDisposable
     private bool disposed;
     public string Model => store.Definition.Name;
     public bool HasModel => store.Exists;
+    public string Accelerator => "CPU · llama.cpp";
+    public long DownloadBytes => store.Definition.Bytes;
     public bool Ready => weights is not null && !disposed;
 
     public LocalInferenceClient(ModelStore? modelStore = null) => store = modelStore ?? new ModelStore();
