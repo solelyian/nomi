@@ -44,7 +44,7 @@ public sealed partial class MainWindow : Window
     private bool summary;
     private bool reasoning;
     private int reasoningWords;
-    private readonly LocalInferenceClient inference = new();
+    private readonly AdaptiveInferenceClient inference = new(new LocalInferenceClient(), new NpuInferenceClient());
     private CancellationTokenSource? modelPreparation;
     private ModelProgress modelProgress = new("local-model-missing");
     private readonly Dictionary<string, Draft> drafts = new();
@@ -541,7 +541,7 @@ public sealed partial class MainWindow : Window
         EditLabel.Text = T("editRequest");
         AutomationProperties.SetName(EditButton, T("editRequest"));
         AutomationProperties.SetLiveSetting(WorkingTitle, AutomationLiveSetting.Polite);
-        EmptyAction.Content = T(inference.HasModel ? "loadLocalModel" : "downloadWithSize");
+        EmptyAction.Content = DownloadLabel();
         AutomationProperties.SetName(EmptyAction, (string)EmptyAction.Content);
         AutomationProperties.SetLiveSetting(StatusText, AutomationLiveSetting.Polite);
         RenderDocuments(draft);
@@ -610,7 +610,7 @@ public sealed partial class MainWindow : Window
         ResultPanel.BorderBrush = Palette("NomiGlassEdge");
         ResultPanel.Background = Palette("NomiGlass");
         var seconds = draft.Seconds > 0 ? $" · {Elapsed(draft.Seconds)}" : "";
-        ResultMeta.Text = $"{Action.Title} · {T(draft.Summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {inference.Model}{seconds}";
+        ResultMeta.Text = $"{Action.Title} · {T(draft.Summary ? "summary" : "steps")}{(draft.Reasoned ? $" · {T("reasoning")}" : "")} · {(inference.AnsweredBy.Length > 0 ? inference.AnsweredBy : inference.Model)}{seconds}";
         ResultBody.Children.Clear();
         var paragraphs = draft.Output.Split('\n', StringSplitOptions.TrimEntries).Where(line => line.Length > 0).ToArray();
         var lastIndex = paragraphs.Length - 1;
@@ -865,7 +865,7 @@ public sealed partial class MainWindow : Window
     private void RefreshAside()
     {
         EngineTitle.Text = T("engineTitle");
-        EngineDetail.Text = $"{inference.Model} · llama.cpp";
+        EngineDetail.Text = EngineLabel();
         AutomationProperties.SetLiveSetting(EngineStatus, AutomationLiveSetting.Polite);
         AutomationProperties.SetLiveSetting(DocumentStatus, AutomationLiveSetting.Polite);
         AutomationProperties.SetName(EngineProgress, T("engineTitle"));
@@ -909,7 +909,8 @@ public sealed partial class MainWindow : Window
         Announce(EngineStatus, status);
         EngineDot.Fill = Palette(inference.Ready ? "NomiOk" : preparing ? "NomiAccent" : "NomiInk3");
         EnginePillDot.Fill = EngineDot.Fill;
-        EnginePillText.Text = inference.Ready ? $"{T("engineReady")} · Qwen3 4B" : status;
+        EnginePillText.Text = inference.Ready ? $"{T("engineReady")} · {ShortModel()}" : status;
+        EngineDetail.Text = EngineLabel();
         AutomationProperties.SetName(EnginePill, $"{T("engineTitle")} : {status}");
         EngineCard.Visibility = !inference.Ready || view == "workspace" ? Visibility.Visible : Visibility.Collapsed;
         EngineProgress.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
@@ -921,9 +922,22 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(PrepareButton, (string)PrepareButton.Content);
         PrepareButton.Visibility = inference.Ready || preparing ? Visibility.Collapsed : Visibility.Visible;
         PrepareCancel.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
-        EmptyAction.Content = T(inference.HasModel ? "loadLocalModel" : "downloadWithSize");
+        EmptyAction.Content = DownloadLabel();
         if (view == "workspace" && CurrentDraft.Output.Length == 0) RenderResult(CurrentDraft);
         UpdateControls();
+    }
+
+    private string EngineLabel() => inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
+
+    private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 4B";
+
+    private string DownloadLabel()
+    {
+        if (inference.HasModel) return T("loadLocalModel");
+        var bytes = inference.DownloadBytes;
+        if (bytes <= 0) return T("downloadLocalModel");
+        var size = (bytes / 1_000_000_000d).ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo(language == "fr" ? "fr-FR" : "en-US"));
+        return string.Format(T("downloadWithSize"), size);
     }
 
     private async Task PrepareModel()
