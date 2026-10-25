@@ -1,0 +1,5 @@
+* text=auto eol=lf
+checks/documents/* -text
+*.png binary
+*.ttf binary
+*.ico binary
