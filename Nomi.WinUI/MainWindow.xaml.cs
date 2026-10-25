@@ -52,7 +52,10 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? documentReading;
     private Draft? activeDraft;
     private bool updating;
-    private readonly bool motion = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+    private readonly bool systemMotion = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+    private readonly ProfileStore profileStore = new();
+    private Profile profile = new();
+    private bool motion => systemMotion && profile.Motion != "reduced";
     private readonly List<HistoryEntry> history = HistoryStore.Load();
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? splashTimer;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? copyReset;
@@ -75,6 +78,13 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        profile = profileStore.Load();
+        language = profile.Language;
+        summary = profile.Response == "summary";
+        StepsToggle.IsChecked = !summary;
+        SummaryToggle.IsChecked = summary;
+        Root.RequestedTheme = profile.Theme switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
+        SyncBoard();
         foreach (var element in new FrameworkElement[] { FocusPill, EnginePill, LanguageSwitch, FrenchToggle, EnglishToggle, ContextTag, ContextChip, FormatSwitch, StepsToggle, SummaryToggle }) Capsule(element);
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(DragRegion);
@@ -118,6 +128,25 @@ public sealed partial class MainWindow : Window
         Refresh();
         SplashTagline.Text = T("tagline");
         Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartTicker(); };
+    }
+
+    private void SyncBoard()
+    {
+        board.Day = profile.Day;
+        board.SplitAbove = profile.StepSize == "small" ? 45 : 60;
+        board.Muted.Clear();
+        board.Muted.UnionWith(profile.Muted);
+        board.Dismissed.UnionWith(profile.Dismissed);
+    }
+
+    private void SaveProfile()
+    {
+        profile.Language = language;
+        profile.Response = summary ? "summary" : "steps";
+        profile.Dismissed = [.. board.Dismissed];
+        profile.Muted = [.. board.Muted];
+        profileStore.Save(profile);
+        SyncBoard();
     }
 
     private void DismissSplash()
@@ -1216,16 +1245,20 @@ public sealed partial class MainWindow : Window
         {
             CancelGeneration();
             language = value == 0 ? "fr" : "en";
+            SaveProfile();
             Refresh();
         });
         var themeIndex = Root.RequestedTheme switch { ElementTheme.Light => 1, ElementTheme.Dark => 2, _ => 0 };
         AddSetting(T("theme"), T("themeHelp"), [T("themeSystem"), T("themeLight"), T("themeDark")], themeIndex, value =>
         {
             Root.RequestedTheme = value switch { 1 => ElementTheme.Light, 2 => ElementTheme.Dark, _ => ElementTheme.Default };
+            profile.Theme = value switch { 1 => "light", 2 => "dark", _ => "system" };
+            SaveProfile();
         });
         AddSetting(T("response"), T("responseHelp"), [T("steps"), T("summary")], summary ? 1 : 0, value =>
         {
             summary = value == 1;
+            SaveProfile();
             StepsToggle.IsChecked = !summary;
             SummaryToggle.IsChecked = summary;
         });
@@ -1441,6 +1474,7 @@ public sealed partial class MainWindow : Window
         if (value == language) { ((ToggleButton)sender).IsChecked = true; return; }
         CancelGeneration();
         language = value;
+        SaveProfile();
         Refresh();
     }
 
@@ -1454,6 +1488,7 @@ public sealed partial class MainWindow : Window
     {
         if (updating) return;
         summary = sender == SummaryToggle;
+        SaveProfile();
         StepsToggle.IsChecked = !summary;
         SummaryToggle.IsChecked = summary;
     }
