@@ -441,7 +441,7 @@
     "boardScopeAll": "Tous les espaces",
     "boardScope": "{0} · espace filtré",
     "yourDay": "Votre journée",
-    "dayBalance": "{0} planifiées · {1} libres d’ici la fin de journée",
+    "dayBalance": "Prévu : {0} · libre d’ici la fin de journée : {1}",
     "nowTitle": "À faire maintenant",
     "startFocus": "Démarrer en Focus",
     "companionTitle": "Nomi suit votre travail",
