@@ -122,6 +122,24 @@ sans clic. **Assistant** regroupe les six actions. `Ctrl+K` ouvre la palette
 (demander à Nomi, créer une tâche, naviguer), `Ctrl+1` à `Ctrl+4` changent d’espace,
 `Ctrl+N` crée une tâche. Les tâches restent dans `%LOCALAPPDATA%\Nyne\Nomi\tasks.json`.
 
+### Affichage adaptatif
+
+Au premier lancement, Nomi demande « Comment préférez-vous voir votre après-midi ? » :
+**En mots** (« juste après le déjeuner », « un moment moyen »), **En proportions**
+(« à la moitié de l’après-midi », « trois quarts d’heure ») ou **En chiffres**.
+Ce choix s’applique aux horaires, durées, échéances, suggestions et au rythme, et
+il est transmis au modèle. « Voir les chiffres » affiche à tout moment les valeurs
+exactes ; les réponses se terminent par « Chiffres exacts : ». La conversion est
+locale et déterministe (`Nomi.WinUI/Adaptation.cs`), sans appel au modèle.
+
+Les préférences décrivent les repères de journée (début, déjeuner, fin), la taille
+des étapes, le mode calme (suggestions gardées « pour après » pendant une tâche,
+Focus ou une réponse), l’enchaînement des tâches, la police Atkinson Hyperlegible,
+l’espacement, le contraste et les animations. « Ce que Nomi retient » montre en clair
+le rythme appris, les suggestions acceptées ou écartées et vos précisions ; tout
+est modifiable et peut être oublié. Une suggestion écartée trois fois n’est plus
+proposée, jusqu’à sa réactivation.
+
 ### Focus écran et modèle vision
 
 **Focus écran** suit une fenêtre que vous choisissez explicitement dans la liste ;
@@ -272,8 +290,8 @@ L’aperçu de session peut s’arrêter quand la machine est mise en veille.
 - Les brouillons et réponses restent en mémoire, par action, contexte et langue,
   jusqu’à la fermeture de l’application ou au rechargement de la page.
 - Préférences : langue, densité, réponses par étapes ou synthèse.
-- Les préférences web sont enregistrées localement, sans compte. Le squelette
-  natif les conserve uniquement pendant la session.
+- Les préférences sont enregistrées localement, sans compte, dans le navigateur
+  pour l’aperçu et dans `profile.json` pour l’application Windows.
 - La copie utilise le presse-papiers lorsque le navigateur l’autorise. Sinon,
   le texte de la réponse reste sélectionnable.
 
@@ -320,8 +338,12 @@ Les réponses sont limitées à 768 tokens et la génération à cinq minutes da
 WinUI (trois minutes dans l’aperçu web) :
 une interruption ou une limite de longueur est signalée, sans afficher le brouillon.
 
-Nomi ne journalise ni ne sauvegarde les demandes sur disque. Les préférences web
-utilisent le stockage local du navigateur ; les textes restent en mémoire.
+L’application Windows enregistre `tasks.json`, `history.json` (les dernières
+réponses) et `profile.json` dans `%LOCALAPPDATA%\Nyne\Nomi`, chiffrés avec DPAPI
+pour la session Windows. Rien n’est envoyé en ligne. Préférences → Vos données
+permet d’exporter ces données en JSON ou de tout supprimer. L’aperçu web ne
+sauvegarde pas les demandes sur disque ; ses préférences utilisent le stockage
+local du navigateur.
 Aucun fournisseur d’inférence distant n’est appelé par le prototype.
 
 ## Dépannage et configuration
