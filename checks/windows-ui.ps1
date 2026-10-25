@@ -48,6 +48,9 @@ function Read-NomiFile($path, $app) {
         [System.Linq.Enumerable]::SequenceEqual([byte[]]$bytes[0..($magic.Length - 1)], [byte[]]$magic)
     if (!$encrypted) { throw "$(Split-Path $path -Leaf) is not encrypted." }
     if (-not ("System.Security.Cryptography.ProtectedData" -as [type])) {
+        try { Add-Type -AssemblyName System.Security } catch { }
+    }
+    if (-not ("System.Security.Cryptography.ProtectedData" -as [type])) {
         Add-Type -Path (Join-Path $app "System.Security.Cryptography.ProtectedData.dll")
     }
     $entropy = [System.Text.Encoding]::UTF8.GetBytes("Nyne.Nomi.local.v1")
@@ -56,7 +59,7 @@ function Read-NomiFile($path, $app) {
     return [System.Text.Encoding]::UTF8.GetString($plain)
 }
 function Set-NomiOnboarded {
-    $profile = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\profile.json"
-    New-Item -ItemType Directory -Force -Path (Split-Path $profile) | Out-Null
-    Set-Content -Path $profile -Value '{"Onboarded":true}' -Encoding UTF8
+    $file = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\profile.json"
+    New-Item -ItemType Directory -Force -Path (Split-Path $file) | Out-Null
+    [System.IO.File]::WriteAllText($file, '{"Onboarded":true}')
 }
