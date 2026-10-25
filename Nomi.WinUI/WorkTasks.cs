@@ -228,10 +228,10 @@ public sealed class TaskBoard
                 Start(task, now);
                 break;
             case "late" when task is not null:
-                task.Due = new DateTimeOffset(now.Date.AddDays(1).Add(Day.Start), now.Offset);
+                task.Due = Day.NextStart(now);
                 break;
             case "overload" when task is not null:
-                task.Due = new DateTimeOffset(now.Date.AddDays(1).Add(Day.Start), now.Offset);
+                task.Due = Day.NextStart(now);
                 break;
             case "pace":
                 var ratio = double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture);

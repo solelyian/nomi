@@ -21,6 +21,17 @@ function json(response, code, body) {
   response.end(JSON.stringify(body));
 }
 
+/** @param {string | undefined} header */
+function loopbackHost(header) {
+  try {
+    return ["127.0.0.1", "localhost", "[::1]"].includes(
+      new URL(`http://${header ?? ""}`).hostname,
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** @param {{ baseUrl?: string, model?: string, timeout?: number }} [options] */
 export function createNomiServer(options = {}) {
   const baseUrl =
@@ -38,6 +49,10 @@ export function createNomiServer(options = {}) {
   return createServer(async (request, response) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Referrer-Policy", "same-origin");
+    if (!loopbackHost(request.headers.host)) {
+      json(response, 403, { error: "forbidden-host" });
+      return;
+    }
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
     if (request.method === "POST" && pathname === "/api/documents") {
       if (

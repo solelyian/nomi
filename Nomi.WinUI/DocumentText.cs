@@ -17,6 +17,7 @@ public static class DocumentText
 {
     public const int MaxFiles = 4;
     public const int MaxBytes = 8_000_000;
+    private const long MaxExpandedBytes = 32_000_000;
     public const int MaxCharacters = 8_000;
     public const int MaxTotal = 12_000;
     public static readonly string[] Extensions = [".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".csv", ".md"];
@@ -64,8 +65,9 @@ public static class DocumentText
             {
                 using var stream = new MemoryStream(bytes);
                 using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-                if (archive.Entries.Count > 2000 || archive.Entries.Sum(entry => entry.Length) > 32_000_000)
+                if (archive.Entries.Count > 2000 || archive.Entries.Sum(entry => entry.Length) > MaxExpandedBytes)
                     throw new InferenceException("document-complex");
+                CheckExpandedSize(archive, token);
                 if (archive.GetEntry("[Content_Types].xml") is null)
                     throw new InferenceException("document-unreadable");
                 if (kind == ".xlsx") ReadSpreadsheet(bytes, archive, output, token);
@@ -94,6 +96,20 @@ public static class DocumentText
         token.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(output.Text)) throw new InferenceException("document-no-text");
         return new AttachedDocument(name, output.Text.Trim(), output.Truncated);
+    }
+
+    private static void CheckExpandedSize(ZipArchive archive, CancellationToken token)
+    {
+        var buffer = new byte[81_920];
+        long total = 0;
+        foreach (var entry in archive.Entries)
+        {
+            token.ThrowIfCancellationRequested();
+            using var stream = entry.Open();
+            int read;
+            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                if ((total += read) > MaxExpandedBytes) throw new InferenceException("document-complex");
+        }
     }
 
     private static XDocument ReadXml(ZipArchive archive, string path)
