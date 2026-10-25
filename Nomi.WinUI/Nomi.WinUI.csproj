@@ -31,6 +31,7 @@
     <Content Include="..\licenses\*.txt" Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
   <Target Name="PublishNomiXamlResources" BeforeTargets="ComputeResolvedFilesToPublishList"
           DependsOnTargets="$(GenerateProjectPriFile)">
