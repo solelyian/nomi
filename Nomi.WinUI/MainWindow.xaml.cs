@@ -77,14 +77,16 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
-        InitializeComponent();
         profile = profileStore.Load();
+        ApplyReading();
+        InitializeComponent();
         language = profile.Language;
         summary = profile.Response == "summary";
         StepsToggle.IsChecked = !summary;
         SummaryToggle.IsChecked = summary;
         Root.RequestedTheme = profile.Theme switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
         SyncBoard();
+        ApplyReading();
         foreach (var element in new FrameworkElement[] { FocusPill, EnginePill, LanguageSwitch, FrenchToggle, EnglishToggle, ContextTag, ContextChip, FormatSwitch, StepsToggle, SummaryToggle }) Capsule(element);
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(DragRegion);
@@ -162,6 +164,7 @@ public sealed partial class MainWindow : Window
                 Splash.Visibility = Visibility.Collapsed;
                 SplashProgress.IsIndeterminate = false;
                 if (inference.HasModel && !inference.Ready && modelPreparation is null) _ = PrepareModel();
+                if (!profile.Onboarded) ShowWelcome();
             }
             if (!motion) { Done(); return; }
             var board = new Storyboard();
@@ -288,8 +291,11 @@ public sealed partial class MainWindow : Window
         {
             Text = value,
             FontSize = size,
+            FontFamily = readingFont,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Palette(ink)
+            Foreground = Palette(profile.Contrast == "strong" ? ink switch { "NomiInk3" => "NomiInk2", "NomiInk2" => "NomiInk", _ => ink } : ink),
+            LineHeight = profile.Spacing == "airy" ? size * 1.7 : 0,
+            CharacterSpacing = profile.Spacing == "airy" ? 24 : 0
         };
     }
 
@@ -1076,7 +1082,7 @@ public sealed partial class MainWindow : Window
                         reasoningWords = words;
                         if (draft == CurrentDraft) UpdateControls();
                     });
-                });
+                }, instruction: AdaptiveInstruction());
             linked.Token.ThrowIfCancellationRequested();
             draft.Output = adapted.Text;
             draft.Rules = adapted.Changes;
@@ -1262,6 +1268,7 @@ public sealed partial class MainWindow : Window
             StepsToggle.IsChecked = !summary;
             SummaryToggle.IsChecked = summary;
         });
+        BuildAdaptationSettings();
         var keys = new StackPanel { Spacing = 8 };
         var keysTitle = Text(T("shortcutsTitle"), 14);
         keysTitle.FontWeight = FontWeights.SemiBold;

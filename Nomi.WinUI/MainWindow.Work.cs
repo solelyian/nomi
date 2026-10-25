@@ -45,9 +45,19 @@ public sealed partial class MainWindow
         _ => T("colTodo")
     };
 
-    private string Minutes(double minutes) => Readable.Duration(minutes, profile.Numbers, language);
+    private bool figuresPeek;
 
-    private string At(DateTimeOffset time) => Readable.Clock(time, Now, profile.Numbers, language, profile.Day);
+    private string NumberMode => figuresPeek ? NumberModes.Figures : profile.Numbers;
+
+    private string AdaptiveInstruction() => string.Join(" ", new[]
+    {
+        Readable.Instruction(profile.Numbers, language),
+        profile.Corrections.Count > 0 ? $"Notes from the user about how they work, to respect when relevant: {string.Join(" / ", profile.Corrections)}." : ""
+    }.Where(part => part.Length > 0));
+
+    private string Minutes(double minutes) => Readable.Duration(minutes, NumberMode, language);
+
+    private string At(DateTimeOffset time) => Readable.Clock(time, Now, NumberMode, language, profile.Day);
 
     private static string Clock(double seconds)
     {
@@ -290,8 +300,13 @@ public sealed partial class MainWindow
         board.Move(task, column, Now);
         if (column == Columns.Doing) board.Start(task, Now);
         if (order is { } value) { task.Order = value; board.Save(); }
-        if (column == Columns.Done && running)
-            ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskFinished"), task.Title, Minutes(task.SpentSeconds / 60)), null, null);
+        if (column != Columns.Done || !running) return;
+        var finished = string.Format(CultureInfo.CurrentCulture, T("taskFinished"), task.Title, Minutes(task.SpentSeconds / 60));
+        var next = profile.Chain
+            ? board.Tasks.Where(item => item.Column == Columns.Todo).OrderBy(item => item.Due ?? DateTimeOffset.MaxValue).ThenBy(item => item.Order).FirstOrDefault()
+            : null;
+        if (next is null) ShowToast(finished, null, null);
+        else ShowToast(finished, string.Format(CultureInfo.CurrentCulture, T("chainNext"), next.Title), () => { Move(next, Columns.Doing); Refresh(); });
     }
 
     // Board
@@ -645,9 +660,17 @@ public sealed partial class MainWindow
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
         balance.TextWrapping = TextWrapping.NoWrap;
         balance.VerticalAlignment = VerticalAlignment.Bottom;
-        balance.Margin = new Thickness(0, 0, 0, 6);
-        Grid.SetColumn(balance, 1);
-        header.Children.Add(balance);
+        var side = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 6) };
+        side.Children.Add(balance);
+        if (profile.Numbers != NumberModes.Figures)
+        {
+            var peek = Chip(T(figuresPeek ? "hideFigures" : "showFigures"), "NomiGhost", "", "FiguresPeek");
+            AutomationProperties.SetHelpText(peek, T("numbersSectionHelp"));
+            peek.Click += (_, _) => { figuresPeek = !figuresPeek; Refresh(); };
+            side.Children.Add(peek);
+        }
+        Grid.SetColumn(side, 1);
+        header.Children.Add(side);
         TodayBody.Children.Add(header);
 
         var metrics = new Grid { ColumnSpacing = 14 };
@@ -655,7 +678,7 @@ public sealed partial class MainWindow
         {
             (T("metricPlanned"), Minutes(planned * ratio), over ? T("metricOver") : string.Format(CultureInfo.CurrentCulture, T("metricPlannedDetail"), plan.Count), "MetricPlanned"),
             (T("metricDone"), doneToday.Length.ToString(CultureInfo.CurrentCulture), string.Format(CultureInfo.CurrentCulture, T("metricTracked"), Minutes(tracked)), "MetricDone"),
-            (T("metricPace"), samples >= 3 ? Readable.Pace(ratio, language) : "—", samples >= 3 ? (profile.Numbers == NumberModes.Figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
+            (T("metricPace"), samples >= 3 ? Readable.Pace(ratio, language) : "—", samples >= 3 ? (NumberMode == NumberModes.Figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
         };
         for (var index = 0; index < tiles.Length; index++)
         {
@@ -818,7 +841,7 @@ public sealed partial class MainWindow
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var slot = Text(Readable.Span(cursor, cursor.AddMinutes(minutes), now, profile.Numbers, language, profile.Day), 12, task.RunningSince is null ? "NomiInk3" : "NomiAccent");
+            var slot = Text(Readable.Span(cursor, cursor.AddMinutes(minutes), now, NumberMode, language, profile.Day), 12, task.RunningSince is null ? "NomiInk3" : "NomiAccent");
             slot.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
             slot.VerticalAlignment = VerticalAlignment.Center;
             row.Children.Add(slot);
@@ -864,7 +887,7 @@ public sealed partial class MainWindow
         "due" => string.Format(CultureInfo.CurrentCulture, T("sugDue"), suggestion.Values[0],
             board.Tasks.FirstOrDefault(task => task.Id == suggestion.TaskId)?.Due is { } due ? At(due) : suggestion.Values[1]),
         "late" => string.Format(CultureInfo.CurrentCulture, T("sugLate"), suggestion.Values),
-        "pace" when profile.Numbers != NumberModes.Figures => string.Format(CultureInfo.CurrentCulture, T("sugPaceWords"),
+        "pace" when NumberMode != NumberModes.Figures => string.Format(CultureInfo.CurrentCulture, T("sugPaceWords"),
             Readable.Pace(double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture), language), suggestion.Values[1]),
         "pace" => string.Format(CultureInfo.CurrentCulture, T(double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture) > 1 ? "sugPaceSlow" : "sugPaceFast"),
             Math.Abs(int.Parse(suggestion.Values[0], CultureInfo.InvariantCulture)), suggestion.Values[1]),
@@ -1319,7 +1342,7 @@ public sealed partial class MainWindow
             var prompt = string.Format(CultureInfo.CurrentCulture, T("splitPrompt"), task.Title, task.Estimate,
                 task.Note.Length > 0 ? task.Note : "—");
             var result = await inference.GenerateNomiAsync(prompt, "plan", language, "steps", splitting.Token,
-                instruction: T("splitInstruction"));
+                instruction: $"{T("splitInstruction")} {T(profile.StepSize == "medium" ? "splitMedium" : "splitSmall")} {AdaptiveInstruction()}".Trim());
             proposedSteps = result.Accepted ? TaskBoard.ParseSteps(result.Text) : [];
             if (proposedSteps.Count == 0) ShowToast(T("splitEmpty"), null, null);
         }
