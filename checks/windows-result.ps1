@@ -23,6 +23,7 @@ $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
 $history = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\history.json"
 if (Test-Path $history) { Remove-Item $history }
+Set-NomiOnboarded
 $personalize = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
 Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value 1 -Type DWord
 $process = Launch $app $logs
@@ -47,7 +48,7 @@ try {
     $label = (Find $process "CopyLabel").Current.Name
     if ($label -notin "Copié", "Copied") { throw "Copy confirmation not shown: '$label'" }
     if (!(Test-Path $history)) { throw "History was not saved locally." }
-    $entries = Get-Content $history -Raw | ConvertFrom-Json
+    $entries = Read-NomiFile $history $app | ConvertFrom-Json
     if (@($entries).Count -lt 1 -or !$entries[0].Output) { throw "History entry has no answer." }
     Write-Host "Answer rendered, copy confirmed, history saved ($(@($entries).Count) entry)."
     Stop-Process -Id $process.Id

@@ -28,6 +28,7 @@ $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
 $tasks = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\tasks.json"
 if (Test-Path $tasks) { Remove-Item $tasks }
+Set-NomiOnboarded
 $personalize = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
 foreach ($theme in 1, 0) {
     $name = if ($theme -eq 1) { "light" } else { "dark" }
@@ -46,9 +47,10 @@ foreach ($theme in 1, 0) {
             Invoke (WaitFor $process "BoardAdd" 30)
             Start-Sleep -Seconds 2
             if (!(Test-Path $tasks)) { throw "Task board was not saved locally." }
-            $saved = Get-Content $tasks -Raw -Encoding UTF8
+            if ((Get-Content $tasks -Raw -Encoding UTF8) -match "commissions de septembre") { throw "tasks.json is stored in clear text." }
+            $saved = Read-NomiFile $tasks $app
             if ($saved -notmatch "commissions de septembre") { throw "Quick-added task missing from tasks.json." }
-            Write-Host "Task added from the board and saved locally."
+            Write-Host "Task added from the board and saved locally, encrypted."
         }
         $root = $A::FromHandle($process.MainWindowHandle)
         $cards = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants,
