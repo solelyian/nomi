@@ -41,3 +41,22 @@ function Launch($app, $logs) {
     if ($process.HasExited) { throw "Application exited after startup: $($process.ExitCode)" }
     return $process
 }
+function Read-NomiFile($path, $app) {
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    $magic = [System.Text.Encoding]::ASCII.GetBytes("NOMI1")
+    $encrypted = $bytes.Length -gt $magic.Length -and
+        [System.Linq.Enumerable]::SequenceEqual([byte[]]$bytes[0..($magic.Length - 1)], [byte[]]$magic)
+    if (!$encrypted) { throw "$(Split-Path $path -Leaf) is not encrypted." }
+    if (-not ("System.Security.Cryptography.ProtectedData" -as [type])) {
+        Add-Type -Path (Join-Path $app "System.Security.Cryptography.ProtectedData.dll")
+    }
+    $entropy = [System.Text.Encoding]::UTF8.GetBytes("Nyne.Nomi.local.v1")
+    $plain = [System.Security.Cryptography.ProtectedData]::Unprotect([byte[]]$bytes[$magic.Length..($bytes.Length - 1)],
+        $entropy, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    return [System.Text.Encoding]::UTF8.GetString($plain)
+}
+function Set-NomiOnboarded {
+    $profile = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\profile.json"
+    New-Item -ItemType Directory -Force -Path (Split-Path $profile) | Out-Null
+    Set-Content -Path $profile -Value '{"Onboarded":true}' -Encoding UTF8
+}
