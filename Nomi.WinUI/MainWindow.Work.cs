@@ -656,21 +656,18 @@ public sealed partial class MainWindow
         var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
         titles.Children.Add(Heading(T("yourDay"), 28));
         var over = planned * ratio > available;
-        header.Children.Add(titles);
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
-        balance.TextWrapping = TextWrapping.NoWrap;
-        balance.VerticalAlignment = VerticalAlignment.Bottom;
-        var side = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 6) };
-        side.Children.Add(balance);
+        titles.Children.Add(balance);
+        header.Children.Add(titles);
         if (profile.Numbers != NumberModes.Figures)
         {
             var peek = Chip(T(figuresPeek ? "hideFigures" : "showFigures"), "NomiGhost", "", "FiguresPeek");
             AutomationProperties.SetHelpText(peek, T("numbersSectionHelp"));
             peek.Click += (_, _) => { figuresPeek = !figuresPeek; Refresh(); };
-            side.Children.Add(peek);
+            peek.VerticalAlignment = VerticalAlignment.Bottom;
+            Grid.SetColumn(peek, 1);
+            header.Children.Add(peek);
         }
-        Grid.SetColumn(side, 1);
-        header.Children.Add(side);
         TodayBody.Children.Add(header);
 
         var metrics = new Grid { ColumnSpacing = 14 };
@@ -684,8 +681,11 @@ public sealed partial class MainWindow
         {
             var (label, value, detail, id) = tiles[index];
             var stack = new StackPanel { Spacing = 2 };
-            var number = Text(value, 30);
-            number.TextWrapping = TextWrapping.NoWrap;
+            var wordy = value.Length > 8;
+            var number = Text(value, wordy ? 22 : 30);
+            number.TextWrapping = wordy ? TextWrapping.WrapWholeWords : TextWrapping.NoWrap;
+            number.MaxLines = 2;
+            number.TextTrimming = TextTrimming.CharacterEllipsis;
             number.FontWeight = FontWeights.SemiBold;
             number.CharacterSpacing = -20;
             number.FontFamily = (FontFamily)Application.Current.Resources["NomiDisplay"];
