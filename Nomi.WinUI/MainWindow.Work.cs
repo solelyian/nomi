@@ -45,11 +45,19 @@ public sealed partial class MainWindow
         _ => T("colTodo")
     };
 
-    private string Minutes(double minutes)
+    private bool figuresPeek;
+
+    private string NumberMode => figuresPeek ? NumberModes.Figures : profile.Numbers;
+
+    private string AdaptiveInstruction() => string.Join(" ", new[]
     {
-        var total = (int)Math.Round(Math.Max(0, minutes));
-        return total < 60 ? $"{total} min" : $"{total / 60} h {total % 60:00}";
-    }
+        Readable.Instruction(profile.Numbers, language),
+        profile.Corrections.Count > 0 ? $"Notes from the user about how they work, to respect when relevant: {string.Join(" / ", profile.Corrections)}." : ""
+    }.Where(part => part.Length > 0));
+
+    private string Minutes(double minutes) => Readable.Duration(minutes, NumberMode, language);
+
+    private string At(DateTimeOffset time) => Readable.Clock(time, Now, NumberMode, language, profile.Day);
 
     private static string Clock(double seconds)
     {
@@ -292,8 +300,13 @@ public sealed partial class MainWindow
         board.Move(task, column, Now);
         if (column == Columns.Doing) board.Start(task, Now);
         if (order is { } value) { task.Order = value; board.Save(); }
-        if (column == Columns.Done && running)
-            ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskFinished"), task.Title, Minutes(task.SpentSeconds / 60)), null, null);
+        if (column != Columns.Done || !running) return;
+        var finished = string.Format(CultureInfo.CurrentCulture, T("taskFinished"), task.Title, Minutes(task.SpentSeconds / 60));
+        var next = profile.Chain
+            ? board.Tasks.Where(item => item.Column == Columns.Todo).OrderBy(item => item.Due ?? DateTimeOffset.MaxValue).ThenBy(item => item.Order).FirstOrDefault()
+            : null;
+        if (next is null) ShowToast(finished, null, null);
+        else ShowToast(finished, string.Format(CultureInfo.CurrentCulture, T("chainNext"), next.Title), () => { Move(next, Columns.Doing); Refresh(); });
     }
 
     // Board
@@ -521,7 +534,7 @@ public sealed partial class MainWindow
         if (task.Space is not null) meta.Children.Add(Pill(SpaceName(task.Space)));
         meta.Children.Add(Pill($"≈ {Minutes(task.Estimate)}"));
         if (task.Due is { } due)
-            meta.Children.Add(Pill(due < now && task.Column != Columns.Done ? $"{T("late")} · {due:HH:mm}" : due.Date == now.Date ? $"{T("dueAt")} {due:HH:mm}" : due.ToString("d MMM", CultureInfo.CurrentCulture),
+            meta.Children.Add(Pill(due < now && task.Column != Columns.Done ? $"{T("late")} · {At(due)}" : due.Date == now.Date ? $"{T("dueAt")} {At(due)}" : due.ToString("d MMM", CultureInfo.CurrentCulture),
                 due < now && task.Column != Columns.Done ? "NomiAccentSoft" : "NomiSurface2", due < now && task.Column != Columns.Done ? "NomiAccent" : "NomiInk2"));
         body.Children.Add(meta);
         var spent = task.Spent(now);
@@ -638,8 +651,7 @@ public sealed partial class MainWindow
         var plan = board.Plan(now);
         var planned = plan.Sum(task => TaskBoard.Remaining(task, now));
         var (ratio, samples) = board.Pace();
-        var endOfDay = new DateTimeOffset(now.Year, now.Month, now.Day, 18, 0, 0, now.Offset);
-        var available = Math.Max(0, (endOfDay - now).TotalMinutes);
+        var available = profile.Day.Available(now);
         var doneToday = board.Tasks.Where(task => task.Completed is { } done && done.Date == now.Date).ToArray();
         var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
         titles.Children.Add(Heading(T("yourDay"), 28));
@@ -648,9 +660,17 @@ public sealed partial class MainWindow
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
         balance.TextWrapping = TextWrapping.NoWrap;
         balance.VerticalAlignment = VerticalAlignment.Bottom;
-        balance.Margin = new Thickness(0, 0, 0, 6);
-        Grid.SetColumn(balance, 1);
-        header.Children.Add(balance);
+        var side = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 6) };
+        side.Children.Add(balance);
+        if (profile.Numbers != NumberModes.Figures)
+        {
+            var peek = Chip(T(figuresPeek ? "hideFigures" : "showFigures"), "NomiGhost", "", "FiguresPeek");
+            AutomationProperties.SetHelpText(peek, T("numbersSectionHelp"));
+            peek.Click += (_, _) => { figuresPeek = !figuresPeek; Refresh(); };
+            side.Children.Add(peek);
+        }
+        Grid.SetColumn(side, 1);
+        header.Children.Add(side);
         TodayBody.Children.Add(header);
 
         var metrics = new Grid { ColumnSpacing = 14 };
@@ -658,7 +678,7 @@ public sealed partial class MainWindow
         {
             (T("metricPlanned"), Minutes(planned * ratio), over ? T("metricOver") : string.Format(CultureInfo.CurrentCulture, T("metricPlannedDetail"), plan.Count), "MetricPlanned"),
             (T("metricDone"), doneToday.Length.ToString(CultureInfo.CurrentCulture), string.Format(CultureInfo.CurrentCulture, T("metricTracked"), Minutes(tracked)), "MetricDone"),
-            (T("metricPace"), samples >= 3 ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)}" : "—", samples >= 3 ? T("metricPaceDetail") : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
+            (T("metricPace"), samples >= 3 ? Readable.Pace(ratio, language) : "—", samples >= 3 ? (NumberMode == NumberModes.Figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
         };
         for (var index = 0; index < tiles.Length; index++)
         {
@@ -730,7 +750,7 @@ public sealed partial class MainWindow
                 var name = Text(upcoming.Title, 20);
                 name.FontWeight = FontWeights.SemiBold;
                 stack.Children.Add(name);
-                stack.Children.Add(Text($"{T("estimated")} {Minutes(upcoming.Estimate)}{(upcoming.Due is { } due ? $" · {T("dueAt")} {due:HH:mm}" : "")}", 12.5, "NomiInk2"));
+                stack.Children.Add(Text($"{T("estimated")} {Minutes(upcoming.Estimate)}{(upcoming.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 12.5, "NomiInk2"));
                 var focus = Primary(T("startFocus"), "TodayStartFocus");
                 focus.Click += (_, _) => { board.Start(upcoming, Now); focusTaskId = upcoming.Id; Show("focus"); };
                 actions.Children.Add(focus);
@@ -766,7 +786,7 @@ public sealed partial class MainWindow
         var remaining = TaskBoard.Remaining(task, now) * ratio;
         var facts = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         facts.Children.Add(Text($"{T("estimated")} {Minutes(task.Estimate)} · {T("remaining")} {Minutes(remaining)}", 12.5, "NomiInk2"));
-        facts.Children.Add(Text($"{T("likelyEnd")} {now.AddMinutes(remaining):HH:mm}", 12.5, "NomiInk2"));
+        facts.Children.Add(Text($"{T("likelyEnd")} {At(now.AddMinutes(remaining))}", 12.5, "NomiInk2"));
         Grid.SetColumn(facts, 1);
         row.Children.Add(facts);
         stack.Children.Add(row);
@@ -821,7 +841,7 @@ public sealed partial class MainWindow
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var slot = Text($"{cursor:HH:mm} – {cursor.AddMinutes(minutes):HH:mm}", 12, task.RunningSince is null ? "NomiInk3" : "NomiAccent");
+            var slot = Text(Readable.Span(cursor, cursor.AddMinutes(minutes), now, NumberMode, language, profile.Day), 12, task.RunningSince is null ? "NomiInk3" : "NomiAccent");
             slot.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
             slot.VerticalAlignment = VerticalAlignment.Center;
             row.Children.Add(slot);
@@ -830,7 +850,7 @@ public sealed partial class MainWindow
             name.MaxLines = 2;
             name.TextTrimming = TextTrimming.CharacterEllipsis;
             info.Children.Add(name);
-            info.Children.Add(Text($"{ColumnName(task.Column)} · {Minutes(minutes)}{(task.Due is { } due ? $" · {T("dueAt")} {due:HH:mm}" : "")}", 11.5, "NomiInk3"));
+            info.Children.Add(Text($"{ColumnName(task.Column)} · {Minutes(minutes)}{(task.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 11.5, "NomiInk3"));
             Grid.SetColumn(info, 1);
             row.Children.Add(info);
             var action = Chip(task.RunningSince is null ? T("start") : T("pauseTimer"), "NomiGhost", task.RunningSince is null ? "\uE768" : "\uE769");
@@ -846,15 +866,33 @@ public sealed partial class MainWindow
         return card;
     }
 
+    private string MinutesOf(string value) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var minutes) ? Minutes(minutes) : value;
+
+    private bool Busy => profile.Calm && (board.Active?.RunningSince is not null || focusState == "watching" || generation is not null);
+
+    private void Learn(Suggestion suggestion, bool accepted)
+    {
+        var muted = profile.Muted.Contains(suggestion.Kind);
+        profile.Record(suggestion.Kind, accepted, accepted ? null : suggestion.Id);
+        board.Dismissed.Add(suggestion.Id);
+        SaveProfile();
+        board.Save();
+        if (!accepted && !muted && profile.Muted.Contains(suggestion.Kind)) ShowToast(T("mutedToast"), null, null);
+    }
+
     private string SuggestionText(Suggestion suggestion) => suggestion.Kind switch
     {
-        "overrun" => string.Format(CultureInfo.CurrentCulture, T("sugOverrun"), suggestion.Values),
-        "due" => string.Format(CultureInfo.CurrentCulture, T("sugDue"), suggestion.Values),
+        "overrun" => string.Format(CultureInfo.CurrentCulture, T("sugOverrun"), suggestion.Values[0], MinutesOf(suggestion.Values[1]), MinutesOf(suggestion.Values[2]), MinutesOf(suggestion.Values[3])),
+        "due" => string.Format(CultureInfo.CurrentCulture, T("sugDue"), suggestion.Values[0],
+            board.Tasks.FirstOrDefault(task => task.Id == suggestion.TaskId)?.Due is { } due ? At(due) : suggestion.Values[1]),
         "late" => string.Format(CultureInfo.CurrentCulture, T("sugLate"), suggestion.Values),
+        "pace" when NumberMode != NumberModes.Figures => string.Format(CultureInfo.CurrentCulture, T("sugPaceWords"),
+            Readable.Pace(double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture), language), suggestion.Values[1]),
         "pace" => string.Format(CultureInfo.CurrentCulture, T(double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture) > 1 ? "sugPaceSlow" : "sugPaceFast"),
             Math.Abs(int.Parse(suggestion.Values[0], CultureInfo.InvariantCulture)), suggestion.Values[1]),
-        "overload" => string.Format(CultureInfo.CurrentCulture, T("sugOverload"), suggestion.Values),
-        "split" => string.Format(CultureInfo.CurrentCulture, T("sugSplit"), suggestion.Values),
+        "overload" => string.Format(CultureInfo.CurrentCulture, T("sugOverload"), suggestion.Values[0], MinutesOf(suggestion.Values[1])),
+        "split" => string.Format(CultureInfo.CurrentCulture, T("sugSplit"), suggestion.Values[0], MinutesOf(suggestion.Values[1])),
         _ => ""
     };
 
@@ -867,6 +905,8 @@ public sealed partial class MainWindow
         "split" => T("splitWithNomi"),
         _ => T("apply")
     };
+
+    private bool showLater;
 
     private Border SuggestionsCard(DateTimeOffset now)
     {
@@ -881,7 +921,20 @@ public sealed partial class MainWindow
         {
             stack.Children.Add(Text(T("noSuggestions"), 12.5, "NomiInk3"));
         }
-        foreach (var suggestion in suggestions.Take(5))
+        var held = Busy && !showLater && suggestions.Count > 0;
+        if (Busy && suggestions.Count > 0)
+        {
+            var later = new StackPanel { Spacing = 8, Padding = new Thickness(12, 10, 12, 10) };
+            var title = Text(T("laterTitle"), 13);
+            title.FontWeight = FontWeights.SemiBold;
+            later.Children.Add(title);
+            later.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("laterBody"), suggestions.Count), 12.5, "NomiInk2"));
+            var toggle = Chip(T(showLater ? "laterHide" : "laterShow"), "NomiGhost", null, "SuggestionsLater");
+            toggle.Click += (_, _) => { showLater = !showLater; Refresh(); };
+            later.Children.Add(toggle);
+            stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = later });
+        }
+        foreach (var suggestion in held ? [] : suggestions.Take(5))
         {
             var item = new StackPanel { Spacing = 8, Padding = new Thickness(12, 10, 12, 10) };
             item.Children.Add(Text(SuggestionText(suggestion), 13));
@@ -889,10 +942,9 @@ public sealed partial class MainWindow
             var apply = Chip(SuggestionAction(suggestion), "NomiChip", null, $"Suggestion_{suggestion.Kind}");
             apply.Click += async (_, _) =>
             {
+                Learn(suggestion, true);
                 if (suggestion.Kind == "split")
                 {
-                    board.Dismissed.Add(suggestion.Id);
-                    board.Save();
                     OpenSheet(suggestion.TaskId);
                     await SplitTask(suggestion.TaskId);
                     return;
@@ -904,7 +956,7 @@ public sealed partial class MainWindow
             buttons.Children.Add(apply);
             var dismiss = Chip(T("dismiss"), "NomiGhost");
             AutomationProperties.SetName(dismiss, $"{T("dismiss")} : {SuggestionText(suggestion)}");
-            dismiss.Click += (_, _) => { board.Dismissed.Add(suggestion.Id); board.Save(); Refresh(); };
+            dismiss.Click += (_, _) => { Learn(suggestion, false); Refresh(); };
             buttons.Children.Add(dismiss);
             item.Children.Add(buttons);
             stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = item });
@@ -966,7 +1018,7 @@ public sealed partial class MainWindow
             {
                 (T("elapsed"), clock),
                 (T("estimated"), Text(Minutes(task.Estimate), 20)),
-                (T("likelyEnd"), Text($"{now.AddMinutes(remaining):HH:mm}", 20))
+                (T("likelyEnd"), Text(At(now.AddMinutes(remaining)), 20))
             };
             for (var index = 0; index < cells.Length; index++)
             {
@@ -1290,7 +1342,7 @@ public sealed partial class MainWindow
             var prompt = string.Format(CultureInfo.CurrentCulture, T("splitPrompt"), task.Title, task.Estimate,
                 task.Note.Length > 0 ? task.Note : "—");
             var result = await inference.GenerateNomiAsync(prompt, "plan", language, "steps", splitting.Token,
-                instruction: T("splitInstruction"));
+                instruction: $"{T("splitInstruction")} {T(profile.StepSize == "medium" ? "splitMedium" : "splitSmall")} {AdaptiveInstruction()}".Trim());
             proposedSteps = result.Accepted ? TaskBoard.ParseSteps(result.Text) : [];
             if (proposedSteps.Count == 0) ShowToast(T("splitEmpty"), null, null);
         }

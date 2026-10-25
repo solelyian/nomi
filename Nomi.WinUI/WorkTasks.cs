@@ -55,6 +55,10 @@ public sealed class TaskBoard
     private readonly string path;
     public List<WorkTask> Tasks { get; }
     public HashSet<string> Dismissed { get; } = [];
+    public HashSet<string> Muted { get; } = [];
+    public Day Day { get; set; } = Day.Default;
+    public int SplitAbove { get; set; } = 60;
+    public string FilePath => path;
 
     public TaskBoard(string? file = null)
     {
@@ -66,8 +70,8 @@ public sealed class TaskBoard
     {
         try
         {
-            if (!File.Exists(file)) return [];
-            var tasks = JsonSerializer.Deserialize<List<WorkTask>>(File.ReadAllText(file)) ?? [];
+            if (SecureFile.Read(file) is not { } text) return [];
+            var tasks = JsonSerializer.Deserialize<List<WorkTask>>(text) ?? [];
             return tasks.Where(task => task.Title.Length > 0 && Columns.All.Contains(task.Column)).ToList();
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
@@ -78,17 +82,7 @@ public sealed class TaskBoard
 
     public void Save()
     {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            var temporary = path + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(Tasks));
-            File.Move(temporary, path, true);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            StartupDiagnostics.Write($"Tasks not saved: {error.GetType().Name}");
-        }
+        SecureFile.Write(path, JsonSerializer.Serialize(Tasks));
     }
 
     public WorkTask? Find(string id) => Tasks.FirstOrDefault(task => task.Id == id);
@@ -207,8 +201,7 @@ public sealed class TaskBoard
                 [Math.Round((ratio - 1) * 100).ToString(culture), open.Length.ToString(culture), Math.Round(ratio, 2).ToString(culture)]));
         var plan = Plan(now);
         var planned = plan.Sum(task => Remaining(task, now));
-        var endOfDay = new DateTimeOffset(now.Year, now.Month, now.Day, 18, 0, 0, now.Offset);
-        var available = Math.Max(0, (endOfDay - now).TotalMinutes);
+        var available = Day.Available(now);
         if (plan.Count > 1 && planned > available + 15)
         {
             var moved = plan.Where(task => task.Column == Columns.Todo && (task.Due is null || task.Due.Value.Date > now.Date))
@@ -218,9 +211,9 @@ public sealed class TaskBoard
                 list.Add(new($"overload:{moved.Id}:{now:yyyyMMdd}", "overload", moved.Id,
                     [moved.Title, ((int)(planned - available)).ToString(culture)]));
         }
-        foreach (var task in Tasks.Where(task => task.Column is Columns.Todo or Columns.Doing && task.Estimate >= 60 && task.Steps.Count == 0).Take(2))
+        foreach (var task in Tasks.Where(task => task.Column is Columns.Todo or Columns.Doing && task.Estimate >= SplitAbove && task.Steps.Count == 0).Take(2))
             list.Add(new($"split:{task.Id}", "split", task.Id, [task.Title, task.Estimate.ToString(culture)]));
-        return list.Where(item => !Dismissed.Contains(item.Id)).ToArray();
+        return list.Where(item => !Dismissed.Contains(item.Id) && !Muted.Contains(item.Kind)).ToArray();
     }
 
     public void Apply(Suggestion suggestion, DateTimeOffset now)
@@ -235,10 +228,10 @@ public sealed class TaskBoard
                 Start(task, now);
                 break;
             case "late" when task is not null:
-                task.Due = new DateTimeOffset(now.Date.AddDays(1).AddHours(9), now.Offset);
+                task.Due = new DateTimeOffset(now.Date.AddDays(1).Add(Day.Start), now.Offset);
                 break;
             case "overload" when task is not null:
-                task.Due = new DateTimeOffset(now.Date.AddDays(1).AddHours(9), now.Offset);
+                task.Due = new DateTimeOffset(now.Date.AddDays(1).Add(Day.Start), now.Offset);
                 break;
             case "pace":
                 var ratio = double.Parse(suggestion.Values[2], CultureInfo.InvariantCulture);

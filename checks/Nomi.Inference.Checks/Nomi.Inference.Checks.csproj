@@ -16,6 +16,7 @@
     <Compile Include="../../Nomi.WinUI/DocumentText.cs" Link="DocumentText.cs" />
     <Compile Include="../../Nomi.WinUI/TableCheck.cs" Link="TableCheck.cs" />
     <Compile Include="../../Nomi.WinUI/WorkTasks.cs" Link="WorkTasks.cs" />
+    <Compile Include="../../Nomi.WinUI/Adaptation.cs" Link="Adaptation.cs" />
     <Compile Include="../../Nomi.WinUI/ScreenFrame.cs" Link="ScreenFrame.cs" />
     <Compile Include="../../Nomi.WinUI/VisionClient.cs" Link="VisionClient.cs" />
     <Compile Include="../../Nomi.WinUI/StartupDiagnostics.cs" Link="StartupDiagnostics.cs" />
@@ -34,5 +35,6 @@
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 </Project>

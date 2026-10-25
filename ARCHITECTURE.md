@@ -141,8 +141,9 @@ UI Automation, titres structurés, retour du focus et ressources de thème syst�
 La validation réelle au clavier, avec Narrator et en contraste élevé doit être
 effectuée sous Windows.
 
-Les préférences de l’aperçu sont conservées localement. Celles du squelette
-natif restent en mémoire pendant la session.
+Les préférences de l’aperçu sont conservées localement. Celles de l’application
+native sont dans `profile.json`, chiffré avec DPAPI comme `tasks.json` et
+`history.json` (`SecureFile`, `Nomi.WinUI/Adaptation.cs`).
 
 ## État des vérifications
 

@@ -17,15 +17,13 @@ public static class HistoryStore
 {
     public const int Limit = 30;
 
-    private static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Nyne", "Nomi", "history.json");
+    public static readonly string FilePath = Path.Combine(SecureFile.Folder, "history.json");
 
     public static List<HistoryEntry> Load()
     {
         try
         {
-            if (!File.Exists(FilePath)) return [];
-            return JsonSerializer.Deserialize<List<HistoryEntry>>(File.ReadAllText(FilePath)) ?? [];
+            return SecureFile.Read(FilePath) is { } text ? JsonSerializer.Deserialize<List<HistoryEntry>>(text) ?? [] : [];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -35,14 +33,6 @@ public static class HistoryStore
 
     public static void Save(IReadOnlyList<HistoryEntry> entries)
     {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(entries.Take(Limit)));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            StartupDiagnostics.Write($"History not saved: {error.GetType().Name}");
-        }
+        SecureFile.Write(FilePath, JsonSerializer.Serialize(entries.Take(Limit)));
     }
 }
