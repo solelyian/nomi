@@ -24,7 +24,7 @@ public sealed record Day(TimeSpan Start, TimeSpan LunchStart, TimeSpan LunchEnd,
     public static readonly Day Default = new(new(9, 0, 0), new(12, 30, 0), new(13, 30, 0), new(18, 0, 0));
 
     public DateTimeOffset At(DateTimeOffset now, TimeSpan time) =>
-        new(now.Year, now.Month, now.Day, 0, 0, 0, now.Offset) + time;
+        new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, now.Offset).Add(time);
 
     public double Available(DateTimeOffset now)
     {

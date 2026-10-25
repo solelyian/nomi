@@ -12,6 +12,39 @@ internal static class WorkChecks
             count++;
         }
 
+        var day = Day.Default;
+        var noon = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.FromHours(1));
+        Check(Readable.Clock(noon.AddMinutes(100), noon, NumberModes.Words, "fr", day) == "juste après le déjeuner", "Landmark after lunch");
+        Check(Readable.Clock(noon.AddMinutes(100), noon, NumberModes.Figures, "fr", day) == "13:40", "Figures kept on request");
+        Check(Readable.Clock(noon.AddMinutes(-30), noon.AddMinutes(-60), NumberModes.Words, "fr", day) == "en fin de matinée", "Late morning landmark");
+        Check(Readable.Clock(noon.AddHours(3).AddMinutes(45), noon, NumberModes.Proportions, "fr", day) == "à la moitié de l’après-midi", "Afternoon proportion");
+        Check(Readable.Clock(noon.AddDays(1), noon, NumberModes.Words, "en", day) == "tomorrow morning", "Next-day landmark");
+        Check(Readable.Duration(40, NumberModes.Words, "fr") == "un moment moyen", "Duration in words");
+        Check(Readable.Duration(45, NumberModes.Proportions, "fr") == "trois quarts d’heure", "Duration in proportions");
+        Check(Readable.Duration(65, NumberModes.Figures, "fr") == "1 h 05", "Duration in figures");
+        Check(Readable.Fraction(0.7, "fr") == "environ deux tiers", "Fraction in words");
+        Check(Readable.Pace(1.3, "fr").Contains("un peu plus"), "Pace in words");
+        Check(Readable.Instruction(NumberModes.Words, "fr").Contains("Chiffres exacts") && Readable.Instruction(NumberModes.Figures, "fr") == "", "Model instruction by mode");
+        Check(Math.Abs(day.Available(noon.AddHours(-3)) - 480) < 0.01 && Math.Abs(day.Available(noon.AddHours(2)) - 240) < 0.01, "Available time skips lunch");
+        var profile = new Profile();
+        for (var index = 0; index < Profile.MuteAfter; index++) profile.Record("split", false, $"split:{index}");
+        Check(profile.Muted.Contains("split") && profile.Dismissed.Count == 3, "Repeatedly dismissed kind muted");
+        profile.Resume("split");
+        Check(!profile.Muted.Contains("split") && !profile.Signals.ContainsKey("split"), "Muted kind resumed");
+        var profilePath = Path.Combine(Path.GetTempPath(), $"nomi-profile-{Guid.NewGuid():N}.json");
+        var store = new ProfileStore(profilePath);
+        profile.Numbers = NumberModes.Proportions;
+        profile.Corrections.Add("Je préfère les petites étapes");
+        store.Save(profile);
+        var loaded = store.Load();
+        Check(loaded.Numbers == NumberModes.Proportions && loaded.Corrections.Count == 1, "Profile persisted");
+        Check(SecureFile.IsEncrypted(profilePath) == SecureFile.Encrypts && !File.ReadAllText(profilePath).Contains("proportions") == SecureFile.Encrypts, "Profile encrypted at rest");
+        File.WriteAllText(profilePath, "{\"Numbers\":\"figures\",\"Language\":\"xx\"}");
+        var legacy = store.Load();
+        Check(legacy.Numbers == NumberModes.Figures && legacy.Language == "fr", "Plain legacy file read and normalised");
+        SecureFile.Delete(profilePath);
+        Check(!File.Exists(profilePath), "Profile deleted");
+
         var rows = TableCheck.ParseRows("""
             Commercial | CA sept. (€) | Taux | Commission (€)
             A. Martin | 48 200 | 5 % | 2 410
