@@ -11,7 +11,6 @@
     <Compile Include="../../Nomi.WinUI/ModelStore.cs" Link="ModelStore.cs" />
     <Compile Include="../../Nomi.WinUI/LocalInferenceClient.cs" Link="LocalInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/AdaptiveInferenceClient.cs" Link="AdaptiveInferenceClient.cs" />
-    <Compile Include="../../Nomi.WinUI/OllamaClient.cs" Link="OllamaClient.cs" />
     <Compile Include="../../Nomi.WinUI/ResponsePolicy.cs" Link="ResponsePolicy.cs" />
     <Compile Include="../../Nomi.WinUI/DocumentText.cs" Link="DocumentText.cs" />
     <Compile Include="../../Nomi.WinUI/TableCheck.cs" Link="TableCheck.cs" />

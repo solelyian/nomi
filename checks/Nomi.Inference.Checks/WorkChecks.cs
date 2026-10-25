@@ -26,6 +26,10 @@ internal static class WorkChecks
         Check(Readable.Pace(1.3, "fr").Contains("un peu plus"), "Pace in words");
         Check(Readable.Instruction(NumberModes.Words, "fr").Contains("Chiffres exacts") && Readable.Instruction(NumberModes.Figures, "fr") == "", "Model instruction by mode");
         Check(Math.Abs(day.Available(noon.AddHours(-3)) - 480) < 0.01 && Math.Abs(day.Available(noon.AddHours(2)) - 240) < 0.01, "Available time skips lunch");
+        Check(Math.Abs(day.Available(noon.AddHours(-5)) - 480) < 0.01, "Time before the day starts is not available");
+        var friday = new DateTimeOffset(2026, 10, 23, 17, 0, 0, TimeSpan.FromHours(2));
+        Check(day.NextStart(friday) == new DateTimeOffset(2026, 10, 26, 9, 0, 0, TimeSpan.FromHours(2)), "Deferral skips the weekend");
+        Check(Readable.Clock(noon.AddDays(-1).AddHours(3), noon, NumberModes.Words, "fr", day) == "hier après-midi", "Yesterday keeps its landmark");
         var profile = new Profile();
         for (var index = 0; index < Profile.MuteAfter; index++) profile.Record("split", false, $"split:{index}");
         Check(profile.Muted.Contains("split") && profile.Dismissed.Count == 3, "Repeatedly dismissed kind muted");

@@ -286,6 +286,8 @@ public sealed partial class MainWindow
         SecureFile.Delete(board.FilePath);
         SecureFile.Delete(HistoryStore.FilePath);
         SecureFile.Delete(profileStore.Path);
+        try { if (Directory.Exists(StartupDiagnostics.DirectoryPath)) Directory.Delete(StartupDiagnostics.DirectoryPath, true); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         profile = new Profile { Language = language };
         summary = false;
         SyncBoard();

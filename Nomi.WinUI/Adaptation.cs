@@ -29,12 +29,19 @@ public sealed record Day(TimeSpan Start, TimeSpan LunchStart, TimeSpan LunchEnd,
     public double Available(DateTimeOffset now)
     {
         var end = At(now, End);
-        var total = Math.Max(0, (end - now).TotalMinutes);
-        var lunchStart = At(now, LunchStart) > now ? At(now, LunchStart) : now;
+        var from = At(now, Start) > now ? At(now, Start) : now;
+        var total = Math.Max(0, (end - from).TotalMinutes);
+        var lunchStart = At(now, LunchStart) > from ? At(now, LunchStart) : from;
         var lunchEnd = At(now, LunchEnd) < end ? At(now, LunchEnd) : end;
         return Math.Max(0, total - Math.Max(0, (lunchEnd - lunchStart).TotalMinutes));
     }
 
+    public DateTimeOffset NextStart(DateTimeOffset now)
+    {
+        var day = now.Date.AddDays(1);
+        while (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) day = day.AddDays(1);
+        return new DateTimeOffset(day.Add(Start), now.Offset);
+    }
     public bool Valid => Start < LunchStart && LunchStart < LunchEnd && LunchEnd < End;
 }
 
@@ -278,7 +285,7 @@ public static class Readable
         {
             var part = t < day.LunchStart ? (fr ? "matin" : "morning") : t < day.End ? (fr ? "après-midi" : "afternoon") : (fr ? "soir" : "evening");
             if (time.Date == now.Date.AddDays(1)) return fr ? $"demain {part}" : $"tomorrow {part}";
-            if (time.Date == now.Date.AddDays(-1)) return fr ? "hier" : "yesterday";
+            if (time.Date == now.Date.AddDays(-1)) return fr ? $"hier {part}" : $"yesterday {part}";
             var culture = CultureInfo.GetCultureInfo(fr ? "fr-FR" : "en-GB");
             return time.Date < now.Date ? time.ToString("d MMMM", culture) : $"{time.ToString("dddd", culture)} {part}";
         }
