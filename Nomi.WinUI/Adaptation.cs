@@ -59,7 +59,6 @@ public sealed class Profile
     public TimeSpan LunchStart { get; set; } = Day.Default.LunchStart;
     public TimeSpan LunchEnd { get; set; } = Day.Default.LunchEnd;
     public TimeSpan DayEnd { get; set; } = Day.Default.End;
-    public string Font { get; set; } = "hyperlegible";
     public string Spacing { get; set; } = "standard";
     public string Motion { get; set; } = "system";
     public string Contrast { get; set; } = "standard";
@@ -85,7 +84,6 @@ public sealed class Profile
         if (!NumberModes.All.Contains(Numbers)) Numbers = NumberModes.Words;
         if (Response is not ("steps" or "summary")) Response = "steps";
         if (StepSize is not ("small" or "medium")) StepSize = "small";
-        if (Font is not ("hyperlegible" or "system")) Font = "hyperlegible";
         if (Spacing is not ("standard" or "airy")) Spacing = "standard";
         if (Motion is not ("system" or "reduced")) Motion = "system";
         if (Contrast is not ("standard" or "strong")) Contrast = "standard";

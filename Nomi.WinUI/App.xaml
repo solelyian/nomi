@@ -174,9 +174,9 @@
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
 
-            <FontFamily x:Key="NomiMono">Cascadia Mono, Consolas</FontFamily>
+            <FontFamily x:Key="NomiMono">ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono</FontFamily>
             <ThemeShadow x:Key="NomiShadow" />
-            <FontFamily x:Key="NomiDisplay">Segoe UI Variable Display, Segoe UI</FontFamily>
+            <FontFamily x:Key="NomiDisplay">ms-appx:///Assets/Fonts/AtkinsonHyperlegible-Bold.ttf#Atkinson Hyperlegible</FontFamily>
 
             <TransitionCollection x:Key="NomiEntrance">
                 <EntranceThemeTransition FromVerticalOffset="24" IsStaggeringEnabled="True" />
