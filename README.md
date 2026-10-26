@@ -134,11 +134,41 @@ locale et déterministe (`Nomi.WinUI/Adaptation.cs`), sans appel au modèle.
 
 Les préférences décrivent les repères de journée (début, déjeuner, fin), la taille
 des étapes, le mode calme (suggestions gardées « pour après » pendant une tâche,
-Focus ou une réponse), l’enchaînement des tâches, la police Atkinson Hyperlegible,
+Focus ou une réponse), l’enchaînement des tâches,
 l’espacement, le contraste et les animations. « Ce que Nomi retient » montre en clair
 le rythme appris, les suggestions acceptées ou écartées et vos précisions ; tout
 est modifiable et peut être oublié. Une suggestion écartée trois fois n’est plus
 proposée, jusqu’à sa réactivation.
+
+Toute l’interface utilise Atkinson Hyperlegible ; les horloges et minuteurs utilisent
+Atkinson Hyperlegible Mono (licence SIL OFL, `licenses/`).
+
+### Routines, agenda et « Ma journée déraille »
+
+La page **Routines** (Ctrl 5) transforme une phrase en routine : « Chaque lundi après
+le déjeuner, préparer le point équipe 20 min puis envoyer le compte rendu ». Nomi
+affiche ce qu’il a compris (moment, jours, étapes), modifiable, avant d’enregistrer.
+Les moments sont des états de la journée : début, après le déjeuner, après une tâche,
+après Focus, au retour d’une pause (inactivité Windows ≥ 10 min), avant la fin de
+journée et après la première réunion. Une routine prête apparaît dans le compagnon
+avec « Commencer », « Plus tard » ou « Pas aujourd’hui » : rien ne démarre seul, et
+une routine ne se propose qu’une fois par jour. Les routines sont chiffrées
+(`routines.json`). Nomi propose aussi une routine quand une tâche revient trois
+semaines de suite le même jour (`Nomi.WinUI/Routines.cs`).
+
+L’agenda se connecte par une adresse ICS privée (Outlook, Google, iCloud, en https ou
+webcal) ou un fichier .ics. L’adresse et la copie de l’agenda restent chiffrées ; les
+récurrences, exceptions et annulations sont prises en compte (`Nomi.WinUI/Agenda.cs`).
+
+« Ma journée déraille » (Aujourd’hui) propose ligne par ligne de garder, d’alléger
+(seule la prochaine étape aujourd’hui, la suite dans une nouvelle tâche) ou de
+reporter au prochain jour travaillé, selon le rythme réel et le temps restant. Rien
+n’est appliqué avant « Appliquer ces choix », et « Annuler » remet tout comme avant
+(`Nomi.WinUI/DayRescue.cs`).
+
+Nomi vérifie au plus une fois par jour la dernière version publiée sur GitHub
+(désactivable dans les préférences). Il affiche un lien, sans rien télécharger ni
+installer.
 
 ### Focus écran et modèle vision
 
