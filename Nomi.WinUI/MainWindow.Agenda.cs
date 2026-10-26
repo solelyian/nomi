@@ -151,6 +151,7 @@ public sealed partial class MainWindow
             {
                 updateStatus = string.Format(CultureInfo.CurrentCulture, T("updateAvailable"), release.Version.ToString(3));
                 if (!Busy) ShowToast(updateStatus, T("updateOpen"), () => _ = Launcher.LaunchUriAsync(release.Page));
+                NotifyAway("Nomi", updateStatus, "settings");
             }
             else updateStatus = latest is null ? T("updateFailed") : T("updateCurrent");
         }
