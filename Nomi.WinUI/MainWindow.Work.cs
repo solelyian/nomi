@@ -92,6 +92,7 @@ public sealed partial class MainWindow
         if (tick % 30 != 0) return;
         CheckRoutines();
         _ = RefreshAgenda(false);
+        _ = CheckForUpdates(false);
         var signature = string.Join('|', board.Suggestions(now).Select(item => item.Id));
         if (signature == suggestionSignature) return;
         suggestionSignature = signature;
