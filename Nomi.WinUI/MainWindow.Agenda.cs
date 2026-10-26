@@ -99,6 +99,9 @@ public sealed partial class MainWindow
         }
         profile.AgendaSource = source;
         agendaStatus = "";
+        SecureFile.Delete(agendaCache);
+        meetingsDate = default;
+        todayMeetings = [];
         SaveProfile();
         await RefreshAgenda(true);
     }
@@ -122,7 +125,7 @@ public sealed partial class MainWindow
                 agendaStatus = "";
             }
         }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidDataException or UnauthorizedAccessException)
         {
             agendaStatus = T("agendaUnreachable");
         }
@@ -154,7 +157,7 @@ public sealed partial class MainWindow
             }
             else updateStatus = latest is null ? T("updateFailed") : T("updateCurrent");
         }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidDataException)
         {
             updateStatus = T("updateFailed");
         }

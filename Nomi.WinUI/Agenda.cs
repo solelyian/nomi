@@ -107,7 +107,7 @@ public static class Agenda
 
     private static TimeSpan? Duration(string value)
     {
-        var match = Regex.Match(value, @"^P(?:(?<d>\d+)D)?(?:T(?:(?<h>\d+)H)?(?:(?<m>\d+)M)?)?$");
+        var match = Regex.Match(value, @"^P(?:(?<d>\d{1,4})D)?(?:T(?:(?<h>\d{1,5})H)?(?:(?<m>\d{1,6})M)?)?$");
         if (!match.Success) return null;
         int Part(string key) => match.Groups[key].Success ? int.Parse(match.Groups[key].Value, CultureInfo.InvariantCulture) : 0;
         return new TimeSpan(Part("d"), Part("h"), Part("m"), 0);
@@ -120,14 +120,23 @@ public static class Agenda
         var frequency = parts.GetValueOrDefault("FREQ", "");
         var interval = int.TryParse(parts.GetValueOrDefault("INTERVAL"), out var every) && every > 0 ? every : 1;
         if (parts.TryGetValue("UNTIL", out var untilText) && Time(untilText, null, TimeZoneInfo.Local) is { } until && date > until.Date) return false;
-        var byDay = parts.TryGetValue("BYDAY", out var days)
-            ? days.Split(',').Select(code => Regex.Replace(code, @"^[+-]?\d+", "")).Select(code => Array.IndexOf(["SU", "MO", "TU", "WE", "TH", "FR", "SA"], code)).Where(index => index >= 0).Select(index => (DayOfWeek)index).ToHashSet()
+        var rules = parts.TryGetValue("BYDAY", out var days)
+            ? days.Split(',').Select(code => Regex.Match(code, @"^(?<n>[+-]?\d{1,2})?(?<d>SU|MO|TU|WE|TH|FR|SA)$")).Where(match => match.Success)
+                .Select(match => (Ordinal: match.Groups["n"].Success ? int.Parse(match.Groups["n"].Value, CultureInfo.InvariantCulture) : 0,
+                    Day: (DayOfWeek)Array.IndexOf(["SU", "MO", "TU", "WE", "TH", "FR", "SA"], match.Groups["d"].Value))).ToArray()
             : null;
+        var byDay = rules?.Select(rule => rule.Day).ToHashSet();
+        bool Nth(DateTime day) => rules!.Any(rule => rule.Day == day.DayOfWeek && rule.Ordinal switch
+        {
+            0 => true,
+            > 0 => (day.Day - 1) / 7 + 1 == rule.Ordinal,
+            _ => (DateTime.DaysInMonth(day.Year, day.Month) - day.Day) / 7 + 1 == -rule.Ordinal
+        });
         bool Matches(DateTime day) => frequency switch
         {
             "DAILY" => (day - start.Date).Days % interval == 0 && (byDay is null || byDay.Contains(day.DayOfWeek)),
             "WEEKLY" => Weeks(start.Date, day) % interval == 0 && (byDay ?? [start.DayOfWeek]).Contains(day.DayOfWeek),
-            "MONTHLY" => ((day.Year - start.Year) * 12 + day.Month - start.Month) % interval == 0 && day.Day == start.Day,
+            "MONTHLY" => ((day.Year - start.Year) * 12 + day.Month - start.Month) % interval == 0 && (rules is { Length: > 0 } ? Nth(day) : day.Day == start.Day),
             "YEARLY" => (day.Year - start.Year) % interval == 0 && day.Month == start.Month && day.Day == start.Day,
             _ => false
         };
