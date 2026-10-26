@@ -96,6 +96,7 @@ public sealed partial class MainWindow
         AddSetting(T("captureShortcut"), T("captureShortcutHelp"), [T("on"), T("off")], profile.CaptureHotKey ? 0 : 1,
             value => ChangeProfile(() => profile.CaptureHotKey = value == 0));
         if (hotKeyTaken) SettingsBody.Children.Add(Text(T("captureShortcutTaken"), 12, "NomiAccent"));
+        if (!profile.KeepRunning) return;
         AddSetting(T("notifications"), T("notificationsHelp"), [T("on"), T("off")], profile.Notifications ? 0 : 1,
             value => ChangeProfile(() => profile.Notifications = value == 0));
     }
