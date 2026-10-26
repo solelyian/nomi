@@ -86,6 +86,7 @@ await ResponsePolicyChecks.RunAsync(args);
 await DocumentChecks.RunAsync();
 WorkChecks.Run();
 RoutineChecks.Run();
+RescueChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ModelChecks.RunAsync(args);
 

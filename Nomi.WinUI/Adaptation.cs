@@ -63,6 +63,10 @@ public sealed class Profile
     public string Motion { get; set; } = "system";
     public string Contrast { get; set; } = "standard";
     public bool Onboarded { get; set; }
+    public string? AgendaSource { get; set; }
+    public bool CheckUpdates { get; set; } = true;
+    public DateTimeOffset? UpdateChecked { get; set; }
+    public string? LatestVersion { get; set; }
     public List<string> Corrections { get; set; } = [];
     public List<string> Dismissed { get; set; } = [];
     public List<string> Muted { get; set; } = [];
@@ -92,6 +96,7 @@ public sealed class Profile
         Corrections = Corrections.Where(item => !string.IsNullOrWhiteSpace(item)).Select(item => item.Trim()).Distinct().Take(20).ToList();
         Dismissed = Dismissed.Distinct().TakeLast(200).ToList();
         Muted = Muted.Distinct().ToList();
+        if (AgendaSource is { } source && !Nomi.AgendaSource.Valid(source)) AgendaSource = null;
     }
 
     public void Record(string kind, bool accepted, string? id = null)

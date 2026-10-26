@@ -145,3 +145,41 @@ public static class Agenda
         return (Monday(to) - Monday(from)).Days / 7;
     }
 }
+
+public static class AgendaSource
+{
+    public const int MaxBytes = 4 * 1024 * 1024;
+
+    public static Uri? Remote(string source)
+    {
+        var text = source.Trim();
+        if (text.StartsWith("webcal://", StringComparison.OrdinalIgnoreCase)) text = "https://" + text[9..];
+        return Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps && uri.Host.Length > 0 ? uri : null;
+    }
+
+    public static bool IsFile(string source) =>
+        Remote(source) is null && Path.IsPathFullyQualified(source.Trim()) && Path.GetExtension(source.Trim()).Equals(".ics", StringComparison.OrdinalIgnoreCase);
+
+    public static bool Valid(string source) => Remote(source) is not null || IsFile(source);
+
+    public static string Describe(string source) => Remote(source) is { } uri ? uri.Host : Path.GetFileName(source.Trim());
+
+    public static async Task<string?> ReadAsync(string source, HttpClient http, CancellationToken token)
+    {
+        string text;
+        if (Remote(source) is { } uri)
+        {
+            using var response = await http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, token);
+            if (!response.IsSuccessStatusCode) return null;
+            text = await Limited.ReadAsync(response, MaxBytes, token);
+        }
+        else if (IsFile(source))
+        {
+            var file = new FileInfo(source.Trim());
+            if (!file.Exists || file.Length > MaxBytes) return null;
+            text = await File.ReadAllTextAsync(file.FullName, token);
+        }
+        else return null;
+        return text.Contains("BEGIN:VCALENDAR", StringComparison.Ordinal) ? text : null;
+    }
+}
