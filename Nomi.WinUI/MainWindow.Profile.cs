@@ -232,11 +232,9 @@ public sealed partial class MainWindow
         var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var feedback = Chip(T("feedback"), "NomiChip", "\uED15", "Feedback");
         feedback.Click += async (_, _) => await Launcher.LaunchUriAsync(new Uri(FeedbackUrl));
-        var updates = Chip(T("updates"), "NomiGhost", "\uE895", "Updates");
-        updates.Click += async (_, _) => await Launcher.LaunchUriAsync(new Uri(ReleasesUrl));
         links.Children.Add(feedback);
-        links.Children.Add(updates);
         SettingsBody.Children.Add(links);
+        BuildUpdates();
         SettingsBody.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("version"),
             typeof(App).Assembly.GetName().Version?.ToString(3) ?? "—"), 12, "NomiInk3"));
     }
@@ -250,8 +248,18 @@ public sealed partial class MainWindow
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
             var file = await picker.PickSaveFileAsync();
             if (file is null) return;
-            var json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, history },
-                new JsonSerializerOptions { WriteIndented = true });
+            var source = profile.AgendaSource;
+            profile.AgendaSource = null;
+            string json;
+            try
+            {
+                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history },
+                    new JsonSerializerOptions { WriteIndented = true });
+            }
+            finally
+            {
+                profile.AgendaSource = source;
+            }
             await Windows.Storage.FileIO.WriteTextAsync(file, json);
             ShowToast(T("dataExported"), null, null);
         }
@@ -281,6 +289,14 @@ public sealed partial class MainWindow
         SecureFile.Delete(board.FilePath);
         SecureFile.Delete(HistoryStore.FilePath);
         SecureFile.Delete(profileStore.Path);
+        routines.Items.Clear();
+        readyRoutine = null;
+        routineDraft = null;
+        rescue = null;
+        SecureFile.Delete(routines.Path);
+        SecureFile.Delete(agendaCache);
+        meetingsDate = default;
+        todayMeetings = [];
         try { if (Directory.Exists(StartupDiagnostics.DirectoryPath)) Directory.Delete(StartupDiagnostics.DirectoryPath, true); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         profile = new Profile { Language = language };

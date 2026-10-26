@@ -674,7 +674,7 @@ public sealed partial class MainWindow
         }
         if (plan.Count > 0 && rescue is null)
         {
-            var derail = Chip(T("rescue"), "NomiChip", "", "DayRescue");
+            var derail = Chip(T("rescue"), "NomiChip", "\uE7BA", "DayRescue");
             AutomationProperties.SetHelpText(derail, T("rescueHelp"));
             derail.VerticalAlignment = VerticalAlignment.Bottom;
             derail.Click += (_, _) => { rescue = DayRescue.Propose(board.Plan(Now), Now, profile.Day, board.Pace().Ratio); Refresh(); };
