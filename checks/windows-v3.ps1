@@ -70,7 +70,7 @@ foreach ($theme in 1, 0) {
         [void](WaitFor $process "AgendaCard" 30)
         if ($theme -eq 1) {
             $phrase = WaitFor $process "RoutinePhrase" 30
-            $phrase.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("Chaque lundi après le déjeuner, préparer le point équipe 20 min puis envoyer le compte rendu")
+            $phrase.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("Every Monday after lunch, prepare the team meeting 20 min then send the notes")
             Invoke (WaitFor $process "RoutineUnderstand" 30)
             [void](WaitFor $process "RoutinePreview" 30)
             Capture $process "artifacts/ui-v3-routine-preview.png"
@@ -80,7 +80,7 @@ foreach ($theme in 1, 0) {
             [void](WaitFor $process "RoutineCard" 30)
             Start-Sleep -Seconds 1
             if (!(Test-Path $routinesFile)) { throw "Routine was not saved locally." }
-            if ((Get-Content $routinesFile -Raw -Encoding UTF8) -match "point") { throw "routines.json is stored in clear text." }
+            if ((Get-Content $routinesFile -Raw -Encoding UTF8) -match "team meeting") { throw "routines.json is stored in clear text." }
             $routinesSaved = Read-NomiFile $routinesFile $app
             if ($routinesSaved -notmatch "after-lunch") { throw "Routine trigger missing from routines.json." }
             Write-Host "Routine understood, confirmed, then saved locally, encrypted."
