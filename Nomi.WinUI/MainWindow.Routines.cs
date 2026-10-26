@@ -77,7 +77,7 @@ public sealed partial class MainWindow
         var moment = new RoutineMoment(now, profile.Day, happened, happened is null ? idle : 0, back, Agenda.FirstMeetingEnd(Meetings(now), profile.Day));
         if (routines.Ready(moment).FirstOrDefault() is not { } due) return;
         readyRoutine = due;
-        NotifyAway(T("routineReady"), due.Name, "routines");
+        NotifyAway("Nomi", T("routineReady"), "routines");
         if (happened is not null) return;
         if (!Busy) ShowToast(string.Format(CultureInfo.CurrentCulture, T("routineReadyToast"), due.Name), T("routineSee"), () => Show("routines"));
         if (view == "routines") Refresh();
