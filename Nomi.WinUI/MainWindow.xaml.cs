@@ -108,6 +108,7 @@ public sealed partial class MainWindow : Window
             visionPreparation?.Cancel();
             ticker?.Stop();
             board.Save();
+            routines.Save();
             _ = inference.DisposeAsync();
             _ = vision.DisposeAsync();
         };
@@ -129,7 +130,7 @@ public sealed partial class MainWindow : Window
         ApplyChrome();
         Refresh();
         SplashTagline.Text = T("tagline");
-        Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartTicker(); };
+        Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartTicker(); _ = CheckForUpdates(false); _ = RefreshAgenda(false); };
     }
 
     private void SyncBoard()
@@ -330,7 +331,8 @@ public sealed partial class MainWindow : Window
             ["focus"] = FocusPanel,
             ["workspace"] = Workspace,
             ["spaces"] = SpacesPanel,
-            ["settings"] = SettingsPanel
+            ["settings"] = SettingsPanel,
+            ["routines"] = RoutinesPanel
         };
         foreach (var (key, element) in panels) element.Visibility = key == view ? Visibility.Visible : Visibility.Collapsed;
         if (view == "spaces") BuildSpaces();
@@ -338,6 +340,7 @@ public sealed partial class MainWindow : Window
         else if (view == "today") BuildToday();
         else if (view == "board") BuildBoard();
         else if (view == "focus") BuildFocus();
+        else if (view == "routines") BuildRoutines();
         RefreshWorkspace();
         RefreshAside();
         BuildCompanion();
@@ -361,6 +364,7 @@ public sealed partial class MainWindow : Window
         "board" => T("board"),
         "focus" => T("focus"),
         "spaces" => T("spaces"),
+        "routines" => T("routines"),
         "settings" => T("preferences"),
         _ => Action.Title
     };
@@ -382,7 +386,8 @@ public sealed partial class MainWindow : Window
             ("today", T("today"), "\uE8BF", "NavToday"),
             ("board", T("board"), "\uF0E2", "NavBoard"),
             ("focus", T("focus"), "\uE7B3", "NavFocus"),
-            ("workspace", T("assistant"), "\uE8BD", "NavAssistant")
+            ("workspace", T("assistant"), "\uE8BD", "NavAssistant"),
+            ("routines", T("routines"), "\uE823", "NavRoutines")
         };
         for (var index = 0; index < views.Length; index++)
         {
@@ -391,6 +396,7 @@ public sealed partial class MainWindow : Window
             {
                 "board" => board.Tasks.Count(task => task.Column != Columns.Done).ToString(CultureInfo.CurrentCulture),
                 "focus" when focusState != "idle" => "●",
+                "routines" when readyRoutine is not null => "●",
                 _ => $"{index + 1}"
             };
             var button = NavButton(label, glyph, view == id, badge, true);
@@ -1277,7 +1283,7 @@ public sealed partial class MainWindow : Window
         keys.Children.Add(Text(T("shortcutsHelp"), 12, "NomiInk3"));
         foreach (var (label, combo) in new[]
         {
-            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–4"), (T("shortcutAction"), "Alt 1–6"),
+            (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–5"), (T("shortcutAction"), "Alt 1–6"),
             (T("newTask"), "Ctrl N"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
         })
         {
@@ -1451,7 +1457,7 @@ public sealed partial class MainWindow : Window
     private void ViewShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         var index = (int)sender.Key - (int)VirtualKey.Number1;
-        string[] views = ["today", "board", "focus", "workspace"];
+        string[] views = ["today", "board", "focus", "workspace", "routines"];
         if (index < 0 || index >= views.Length) return;
         args.Handled = true;
         CloseSheet();

@@ -61,5 +61,5 @@ function Read-NomiFile($path, $app) {
 function Set-NomiOnboarded {
     $file = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\profile.json"
     New-Item -ItemType Directory -Force -Path (Split-Path $file) | Out-Null
-    [System.IO.File]::WriteAllText($file, '{"Onboarded":true}')
+    [System.IO.File]::WriteAllText($file, '{"Onboarded":true,"CheckUpdates":false}')
 }

@@ -18,13 +18,10 @@ public sealed partial class MainWindow
 
     private static readonly string[] SuggestionKinds = ["overrun", "due", "late", "pace", "overload", "split"];
 
-    private FontFamily readingFont = new("Segoe UI Variable Text, Segoe UI");
+    private readonly FontFamily readingFont = new("ms-appx:///Assets/Fonts/AtkinsonHyperlegible-Regular.ttf#Atkinson Hyperlegible");
 
     private void ApplyReading()
     {
-        readingFont = new FontFamily(profile.Font == "hyperlegible"
-            ? "ms-appx:///Assets/Fonts/AtkinsonHyperlegible-Regular.ttf#Atkinson Hyperlegible, Segoe UI Variable Text, Segoe UI"
-            : "Segoe UI Variable Text, Segoe UI");
         Application.Current.Resources["ContentControlThemeFontFamily"] = readingFont;
     }
 
@@ -76,8 +73,6 @@ public sealed partial class MainWindow
             value => ChangeProfile(() => profile.Chain = value == 0));
 
         SettingsSection(T("readingSection"), T("readingSectionHelp"));
-        AddSetting(T("font"), T("fontHelp"), ["Atkinson Hyperlegible", T("fontSystem")], profile.Font == "system" ? 1 : 0,
-            value => ChangeProfile(() => profile.Font = value == 1 ? "system" : "hyperlegible"));
         AddSetting(T("spacing"), T("spacingHelp"), [T("spacingStandard"), T("spacingAiry")], profile.Spacing == "airy" ? 1 : 0,
             value => ChangeProfile(() => profile.Spacing = value == 1 ? "airy" : "standard"));
         AddSetting(T("contrast"), T("contrastHelp"), [T("contrastStandard"), T("contrastStrong")], profile.Contrast == "strong" ? 1 : 0,
@@ -237,11 +232,9 @@ public sealed partial class MainWindow
         var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var feedback = Chip(T("feedback"), "NomiChip", "\uED15", "Feedback");
         feedback.Click += async (_, _) => await Launcher.LaunchUriAsync(new Uri(FeedbackUrl));
-        var updates = Chip(T("updates"), "NomiGhost", "\uE895", "Updates");
-        updates.Click += async (_, _) => await Launcher.LaunchUriAsync(new Uri(ReleasesUrl));
         links.Children.Add(feedback);
-        links.Children.Add(updates);
         SettingsBody.Children.Add(links);
+        BuildUpdates();
         SettingsBody.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("version"),
             typeof(App).Assembly.GetName().Version?.ToString(3) ?? "—"), 12, "NomiInk3"));
     }
@@ -255,8 +248,18 @@ public sealed partial class MainWindow
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
             var file = await picker.PickSaveFileAsync();
             if (file is null) return;
-            var json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, history },
-                new JsonSerializerOptions { WriteIndented = true });
+            var source = profile.AgendaSource;
+            profile.AgendaSource = null;
+            string json;
+            try
+            {
+                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history },
+                    new JsonSerializerOptions { WriteIndented = true });
+            }
+            finally
+            {
+                profile.AgendaSource = source;
+            }
             await Windows.Storage.FileIO.WriteTextAsync(file, json);
             ShowToast(T("dataExported"), null, null);
         }
@@ -286,6 +289,14 @@ public sealed partial class MainWindow
         SecureFile.Delete(board.FilePath);
         SecureFile.Delete(HistoryStore.FilePath);
         SecureFile.Delete(profileStore.Path);
+        routines.Items.Clear();
+        readyRoutine = null;
+        routineDraft = null;
+        rescue = null;
+        SecureFile.Delete(routines.Path);
+        SecureFile.Delete(agendaCache);
+        meetingsDate = default;
+        todayMeetings = [];
         try { if (Directory.Exists(StartupDiagnostics.DirectoryPath)) Directory.Delete(StartupDiagnostics.DirectoryPath, true); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         profile = new Profile { Language = language };

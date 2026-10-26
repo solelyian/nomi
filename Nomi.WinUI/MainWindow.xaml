@@ -10,6 +10,7 @@
             <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number3" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number4" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number5" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number1" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number2" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number3" Modifiers="Menu" Invoked="ActionShortcut" />
@@ -336,6 +337,9 @@
 
                 <ScrollViewer x:Name="SpacesPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SpacesBody" Spacing="14" MaxWidth="820" HorizontalAlignment="Left" Padding="4,4,4,8" />
+                </ScrollViewer>
+                <ScrollViewer x:Name="RoutinesPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="RoutinesBody" Spacing="14" MaxWidth="760" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SettingsBody" Spacing="14" MaxWidth="620" HorizontalAlignment="Left" Padding="4,4,4,8" />

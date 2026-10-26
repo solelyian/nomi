@@ -19,6 +19,10 @@
     <Compile Include="../../Nomi.WinUI/ScreenFrame.cs" Link="ScreenFrame.cs" />
     <Compile Include="../../Nomi.WinUI/VisionClient.cs" Link="VisionClient.cs" />
     <Compile Include="../../Nomi.WinUI/StartupDiagnostics.cs" Link="StartupDiagnostics.cs" />
+    <Compile Include="../../Nomi.WinUI/Routines.cs" Link="Routines.cs" />
+    <Compile Include="../../Nomi.WinUI/Agenda.cs" Link="Agenda.cs" />
+    <Compile Include="../../Nomi.WinUI/DayRescue.cs" Link="DayRescue.cs" />
+    <Compile Include="../../Nomi.WinUI/Updates.cs" Link="Updates.cs" />
     <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../vision/*" Link="vision/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/inference.json" Link="content/inference.json" CopyToOutputDirectory="PreserveNewest" />

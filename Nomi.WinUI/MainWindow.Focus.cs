@@ -65,7 +65,13 @@ public sealed partial class MainWindow
             pause.Click += (_, _) => PauseFocus(focusState != "paused");
             controls.Children.Add(pause);
             var stop = Chip(T("focusStopShare"), "NomiChip", null, "FocusStop");
-            stop.Click += (_, _) => { StopFocus(); Refresh(); };
+            stop.Click += (_, _) =>
+            {
+                var lasted = DateTimeOffset.Now - focusStarted;
+                StopFocus();
+                if (lasted >= TimeSpan.FromMinutes(10)) CheckRoutines(Triggers.FocusDone);
+                Refresh();
+            };
             controls.Children.Add(stop);
             side = controls;
         }

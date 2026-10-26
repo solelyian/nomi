@@ -57,6 +57,12 @@ test("every literal UI translation reference exists in both catalogs", async () 
     "preview/app.js",
     "preview/index.html",
     "Nomi.WinUI/MainWindow.xaml.cs",
+    "Nomi.WinUI/MainWindow.Work.cs",
+    "Nomi.WinUI/MainWindow.Focus.cs",
+    "Nomi.WinUI/MainWindow.Profile.cs",
+    "Nomi.WinUI/MainWindow.Welcome.cs",
+    "Nomi.WinUI/MainWindow.Routines.cs",
+    "Nomi.WinUI/MainWindow.Agenda.cs",
   ];
   for (const path of files) {
     const source = await readFile(
