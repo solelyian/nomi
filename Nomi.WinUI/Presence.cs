@@ -106,6 +106,7 @@ public sealed class Presence : IDisposable
     private readonly uint taskbarCreated;
     private readonly IntPtr icon;
     private bool added;
+    private bool wanted;
     private bool versioned;
     private bool hotKey;
     private string tip = "Nomi";
@@ -136,6 +137,7 @@ public sealed class Presence : IDisposable
 
     public void Show()
     {
+        wanted = true;
         var data = Data(NifMessage | NifIcon | NifTip | NifShowTip);
         if (ShellNotifyIcon(added ? NimModify : NimAdd, ref data)) added = true;
         if (!added || versioned) return;
@@ -145,6 +147,7 @@ public sealed class Presence : IDisposable
 
     public void Hide()
     {
+        wanted = false;
         if (!added) return;
         var data = Data(0);
         ShellNotifyIcon(NimDelete, ref data);
@@ -208,7 +211,7 @@ public sealed class Presence : IDisposable
             HotKeyPressed?.Invoke();
             return IntPtr.Zero;
         }
-        if (message == taskbarCreated && added)
+        if (message == taskbarCreated && wanted)
         {
             added = versioned = false;
             Show();
