@@ -170,6 +170,18 @@ Nomi vérifie au plus une fois par jour la dernière version publiée sur GitHub
 (désactivable dans les préférences). Il affiche un lien, sans rien télécharger ni
 installer.
 
+### Nomi toujours présent
+
+Fermer la fenêtre laisse Nomi dans la zone de notification (clic : rouvrir ; menu :
+Ouvrir, Capturer une tâche, Quitter Nomi), pour que routines et rappels continuent.
+`Ctrl+Alt+Espace` ouvre la saisie d’une tâche depuis n’importe quelle application.
+Quand la fenêtre n’est pas au premier plan, une notification Windows signale une
+routine prête ou une nouvelle version, jamais pendant une tâche en mode calme.
+« Lancer Nomi avec Windows » (désactivé par défaut) démarre Nomi discrètement
+(`--background`). Une seule instance tourne : relancer Nomi ramène la fenêtre
+(`Nomi.WinUI/Presence.cs`, `checks/windows-presence.ps1`). Tout se règle dans
+Préférences › Présence.
+
 ### Focus écran et modèle vision
 
 **Focus écran** suit une fenêtre que vous choisissez explicitement dans la liste ;
