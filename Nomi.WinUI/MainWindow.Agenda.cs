@@ -139,12 +139,12 @@ public sealed partial class MainWindow
     {
         if (!manual && (!profile.CheckUpdates || !Updates.Due(profile.UpdateChecked, Now))) return;
         updateStatus = T("updateChecking");
+        profile.UpdateChecked = Now;
         if (view == "settings") Refresh();
         try
         {
             using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             latest = await Updates.FetchAsync(nomiWeb, cancel.Token);
-            profile.UpdateChecked = Now;
             profile.LatestVersion = latest?.Version.ToString(3);
             SaveProfile();
             if (latest is { } release && Updates.Newer(release, CurrentVersion))
