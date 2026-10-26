@@ -28,8 +28,7 @@ $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
 $tasks = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\tasks.json"
 if (Test-Path $tasks) { Remove-Item $tasks }
-$staleRoutines = Join-Path $env:LOCALAPPDATA "NyneNomi
-outines.json"
+$staleRoutines = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\routines.json"
 if (Test-Path $staleRoutines) { Remove-Item $staleRoutines }
 Set-NomiOnboarded
 $personalize = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
