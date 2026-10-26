@@ -544,7 +544,25 @@
     "updateFailed": "Unable to check right now.",
     "updateOpen": "View",
     "updateOpenVersion": "View version {0}",
-    "updateLast": "Last checked: {0}"
+    "updateLast": "Last checked: {0}",
+    "presenceSection": "Presence",
+    "presenceSectionHelp": "Nomi can stay available when the window is closed, to prepare your routines and capture a task from any app. Everything stays local.",
+    "keepRunning": "Keep Nomi in the notification area",
+    "keepRunningHelp": "Closing the window leaves Nomi running near the clock. “Quit Nomi” in its menu really stops it.",
+    "startWithWindows": "Start Nomi with Windows",
+    "startWithWindowsHelp": "Nomi starts quietly in the notification area when you sign in.",
+    "captureShortcut": "Quick capture · Ctrl+Alt+Space",
+    "captureShortcutHelp": "From any app, opens Nomi on a new task.",
+    "captureShortcutTaken": "Ctrl+Alt+Space is already used by another app.",
+    "notifications": "Windows notifications",
+    "notificationsHelp": "When the window is not in front, Nomi tells you about a ready routine or a new version. Never during a running task when calm mode is on.",
+    "trayTip": "Nomi",
+    "trayOpen": "Open Nomi",
+    "trayCapture": "Capture a task",
+    "trayQuit": "Quit Nomi",
+    "trayHintTitle": "Nomi stays available",
+    "trayHint": "Nomi keeps running in the notification area. Ctrl+Alt+Space captures a task from any app.",
+    "shortcutCapture": "Capture a task, anywhere"
   },
   "actions": [
     {

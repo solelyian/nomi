@@ -47,6 +47,7 @@ public sealed partial class MainWindow
         change();
         SaveProfile();
         ApplyReading();
+        ApplyPresence();
         Refresh();
     }
 
@@ -80,8 +81,24 @@ public sealed partial class MainWindow
         AddSetting(T("motionSetting"), T("motionHelp"), [T("motionSystem"), T("motionReduced")], profile.Motion == "reduced" ? 1 : 0,
             value => ChangeProfile(() => profile.Motion = value == 1 ? "reduced" : "system"));
 
+        BuildPresence();
         BuildMemory();
         BuildData();
+    }
+
+    private void BuildPresence()
+    {
+        SettingsSection(T("presenceSection"), T("presenceSectionHelp"));
+        AddSetting(T("keepRunning"), T("keepRunningHelp"), [T("on"), T("off")], profile.KeepRunning ? 0 : 1,
+            value => ChangeProfile(() => profile.KeepRunning = value == 0));
+        AddSetting(T("startWithWindows"), T("startWithWindowsHelp"), [T("on"), T("off")], AutoStart.Enabled ? 0 : 1,
+            value => { AutoStart.Set(value == 0); Refresh(); });
+        AddSetting(T("captureShortcut"), T("captureShortcutHelp"), [T("on"), T("off")], profile.CaptureHotKey ? 0 : 1,
+            value => ChangeProfile(() => profile.CaptureHotKey = value == 0));
+        if (hotKeyTaken) SettingsBody.Children.Add(Text(T("captureShortcutTaken"), 12, "NomiAccent"));
+        if (!profile.KeepRunning) return;
+        AddSetting(T("notifications"), T("notificationsHelp"), [T("on"), T("off")], profile.Notifications ? 0 : 1,
+            value => ChangeProfile(() => profile.Notifications = value == 0));
     }
 
     private void AddTime(string label, TimeSpan value, Action<TimeSpan> changed)
@@ -300,6 +317,8 @@ public sealed partial class MainWindow
         try { if (Directory.Exists(StartupDiagnostics.DirectoryPath)) Directory.Delete(StartupDiagnostics.DirectoryPath, true); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         profile = new Profile { Language = language };
+        AutoStart.Set(false);
+        ApplyPresence();
         summary = false;
         SyncBoard();
         ApplyReading();

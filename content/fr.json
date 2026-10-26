@@ -544,7 +544,25 @@
     "updateFailed": "Impossible de vérifier pour le moment.",
     "updateOpen": "Voir",
     "updateOpenVersion": "Voir la version {0}",
-    "updateLast": "Dernière vérification : {0}"
+    "updateLast": "Dernière vérification : {0}",
+    "presenceSection": "Présence",
+    "presenceSectionHelp": "Nomi peut rester disponible quand la fenêtre est fermée, pour préparer vos routines et capturer une tâche depuis n’importe quelle application. Tout reste local.",
+    "keepRunning": "Garder Nomi dans la zone de notification",
+    "keepRunningHelp": "Fermer la fenêtre laisse Nomi actif près de l’horloge. « Quitter Nomi » dans son menu l’arrête vraiment.",
+    "startWithWindows": "Lancer Nomi avec Windows",
+    "startWithWindowsHelp": "Nomi démarre discrètement dans la zone de notification à l’ouverture de votre session.",
+    "captureShortcut": "Capture rapide · Ctrl+Alt+Espace",
+    "captureShortcutHelp": "Depuis n’importe quelle application, ouvre Nomi sur la saisie d’une nouvelle tâche.",
+    "captureShortcutTaken": "Ctrl+Alt+Espace est déjà utilisé par une autre application.",
+    "notifications": "Notifications Windows",
+    "notificationsHelp": "Quand la fenêtre n’est pas au premier plan, Nomi prévient d’une routine prête ou d’une nouvelle version. Jamais pendant une tâche en cours si le mode calme est activé.",
+    "trayTip": "Nomi",
+    "trayOpen": "Ouvrir Nomi",
+    "trayCapture": "Capturer une tâche",
+    "trayQuit": "Quitter Nomi",
+    "trayHintTitle": "Nomi reste disponible",
+    "trayHint": "Nomi continue dans la zone de notification. Ctrl+Alt+Espace capture une tâche depuis n’importe quelle application.",
+    "shortcutCapture": "Capturer une tâche, partout"
   },
   "actions": [
     {

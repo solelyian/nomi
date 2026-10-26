@@ -65,6 +65,10 @@ public sealed class Profile
     public bool Onboarded { get; set; }
     public string? AgendaSource { get; set; }
     public bool CheckUpdates { get; set; } = true;
+    public bool KeepRunning { get; set; } = true;
+    public bool CaptureHotKey { get; set; } = true;
+    public bool Notifications { get; set; } = true;
+    public bool TrayHintShown { get; set; }
     public DateTimeOffset? UpdateChecked { get; set; }
     public string? LatestVersion { get; set; }
     public List<string> Corrections { get; set; } = [];

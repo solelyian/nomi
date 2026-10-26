@@ -75,7 +75,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    public MainWindow()
+    public MainWindow(bool background = false)
     {
         profile = profileStore.Load();
         ApplyReading();
@@ -109,6 +109,7 @@ public sealed partial class MainWindow : Window
             ticker?.Stop();
             board.Save();
             routines.Save();
+            presence?.Dispose();
             _ = inference.DisposeAsync();
             _ = vision.DisposeAsync();
         };
@@ -130,7 +131,8 @@ public sealed partial class MainWindow : Window
         ApplyChrome();
         Refresh();
         SplashTagline.Text = T("tagline");
-        Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartTicker(); _ = CheckForUpdates(false); _ = RefreshAgenda(false); };
+        StartPresence(background);
+        Root.Loaded += (_, _) => { DismissSplash(); StartAmbient(); StartBackground(); };
     }
 
     private void SyncBoard()
@@ -355,6 +357,7 @@ public sealed partial class MainWindow : Window
         PaletteSearch.PlaceholderText = T("commandHint");
         AutomationProperties.SetName(PaletteSearch, T("search"));
         AutomationProperties.SetName(PaletteResults, T("search"));
+        if (presence is not null && presenceLanguage != language) ApplyPresence();
         updating = false;
     }
 
@@ -1284,7 +1287,7 @@ public sealed partial class MainWindow : Window
         foreach (var (label, combo) in new[]
         {
             (T("send"), "Ctrl ↵"), (T("shortcutPalette"), "Ctrl K"), (T("shortcutView"), "Ctrl 1–5"), (T("shortcutAction"), "Alt 1–6"),
-            (T("newTask"), "Ctrl N"), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
+            (T("newTask"), "Ctrl N"), (T("shortcutCapture"), CaptureKeys), (T("reasoning"), "Ctrl R"), (T("stop"), "Esc")
         })
         {
             var row = new Grid();
