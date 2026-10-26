@@ -70,6 +70,7 @@ public static class DayRescue
             if (line.Choice == RescueChoices.Defer)
             {
                 board.Pause(task, now);
+                if (task.Column == Columns.Doing) board.Move(task, Columns.Todo, now);
                 if (task.Due is not { } due || due < next) task.Due = next;
                 continue;
             }

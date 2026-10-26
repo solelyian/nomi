@@ -162,7 +162,7 @@ public sealed class TaskBoard
 
     public IReadOnlyList<WorkTask> Plan(DateTimeOffset now) => Tasks
         .Where(task => task.Column is Columns.Doing or Columns.Todo)
-        .Where(task => task.Column == Columns.Doing || task.Due is null || task.Due.Value.Date <= now.Date.AddDays(1))
+        .Where(task => task.Column == Columns.Doing || task.Due is null || task.Due.Value.Date <= now.Date)
         .OrderBy(task => task.RunningSince is null ? 1 : 0)
         .ThenBy(task => task.Column == Columns.Doing ? 0 : 1)
         .ThenBy(task => task.Due ?? DateTimeOffset.MaxValue)
