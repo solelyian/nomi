@@ -159,6 +159,33 @@ END:VCALENDAR
         Check(Agenda.On(Calendar, new DateTime(2026, 10, 3), paris).Any(item => item.Title == "Sprint") && !Agenda.On(Calendar, new DateTime(2026, 10, 4), paris).Any(item => item.Title == "Sprint"), "Count limits a series");
         Check(Agenda.FirstMeetingEnd([new(monday.AddHours(10), monday.AddHours(11), "Late")], day) is null, "Evening events ignored");
         Check(Agenda.On("garbage", new DateTime(2026, 10, 26), paris).Count == 0, "Invalid calendar ignored");
+        const string Odd = """
+BEGIN:VEVENT
+UID:huge
+SUMMARY:Huge
+DTSTART:20261026T080000Z
+DURATION:P999999999999D
+END:VEVENT
+BEGIN:VEVENT
+UID:review
+SUMMARY:Revue mensuelle
+DTSTART;TZID=Europe/Paris:20261013T110000
+DTEND;TZID=Europe/Paris:20261013T120000
+RRULE:FREQ=MONTHLY;BYDAY=2TU
+END:VEVENT
+BEGIN:VEVENT
+UID:last
+SUMMARY:Clôture
+DTSTART;TZID=Europe/Paris:20261030T160000
+DTEND;TZID=Europe/Paris:20261030T170000
+RRULE:FREQ=MONTHLY;BYDAY=-1FR
+END:VEVENT
+""";
+        Check(Agenda.On(Odd, new DateTime(2026, 10, 26), paris).All(item => item.End - item.Start <= TimeSpan.FromHours(1)), "Oversized duration does not break the agenda");
+        Check(Agenda.On(Odd, new DateTime(2026, 11, 10), paris).Any(item => item.Title == "Revue mensuelle")
+            && !Agenda.On(Odd, new DateTime(2026, 11, 13), paris).Any(item => item.Title == "Revue mensuelle"), "Monthly second Tuesday");
+        Check(Agenda.On(Odd, new DateTime(2026, 11, 27), paris).Any(item => item.Title == "Clôture")
+            && !Agenda.On(Odd, new DateTime(2026, 11, 20), paris).Any(item => item.Title == "Clôture"), "Monthly last Friday");
         Console.WriteLine($"{count} routine and agenda checks passed.");
     }
 }
