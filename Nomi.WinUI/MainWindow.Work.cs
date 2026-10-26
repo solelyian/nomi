@@ -90,6 +90,8 @@ public sealed partial class MainWindow
         }
         if (focusState != "idle") UpdateFocusPill();
         if (tick % 30 != 0) return;
+        CheckRoutines();
+        _ = RefreshAgenda(false);
         var signature = string.Join('|', board.Suggestions(now).Select(item => item.Id));
         if (signature == suggestionSignature) return;
         suggestionSignature = signature;
@@ -300,6 +302,7 @@ public sealed partial class MainWindow
         board.Move(task, column, Now);
         if (column == Columns.Doing) board.Start(task, Now);
         if (order is { } value) { task.Order = value; board.Save(); }
+        if (column == Columns.Done && task.Origin != "routine") CheckRoutines(Triggers.TaskDone);
         if (column != Columns.Done || !running) return;
         var finished = string.Format(CultureInfo.CurrentCulture, T("taskFinished"), task.Title, Minutes(task.SpentSeconds / 60));
         var next = profile.Chain
@@ -646,6 +649,7 @@ public sealed partial class MainWindow
         var header = new Grid { ColumnSpacing = 16 };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var titles = new StackPanel { Spacing = 4 };
         titles.Children.Add(Eyebrow(now.ToString("dddd d MMMM", CultureInfo.GetCultureInfo(Current.Locale))));
         var plan = board.Plan(now);
@@ -668,7 +672,19 @@ public sealed partial class MainWindow
             Grid.SetColumn(peek, 1);
             header.Children.Add(peek);
         }
+        if (plan.Count > 0 && rescue is null)
+        {
+            var derail = Chip(T("rescue"), "NomiChip", "", "DayRescue");
+            AutomationProperties.SetHelpText(derail, T("rescueHelp"));
+            derail.VerticalAlignment = VerticalAlignment.Bottom;
+            derail.Click += (_, _) => { rescue = DayRescue.Propose(board.Plan(Now), Now, profile.Day, board.Pace().Ratio); Refresh(); };
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Bottom };
+            actions.Children.Add(derail);
+            Grid.SetColumn(actions, 2);
+            header.Children.Add(actions);
+        }
         TodayBody.Children.Add(header);
+        if (rescue is not null) TodayBody.Children.Add(RescueCard(now, ratio));
 
         var metrics = new Grid { ColumnSpacing = 14 };
         var tiles = new (string Label, string Value, string Detail, string Id)[]
@@ -983,6 +999,7 @@ public sealed partial class MainWindow
     {
         companionTimers.Clear();
         CompanionBody.Children.Clear();
+        if (readyRoutine is not null) CompanionBody.Children.Add(Inner(T("routineReady"), RoutineReadyContent(readyRoutine), "RoutineReady"));
         var now = Now;
         var task = board.Active;
         CompanionTitle.Text = T("companionTitle");
