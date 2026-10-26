@@ -114,6 +114,8 @@ jobs:
             artifacts/ui-*.png
       - name: Verify Today, Board and Focus in the installed application
         run: ./checks/windows-v3.ps1
+      - name: Verify the notification area and single instance
+        run: ./checks/windows-presence.ps1
       - name: Verify embedded CPU engine without Ollama
         run: |
           if (!(Get-ChildItem artifacts/Nomi-win-x64 -Recurse -Filter llama.dll)) {
