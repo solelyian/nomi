@@ -17,6 +17,9 @@ function WaitFor($process, $id, $seconds) {
         if ($element -and -not $element.Current.IsOffscreen) { return $element }
         Start-Sleep -Milliseconds 500
     } while ((Get-Date) -lt $deadline)
+    $process.Refresh()
+    Write-Host "Waiting for $id failed. Exited: $($process.HasExited), responding: $(if (!$process.HasExited) { $process.Responding })"
+    Capture $process (Join-Path $env:RUNNER_TEMP "onboarding-failure.png")
     $root = $A::FromHandle($process.MainWindowHandle)
     $seen = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) |
         Where-Object { $_.Current.AutomationId } | ForEach-Object { $_.Current.AutomationId }

@@ -275,15 +275,16 @@ public sealed partial class MainWindow
         return null;
     }
 
-    private void ApplyOnboarding(Action change, string focus)
+    private void ApplyOnboarding(Action change, string focus) => DispatcherQueue.TryEnqueue(() =>
     {
+        if (onboarding is null) return;
         change();
         SaveProfile();
         ApplyReading();
         ApplyPresence();
         Refresh();
         BuildOnboarding(focus);
-    }
+    });
 
     private void OnboardingChoice(string id, string label, string help, string[] options, int selected, Action<int> changed)
     {
