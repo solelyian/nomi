@@ -21,8 +21,8 @@ public sealed class Signal
 
 public sealed record Day(TimeSpan Start, TimeSpan LunchStart, TimeSpan LunchEnd, TimeSpan End)
 {
-    public static readonly Day Default = new(new(9, 0, 0), new(12, 30, 0), new(13, 30, 0), new(18, 0, 0));
     public static readonly DayOfWeek[] Weekdays = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
+    public static readonly Day Default = new(new(9, 0, 0), new(12, 30, 0), new(13, 30, 0), new(18, 0, 0));
 
     public IReadOnlyList<DayOfWeek> Workdays { get; init; } = Weekdays;
 
