@@ -1,0 +1,368 @@
+using System.Globalization;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.System;
+
+namespace Nomi;
+
+public sealed partial class MainWindow
+{
+    private Grid? onboarding;
+    private StackPanel? onboardingBody;
+    private StackPanel? onboardingRail;
+    private Grid? onboardingFooter;
+    private string onboardingStep = Onboarding.Welcome;
+    private string onboardingTasks = "";
+    private ProgressBar? onboardingProgress;
+    private TextBlock? onboardingModelStatus;
+
+    private string StepTitle(string step) => T($"oobe-{step}");
+
+    private void ShowOnboarding(bool restart = false)
+    {
+        if (restart) profile.OnboardingStep = Onboarding.Welcome;
+        onboardingStep = profile.OnboardingStep;
+        if (onboarding is not null) Root.Children.Remove(onboarding);
+        ClosePalette();
+        CloseSheet();
+        onboarding = new Grid { Background = Palette("NomiCanvas"), Padding = new Thickness(0, 44, 0, 0) };
+        AutomationProperties.SetAutomationId(onboarding, "Onboarding");
+        Grid.SetRowSpan(onboarding, 16);
+        Grid.SetColumnSpan(onboarding, 16);
+        onboarding.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
+        onboarding.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        onboarding.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        onboarding.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        onboardingRail = new StackPanel { Spacing = 4, Padding = new Thickness(32, 28, 20, 28) };
+        var rail = new Border { Background = Palette("NomiSurface2"), Child = new ScrollViewer { Content = onboardingRail } };
+        Grid.SetRowSpan(rail, 2);
+        onboarding.Children.Add(rail);
+
+        onboardingBody = new StackPanel { Spacing = 16, MaxWidth = 640, HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(56, 40, 56, 32) };
+        var scroll = new ScrollViewer { Content = onboardingBody, HorizontalScrollMode = ScrollMode.Disabled };
+        Grid.SetColumn(scroll, 1);
+        onboarding.Children.Add(scroll);
+
+        onboardingFooter = new Grid { Padding = new Thickness(56, 14, 40, 22), ColumnSpacing = 10 };
+        Grid.SetColumn(onboardingFooter, 1);
+        Grid.SetRow(onboardingFooter, 1);
+        onboarding.Children.Add(onboardingFooter);
+
+        onboarding.KeyDown += OnboardingKey;
+        Root.Children.Add(onboarding);
+        BuildOnboarding();
+    }
+
+    private void OnboardingKey(object sender, KeyRoutedEventArgs args)
+    {
+        if (args.Key == VirtualKey.Escape)
+        {
+            args.Handled = true;
+            if (onboardingStep != Onboarding.Welcome) FinishOnboardingLater();
+        }
+        else if (args.Key == VirtualKey.Enter && args.OriginalSource is not (TextBox or Button or ComboBox or TimePicker))
+        {
+            args.Handled = true;
+            NextOnboarding();
+        }
+    }
+
+    private void GoToOnboarding(string step, string? focus = null)
+    {
+        onboardingStep = step;
+        profile.OnboardingStep = step;
+        SaveProfile();
+        BuildOnboarding(focus);
+    }
+
+    private void NextOnboarding()
+    {
+        if (onboardingStep == Onboarding.Tasks) { CompleteOnboarding(); return; }
+        if (Onboarding.Next(onboardingStep) is { } next) GoToOnboarding(next);
+    }
+
+    private void FinishOnboardingLater()
+    {
+        SaveProfile();
+        CloseOnboarding();
+        ShowToast(T("oobeLaterSaved"), null, null);
+    }
+
+    private void CloseOnboarding()
+    {
+        if (onboarding is not null) Root.Children.Remove(onboarding);
+        onboarding = null;
+        onboardingBody = null;
+        onboardingProgress = null;
+        onboardingModelStatus = null;
+        Refresh();
+    }
+
+    private void CompleteOnboarding()
+    {
+        foreach (var title in Onboarding.TaskLines(onboardingTasks)) board.Add(title, Columns.Todo, null);
+        onboardingTasks = "";
+        profile.Onboarded = true;
+        profile.OnboardingStep = Onboarding.Welcome;
+        SaveProfile();
+        board.Save();
+        view = "today";
+        CloseOnboarding();
+        ShowToast(T("welcomeSaved"), null, null);
+        if (!profile.TourShown) DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ShowTour);
+    }
+
+    private void RefreshOnboarding()
+    {
+        if (onboarding is null) return;
+        if (onboardingStep is "agenda") BuildOnboarding(FocusManager.GetFocusedElement(Root.XamlRoot) is FrameworkElement element ? AutomationProperties.GetAutomationId(element) : null);
+    }
+
+    private void BuildOnboarding(string? focus = null)
+    {
+        if (onboarding is null || onboardingBody is null || onboardingRail is null || onboardingFooter is null) return;
+        onboarding.Background = Palette("NomiCanvas");
+        onboardingProgress = null;
+        onboardingModelStatus = null;
+        var index = Onboarding.Index(onboardingStep);
+
+        onboardingRail.Children.Clear();
+        var brand = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Margin = new Thickness(0, 0, 0, 24) };
+        var logo = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "nomi-512.png");
+        if (System.IO.File.Exists(logo)) brand.Children.Add(new Image { Source = new BitmapImage(new Uri(logo)), Width = 28, Height = 28 });
+        var name = Text("Nomi", 18);
+        name.FontWeight = FontWeights.SemiBold;
+        name.VerticalAlignment = VerticalAlignment.Center;
+        brand.Children.Add(name);
+        onboardingRail.Children.Add(brand);
+        var list = new StackPanel { Spacing = 2 };
+        AutomationProperties.SetName(list, T("oobeSteps"));
+        for (var i = 0; i < Onboarding.Steps.Length; i++)
+        {
+            var step = Onboarding.Steps[i];
+            var state = i < index ? T("oobeStepDone") : i == index ? T("oobeStepCurrent") : T("oobeStepNext");
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            row.Children.Add(new FontIcon
+            {
+                Glyph = i < index ? "\uE73E" : i == index ? "\uE915" : "\uEA3A",
+                FontSize = i == index ? 10 : 12,
+                Width = 16,
+                Foreground = Palette(i <= index ? "NomiAccent" : "NomiInk3")
+            });
+            var label = Text(StepTitle(step), 13.5, i == index ? "NomiInk" : i < index ? "NomiInk2" : "NomiInk3");
+            if (i == index) label.FontWeight = FontWeights.SemiBold;
+            row.Children.Add(label);
+            if (i < index)
+            {
+                var jump = new Button { Content = row, Style = (Style)Application.Current.Resources["NomiGhost"], HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left };
+                AutomationProperties.SetName(jump, $"{StepTitle(step)}, {state}");
+                AutomationProperties.SetAutomationId(jump, $"OnboardingRail_{step}");
+                jump.Click += (_, _) => GoToOnboarding(step);
+                onboardingRail.Children.Add(jump);
+            }
+            else
+            {
+                var holder = new Border { Padding = new Thickness(11, 7, 11, 7), Child = row };
+                AutomationProperties.SetName(holder, $"{StepTitle(step)}, {state}");
+                onboardingRail.Children.Add(holder);
+            }
+        }
+
+        onboardingBody.Children.Clear();
+        var eyebrow = Eyebrow(StepTitle(onboardingStep));
+        onboardingBody.Children.Add(eyebrow);
+        var heading = Heading(T($"oobe-{onboardingStep}Title"), 28);
+        AutomationProperties.SetAutomationId(heading, $"OnboardingStep_{onboardingStep}");
+        onboardingBody.Children.Add(heading);
+        onboardingBody.Children.Add(Text(T($"oobe-{onboardingStep}Intro"), 14.5, "NomiInk2"));
+        switch (onboardingStep)
+        {
+            case Onboarding.Welcome: BuildWelcomeStep(); break;
+            case "reading": BuildReadingStep(); break;
+            case "numbers": BuildNumbersStep(); break;
+            case "day": BuildDayStep(); break;
+            case "pace": BuildPaceStep(); break;
+            case "model": BuildModelStep(); break;
+            case "presence": BuildPresenceStep(); break;
+            case "agenda": onboardingBody.Children.Add(AgendaCard()); break;
+            case "data": BuildDataStep(); break;
+            case Onboarding.Tasks: BuildTasksStep(); break;
+        }
+
+        onboardingFooter.Children.Clear();
+        onboardingFooter.ColumnDefinitions.Clear();
+        foreach (var width in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, GridLength.Auto })
+            onboardingFooter.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
+        void Add(Button button, int column) { Grid.SetColumn(button, column); onboardingFooter.Children.Add(button); }
+        if (Onboarding.Previous(onboardingStep) is { } previous)
+        {
+            var back = Chip(T("oobeBack"), "NomiGhost", "\uE72B", "OnboardingBack");
+            back.Click += (_, _) => GoToOnboarding(previous);
+            Add(back, 0);
+            var later = Chip(T("oobeLater"), "NomiGhost", null, "OnboardingLater");
+            later.Click += (_, _) => FinishOnboardingLater();
+            Add(later, 1);
+        }
+        if (Onboarding.CanSkip(onboardingStep) && onboardingStep is not ("data" or Onboarding.Tasks))
+        {
+            var skip = Chip(T("oobeSkip"), "NomiChip", null, "OnboardingSkip");
+            skip.Click += (_, _) => NextOnboarding();
+            Add(skip, 3);
+        }
+        var nextLabel = onboardingStep switch
+        {
+            Onboarding.Welcome => T("welcomeStart"),
+            "data" => T("oobeUnderstood"),
+            Onboarding.Tasks => T("oobeFinish"),
+            _ => T("oobeContinue")
+        };
+        var next = Primary(nextLabel, "OnboardingNext");
+        next.Click += (_, _) => NextOnboarding();
+        Add(next, 4);
+
+        Title = $"Nomi — {StepTitle(onboardingStep)}";
+        Reveal(onboardingBody, 8);
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            if (onboardingBody is null) return;
+            var target = focus is null ? null : FindById(onboardingBody, focus);
+            target ??= FindFirstInput(onboardingBody) ?? next;
+            if (target is Control control) control.Focus(FocusState.Keyboard);
+            if (FrameworkElementAutomationPeer.FromElement(heading) is { } peer)
+                peer.RaiseNotificationEvent(AutomationNotificationKind.Other, AutomationNotificationProcessing.ImportantMostRecent, $"{StepTitle(onboardingStep)}. {heading.Text}", "OnboardingStep");
+        });
+    }
+
+    private static FrameworkElement? FindById(DependencyObject root, string id)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is FrameworkElement element && AutomationProperties.GetAutomationId(element) == id) return element;
+            if (FindById(child, id) is { } found) return found;
+        }
+        return null;
+    }
+
+    private static Control? FindFirstInput(DependencyObject root)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is RadioButton or TextBox or ToggleSwitch or ComboBox or TimePicker or ToggleButton or Button && child is Control { IsEnabled: true, IsTabStop: true } control) return control;
+            if (FindFirstInput(child) is { } found) return found;
+        }
+        return null;
+    }
+
+    private void ApplyOnboarding(Action change, string focus)
+    {
+        change();
+        SaveProfile();
+        ApplyReading();
+        ApplyPresence();
+        Refresh();
+        BuildOnboarding(focus);
+    }
+
+    private void OnboardingChoice(string id, string label, string help, string[] options, int selected, Action<int> changed)
+    {
+        var header = new StackPanel { Spacing = 2 };
+        var title = Text(label, 14.5);
+        title.FontWeight = FontWeights.SemiBold;
+        header.Children.Add(title);
+        if (help.Length > 0) header.Children.Add(Text(help, 12.5, "NomiInk3"));
+        var choice = new RadioButtons { Header = header, MaxColumns = Math.Min(options.Length, 3), SelectedIndex = selected };
+        foreach (var option in options) choice.Items.Add(option);
+        AutomationProperties.SetName(choice, label);
+        AutomationProperties.SetAutomationId(choice, id);
+        choice.SelectionChanged += (_, _) =>
+        {
+            if (choice.SelectedIndex < 0 || choice.SelectedIndex == selected) return;
+            var value = choice.SelectedIndex;
+            ApplyOnboarding(() => changed(value), id);
+        };
+        onboardingBody!.Children.Add(choice);
+    }
+
+    private void OnboardingSwitch(string id, string label, string help, bool value, Action<bool> changed)
+    {
+        var card = new Border { Style = (Style)Application.Current.Resources["NomiCard"], Padding = new Thickness(18, 12, 18, 12) };
+        var grid = new Grid { ColumnSpacing = 16 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+        var title = Text(label, 14);
+        title.FontWeight = FontWeights.SemiBold;
+        text.Children.Add(title);
+        text.Children.Add(Text(help, 12, "NomiInk3"));
+        grid.Children.Add(text);
+        var toggle = new ToggleSwitch { IsOn = value, OnContent = T("on"), OffContent = T("off"), VerticalAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(toggle, label);
+        AutomationProperties.SetHelpText(toggle, help);
+        AutomationProperties.SetAutomationId(toggle, id);
+        toggle.Toggled += (_, _) => { if (toggle.IsOn != value) ApplyOnboarding(() => changed(toggle.IsOn), id); };
+        Grid.SetColumn(toggle, 1);
+        grid.Children.Add(toggle);
+        card.Child = grid;
+        onboardingBody!.Children.Add(card);
+    }
+
+    private void BuildWelcomeStep()
+    {
+        var tagline = Text(T("tagline"), 18, "NomiAccent");
+        tagline.FontWeight = FontWeights.SemiBold;
+        onboardingBody!.Children.Insert(2, tagline);
+        OnboardingChoice("OnboardingLanguage", T("language"), T("oobeLanguageHelp"), ["Français", "English"], language == "fr" ? 0 : 1, value =>
+        {
+            CancelGeneration();
+            language = value == 0 ? "fr" : "en";
+        });
+        onboardingBody.Children.Add(Text(T("oobeWelcomeNote"), 12.5, "NomiInk3"));
+    }
+
+    private void BuildReadingStep()
+    {
+        var theme = profile.Theme switch { "light" => 1, "dark" => 2, _ => 0 };
+        OnboardingChoice("OnboardingTheme", T("theme"), T("themeHelp"), [T("themeSystem"), T("themeLight"), T("themeDark")], theme, value =>
+        {
+            profile.Theme = value switch { 1 => "light", 2 => "dark", _ => "system" };
+            Root.RequestedTheme = value switch { 1 => ElementTheme.Light, 2 => ElementTheme.Dark, _ => ElementTheme.Default };
+        });
+        OnboardingChoice("OnboardingSpacing", T("spacing"), T("spacingHelp"), [T("spacingStandard"), T("spacingAiry")], profile.Spacing == "airy" ? 1 : 0,
+            value => profile.Spacing = value == 1 ? "airy" : "standard");
+        OnboardingChoice("OnboardingContrast", T("contrast"), T("contrastHelp"), [T("contrastStandard"), T("contrastStrong")], profile.Contrast == "strong" ? 1 : 0,
+            value => profile.Contrast = value == 1 ? "strong" : "standard");
+        OnboardingChoice("OnboardingMotion", T("motionSetting"), T("motionHelp"), [T("motionSystem"), T("motionReduced")], profile.Motion == "reduced" ? 1 : 0,
+            value => profile.Motion = value == 1 ? "reduced" : "system");
+        var sample = new StackPanel { Spacing = 6 };
+        var title = Text(T("welcomeTask"), 15);
+        title.FontWeight = FontWeights.SemiBold;
+        sample.Children.Add(title);
+        sample.Children.Add(Text(T("oobeReadingSample"), 14));
+        sample.Children.Add(Text(T("oobeReadingSampleNote"), 12.5, "NomiInk3"));
+        onboardingBody!.Children.Add(Glass(sample, 18));
+    }
+
+    private void BuildNumbersStep()
+    {
+        var modes = NumberModes.All;
+        OnboardingChoice("OnboardingNumbers", T("welcomeTitle"), "", [.. modes.Select(NumberModeName)], Array.IndexOf(modes, profile.Numbers),
+            value => profile.Numbers = modes[value]);
+        var sample = new StackPanel { Spacing = 6 };
+        var task = Text(T("welcomeTask"), 15);
+        task.FontWeight = FontWeights.SemiBold;
+        sample.Children.Add(task);
+        var preview = Text(WelcomePreview(profile.Numbers), 14);
+        AutomationProperties.SetLiveSetting(preview, AutomationLiveSetting.Polite);
+        sample.Children.Add(preview);
+        onboardingBody!.Children.Add(Glass(sample, 18));
+        onboardingBody.Children.Add(Text(T("welcomeNote"), 12.5, "NomiInk3"));
+    }
