@@ -314,6 +314,10 @@ public sealed partial class MainWindow
         SecureFile.Delete(agendaCache);
         meetingsDate = default;
         todayMeetings = [];
+        agendaFetched = null;
+        agendaStatus = "";
+        latest = null;
+        updateStatus = "";
         try { if (Directory.Exists(StartupDiagnostics.DirectoryPath)) Directory.Delete(StartupDiagnostics.DirectoryPath, true); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         profile = new Profile { Language = language };

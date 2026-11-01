@@ -112,12 +112,15 @@ public sealed partial class MainWindow
         if (!manual && agendaFetched is { } at && Now - at < TimeSpan.FromMinutes(30)) return;
         agendaBusy = true;
         agendaFetched = Now;
+        var stale = false;
         if (manual && view == "routines") Refresh();
         try
         {
             using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             var text = await AgendaSource.ReadAsync(source, nomiWeb, cancel.Token);
-            if (text is null) agendaStatus = T("agendaUnreadable");
+            stale = profile.AgendaSource != source;
+            if (stale) { }
+            else if (text is null) agendaStatus = T("agendaUnreadable");
             else
             {
                 SecureFile.Write(agendaCache, text);
@@ -127,11 +130,17 @@ public sealed partial class MainWindow
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or IOException or InvalidDataException or UnauthorizedAccessException)
         {
-            agendaStatus = T("agendaUnreachable");
+            stale = profile.AgendaSource != source;
+            if (!stale) agendaStatus = T("agendaUnreachable");
         }
         finally
         {
             agendaBusy = false;
+        }
+        if (stale && profile.AgendaSource is not null)
+        {
+            await RefreshAgenda(true);
+            return;
         }
         if (view == "routines" && !FocusInside(RoutinesBody)) Refresh();
     }

@@ -177,6 +177,8 @@ public sealed class Presence : IDisposable
         return hotKey == on;
     }
 
+    public void Minimize() => ShowWindow(window, 7);
+
     public void Bring()
     {
         if (IsIconic(window)) ShowWindow(window, 9);

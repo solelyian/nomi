@@ -30,21 +30,30 @@ public partial class App : Application
     {
         try
         {
+            var background = AutoStart.Background(Environment.GetCommandLineArgs());
             if (!First())
             {
-                StartupDiagnostics.Write("Nomi already running, showing it");
-                try
+                StartupDiagnostics.Write("Nomi already running");
+                if (!background)
                 {
-                    using var show = EventWaitHandle.OpenExisting(ShowName);
-                    show.Set();
+                    try
+                    {
+                        using var show = EventWaitHandle.OpenExisting(ShowName);
+                        show.Set();
+                    }
+                    catch (WaitHandleCannotBeOpenedException) { }
                 }
-                catch (WaitHandleCannotBeOpenedException) { }
                 Exit();
                 return;
             }
             StartupDiagnostics.Write("Creating main window");
-            window = new MainWindow(AutoStart.Background(Environment.GetCommandLineArgs()));
+            window = new MainWindow(background);
             if (window.StartsHidden) StartupDiagnostics.Write("Started in the notification area");
+            else if (window.StartsMinimized)
+            {
+                window.ShowMinimized();
+                StartupDiagnostics.Write("Started minimized");
+            }
             else
             {
                 window.Activate();
