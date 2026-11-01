@@ -82,6 +82,15 @@ try {
     Step $process "pace"
     Invoke (WaitFor $process "OnboardingSkip" 10)
     Step $process "model"
+    $verdict = WaitFor $process "OnboardingHardwareVerdict" 30
+    foreach ($row in "processor", "memory", "disk", "npu") {
+        $cell = WaitFor $process "OnboardingHardware_$row" 5
+        if ($cell.Current.Name -notmatch " : .+") { throw "The $row row of the hardware check is empty." }
+        Write-Host $cell.Current.Name
+    }
+    if ($verdict.Current.Name.Length -lt 20) { throw "The hardware check gives no recommendation." }
+    Write-Host "Hardware verdict: $($verdict.Current.Name)"
+    Capture $process (Join-Path $env:RUNNER_TEMP "onboarding-hardware.png")
     [void](WaitFor $process "OnboardingDownload" 10)
     Invoke (WaitFor $process "OnboardingModelLater" 10)
     Step $process "presence"

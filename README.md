@@ -126,8 +126,9 @@ sans clic. **Assistant** regroupe les six actions. `Ctrl+K` ouvre la palette
 
 Au premier lancement, un accueil en page entière règle Nomi en dix étapes nommées :
 bienvenue et langue, lecture (thème, espacement, contraste, animations), nombres,
-repères et jours travaillés, façon d’avancer, IA locale (« Télécharger maintenant »,
-le téléchargement continue en arrière-plan), présence, agenda, données et première
+repères et jours travaillés, façon d’avancer, IA locale (analyse du processeur, de la mémoire,
+de l’espace libre et du NPU, puis « Télécharger maintenant » ; le téléchargement continue
+en arrière-plan), présence, agenda, données et première
 tâche (une par ligne). Tout se fait au clavier ; chaque étape sauf la langue peut
 être passée et garde alors les réglages par défaut. « Terminer plus tard » enregistre
 l’étape dans le profil chiffré et l’accueil reprend là au prochain lancement.
