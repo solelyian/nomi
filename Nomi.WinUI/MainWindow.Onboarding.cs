@@ -24,6 +24,18 @@ public sealed partial class MainWindow
 
     private string StepTitle(string step) => T($"oobe-{step}");
 
+    private string WelcomePreview(string mode)
+    {
+        var day = profile.Day;
+        var start = day.At(Now, day.LunchEnd).AddMinutes(15);
+        var now = day.At(Now, day.LunchStart).AddMinutes(-30);
+        return mode == NumberModes.Figures
+            ? string.Format(CultureInfo.CurrentCulture, T("welcomePreviewFigures"),
+                Readable.Span(start, start.AddMinutes(40), now, mode, language, day), Readable.Duration(40, mode, language))
+            : string.Format(CultureInfo.CurrentCulture, T("welcomePreview"),
+                Readable.Clock(start, now, mode, language, day), Readable.Duration(40, mode, language));
+    }
+
     private void ShowOnboarding(bool restart = false)
     {
         if (restart) profile.OnboardingStep = Onboarding.Welcome;
@@ -365,4 +377,111 @@ public sealed partial class MainWindow
         sample.Children.Add(preview);
         onboardingBody!.Children.Add(Glass(sample, 18));
         onboardingBody.Children.Add(Text(T("welcomeNote"), 12.5, "NomiInk3"));
+    }
+
+    private void BuildDayStep()
+    {
+        var day = profile.Day;
+        var grid = new Grid { ColumnSpacing = 16, RowSpacing = 12 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.RowDefinitions.Add(new RowDefinition());
+        grid.RowDefinitions.Add(new RowDefinition());
+        void Picker(string key, TimeSpan value, int row, int column, Func<TimeSpan, Day> change)
+        {
+            var picker = new TimePicker { Header = T(key), ClockIdentifier = "24HourClock", MinuteIncrement = 5, Time = value, HorizontalAlignment = HorizontalAlignment.Stretch };
+            var id = $"OnboardingDay_{key}";
+            AutomationProperties.SetName(picker, T(key));
+            AutomationProperties.SetAutomationId(picker, id);
+            picker.TimeChanged += (_, args) =>
+            {
+                var next = change(args.NewTime);
+                if (!next.Valid) { ShowToast(T("dayInvalid"), null, null); picker.Time = args.OldTime; return; }
+                ApplyOnboarding(() =>
+                {
+                    profile.DayStart = next.Start;
+                    profile.LunchStart = next.LunchStart;
+                    profile.LunchEnd = next.LunchEnd;
+                    profile.DayEnd = next.End;
+                }, id);
+            };
+            Grid.SetRow(picker, row);
+            Grid.SetColumn(picker, column);
+            grid.Children.Add(picker);
+        }
+        Picker("dayStart", day.Start, 0, 0, value => day with { Start = value });
+        Picker("dayEnd", day.End, 0, 1, value => day with { End = value });
+        Picker("lunchStart", day.LunchStart, 1, 0, value => day with { LunchStart = value });
+        Picker("lunchEnd", day.LunchEnd, 1, 1, value => day with { LunchEnd = value });
+        onboardingBody!.Children.Add(grid);
+
+        var label = Text(T("oobeWorkingDays"), 14.5);
+        label.FontWeight = FontWeights.SemiBold;
+        label.Margin = new Thickness(0, 8, 0, 0);
+        onboardingBody.Children.Add(label);
+        var days = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        AutomationProperties.SetName(days, T("oobeWorkingDays"));
+        var culture = CultureInfo.GetCultureInfo(language == "fr" ? "fr-FR" : "en-US");
+        foreach (var weekday in new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday })
+        {
+            var on = profile.WorkingDays.Contains(weekday);
+            var full = culture.TextInfo.ToTitleCase(culture.DateTimeFormat.GetDayName(weekday));
+            var toggle = new ToggleButton { Content = culture.TextInfo.ToTitleCase(culture.DateTimeFormat.GetAbbreviatedDayName(weekday)), IsChecked = on, MinWidth = 56, CornerRadius = new CornerRadius(10) };
+            var id = $"OnboardingWorkday_{weekday}";
+            AutomationProperties.SetName(toggle, full);
+            AutomationProperties.SetAutomationId(toggle, id);
+            toggle.Click += (_, _) =>
+            {
+                if (on && profile.WorkingDays.Count == 1) { toggle.IsChecked = true; ShowToast(T("oobeWorkingDaysOne"), null, null); return; }
+                ApplyOnboarding(() =>
+                {
+                    if (on) profile.WorkingDays.Remove(weekday);
+                    else profile.WorkingDays.Add(weekday);
+                    profile.Normalize();
+                }, id);
+            };
+            days.Children.Add(toggle);
+        }
+        onboardingBody.Children.Add(days);
+        onboardingBody.Children.Add(Text(T("oobeDayNote"), 12.5, "NomiInk3"));
+    }
+
+    private void BuildPaceStep()
+    {
+        OnboardingChoice("OnboardingStepSize", T("stepSize"), T("stepSizeHelp"), [T("stepSmall"), T("stepMedium")], profile.StepSize == "medium" ? 1 : 0,
+            value => profile.StepSize = value == 1 ? "medium" : "small");
+        OnboardingChoice("OnboardingResponse", T("response"), T("responseHelp"), [T("steps"), T("summary")], summary ? 1 : 0,
+            value => summary = value == 1);
+        OnboardingSwitch("OnboardingCalm", T("calm"), T("calmHelp"), profile.Calm, value => profile.Calm = value);
+        OnboardingSwitch("OnboardingChain", T("chain"), T("chainHelp"), profile.Chain, value => profile.Chain = value);
+    }
+
+    private void BuildPresenceStep()
+    {
+        OnboardingSwitch("OnboardingKeepRunning", T("keepRunning"), T("keepRunningHelp"), profile.KeepRunning, value => profile.KeepRunning = value);
+        OnboardingSwitch("OnboardingCapture", T("captureShortcut"), T("captureShortcutHelp"), profile.CaptureHotKey, value => profile.CaptureHotKey = value);
+        OnboardingSwitch("OnboardingNotifications", T("notifications"), T("notificationsHelp"), profile.Notifications, value => profile.Notifications = value);
+        OnboardingSwitch("OnboardingAutoStart", T("startWithWindows"), T("startWithWindowsHelp"), AutoStart.Enabled, AutoStart.Set);
+        OnboardingSwitch("OnboardingUpdates", T("updatesSetting"), T("updatesHelp"), profile.CheckUpdates, value => profile.CheckUpdates = value);
+    }
+
+    private void BuildDataStep()
+    {
+        var list = new StackPanel { Spacing = 14 };
+        foreach (var (glyph, key) in new[] { ("\uE7EF", "oobeDataLocal"), ("\uE72E", "oobeDataEncrypted"), ("\uE8F1", "oobeDataMemory"), ("\uEDE1", "oobeDataExport") })
+        {
+            var row = new Grid { ColumnSpacing = 14 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.Children.Add(new FontIcon { Glyph = glyph, FontSize = 18, Foreground = Palette("NomiAccent"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) });
+            var text = new StackPanel { Spacing = 2 };
+            var title = Text(T(key), 14.5);
+            title.FontWeight = FontWeights.SemiBold;
+            text.Children.Add(title);
+            text.Children.Add(Text(T($"{key}Help"), 13, "NomiInk2"));
+            Grid.SetColumn(text, 1);
+            row.Children.Add(text);
+            list.Children.Add(row);
+        }
+        onboardingBody!.Children.Add(Glass(list, 22));
     }

@@ -328,6 +328,6 @@ public sealed partial class MainWindow
         ApplyReading();
         Refresh();
         ShowToast(T("dataDeleted"), null, null);
-        ShowWelcome();
+        ShowOnboarding(true);
     }
 }
