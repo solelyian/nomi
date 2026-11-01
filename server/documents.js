@@ -223,7 +223,7 @@ export async function extractDocument(name, bytes) {
   } catch (error) {
     if (error instanceof Error && error.message === "document-complex")
       throw error;
-    throw new Error("document-unreadable");
+    throw new Error("document-unreadable", { cause: error });
   }
   if (!out.text.trim()) throw new Error("document-no-text");
   return { name, text: out.text.trim(), truncated: out.truncated };
