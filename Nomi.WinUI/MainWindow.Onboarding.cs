@@ -546,7 +546,7 @@ public sealed partial class MainWindow
             later.Click += (_, _) => NextOnboarding();
             actions.Children.Add(later);
             card.Children.Add(actions);
-            card.Children.Add(Text(DownloadLabel(), 12.5, "NomiInk3"));
+            if (!inference.HasModel && inference.DownloadBytes > 0) card.Children.Add(Text(DownloadLabel(), 12.5, "NomiInk3"));
             onboardingBody.Children.Add(Glass(card, 22, true));
             UpdateOnboardingModel();
             return;

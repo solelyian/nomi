@@ -122,9 +122,21 @@ sans clic. **Assistant** regroupe les six actions. `Ctrl+K` ouvre la palette
 (demander à Nomi, créer une tâche, naviguer), `Ctrl+1` à `Ctrl+4` changent d’espace,
 `Ctrl+N` crée une tâche. Les tâches restent dans `%LOCALAPPDATA%\Nyne\Nomi\tasks.json`.
 
+### Premier lancement
+
+Au premier lancement, un accueil en page entière règle Nomi en dix étapes nommées :
+bienvenue et langue, lecture (thème, espacement, contraste, animations), nombres,
+repères et jours travaillés, façon d’avancer, IA locale (« Télécharger maintenant »,
+le téléchargement continue en arrière-plan), présence, agenda, données et première
+tâche (une par ligne). Tout se fait au clavier ; chaque étape sauf la langue peut
+être passée et garde alors les réglages par défaut. « Terminer plus tard » enregistre
+l’étape dans le profil chiffré et l’accueil reprend là au prochain lancement.
+Préférences › « Revoir l’accueil » le relance (`Nomi.WinUI/MainWindow.Onboarding.cs`,
+vérifié par `checks/windows-onboarding.ps1`).
+
 ### Affichage adaptatif
 
-Au premier lancement, Nomi demande « Comment préférez-vous voir votre après-midi ? » :
+L’étape Nombres de l’accueil demande « Comment préférez-vous voir votre après-midi ? » :
 **En mots** (« juste après le déjeuner », « un moment moyen »), **En proportions**
 (« à la moitié de l’après-midi », « trois quarts d’heure ») ou **En chiffres**.
 Ce choix s’applique aux horaires, durées, échéances, suggestions et au rythme, et
