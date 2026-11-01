@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -461,7 +462,7 @@ public sealed partial class MainWindow
         OnboardingSwitch("OnboardingKeepRunning", T("keepRunning"), T("keepRunningHelp"), profile.KeepRunning, value => profile.KeepRunning = value);
         OnboardingSwitch("OnboardingCapture", T("captureShortcut"), T("captureShortcutHelp"), profile.CaptureHotKey, value => profile.CaptureHotKey = value);
         OnboardingSwitch("OnboardingNotifications", T("notifications"), T("notificationsHelp"), profile.Notifications, value => profile.Notifications = value);
-        OnboardingSwitch("OnboardingAutoStart", T("startWithWindows"), T("startWithWindowsHelp"), AutoStart.Enabled, AutoStart.Set);
+        OnboardingSwitch("OnboardingAutoStart", T("startWithWindows"), T("startWithWindowsHelp"), AutoStart.Enabled, value => AutoStart.Set(value));
         OnboardingSwitch("OnboardingUpdates", T("updatesSetting"), T("updatesHelp"), profile.CheckUpdates, value => profile.CheckUpdates = value);
     }
 
@@ -485,3 +486,128 @@ public sealed partial class MainWindow
         }
         onboardingBody!.Children.Add(Glass(list, 22));
     }
+
+    private string onboardingModelState = "";
+
+    private string OnboardingModelState() => inference.Ready ? "ready" : modelPreparation is not null ? "busy" : modelProgress.Stage;
+
+    private void BuildModelStep()
+    {
+        onboardingModelState = OnboardingModelState();
+        var points = new StackPanel { Spacing = 10 };
+        foreach (var key in new[] { "oobeModelOffline", "oobeModelPrivate", "oobeModelAccelerator" })
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+            row.Children.Add(new FontIcon { Glyph = "\uE73E", FontSize = 13, Foreground = Palette("NomiAccent") });
+            row.Children.Add(Text(T(key), 13.5, "NomiInk2"));
+            points.Children.Add(row);
+        }
+        onboardingBody!.Children.Add(points);
+
+        var card = new StackPanel { Spacing = 12 };
+        var name = Text(EngineLabel(), 15);
+        name.FontWeight = FontWeights.SemiBold;
+        card.Children.Add(name);
+        onboardingModelStatus = Text("", 13.5, "NomiInk2");
+        AutomationProperties.SetAutomationId(onboardingModelStatus, "OnboardingModelStatus");
+        AutomationProperties.SetLiveSetting(onboardingModelStatus, AutomationLiveSetting.Polite);
+        card.Children.Add(onboardingModelStatus);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        if (inference.Ready || inference.HasModel && modelPreparation is null && modelProgress.Stage == "local-model-ready")
+        {
+            onboardingModelStatus.Text = T("oobeModelReady");
+        }
+        else if (modelPreparation is not null)
+        {
+            onboardingProgress = new ProgressBar { Minimum = 0, Maximum = 100, Height = 6, CornerRadius = new CornerRadius(3) };
+            AutomationProperties.SetName(onboardingProgress, T("engineDownloading"));
+            card.Children.Insert(2, onboardingProgress);
+            var pause = Chip(T("oobeModelPause"), "NomiChip", "\uE769", "OnboardingModelPause");
+            pause.Click += (_, _) => modelPreparation?.Cancel();
+            actions.Children.Add(pause);
+            card.Children.Add(Text(T("oobeModelBackground"), 12.5, "NomiInk3"));
+        }
+        else
+        {
+            var resume = modelProgress.Stage is "model-paused" or "model-download-error";
+            if (modelProgress.Stage is not ("local-model-missing" or "model-paused")) onboardingModelStatus.Text = T(modelProgress.Stage);
+            else if (resume) onboardingModelStatus.Text = T("model-paused");
+            else onboardingModelStatus.Text = inference.HasModel ? T("oobeModelPresent") : T("oobeModelSize");
+            var download = Primary(inference.HasModel ? T("loadLocalModel") : resume ? T("oobeModelResume") : T("oobeDownloadNow"), "OnboardingDownload");
+            download.Padding = new Thickness(22, 12, 22, 12);
+            download.FontSize = 15;
+            download.Click += (_, _) => _ = PrepareModel();
+            actions.Children.Add(download);
+            var later = Chip(T("routineLater"), "NomiGhost", null, "OnboardingModelLater");
+            later.Click += (_, _) => NextOnboarding();
+            actions.Children.Add(later);
+            card.Children.Add(actions);
+            card.Children.Add(Text(DownloadLabel(), 12.5, "NomiInk3"));
+            onboardingBody.Children.Add(Glass(card, 22, true));
+            UpdateOnboardingModel();
+            return;
+        }
+        if (actions.Children.Count > 0) card.Children.Add(actions);
+        onboardingBody.Children.Add(Glass(card, 22, true));
+        UpdateOnboardingModel();
+    }
+
+    private void UpdateOnboardingModel()
+    {
+        if (onboarding is null || onboardingStep != "model") return;
+        if (OnboardingModelState() != onboardingModelState)
+        {
+            var focused = FocusManager.GetFocusedElement(Root.XamlRoot) is FrameworkElement element ? AutomationProperties.GetAutomationId(element) : null;
+            BuildOnboarding(focused is "OnboardingDownload" or "OnboardingModelPause" ? null : focused);
+            return;
+        }
+        if (onboardingProgress is null || onboardingModelStatus is null) return;
+        var downloading = modelProgress.Stage == "model-downloading";
+        onboardingProgress.IsIndeterminate = !downloading;
+        onboardingProgress.Value = modelProgress.Fraction * 100;
+        onboardingModelStatus.Text = downloading
+            ? $"{T("engineDownloading")} · {Readable.Fraction(modelProgress.Fraction, language)}"
+            : T(modelProgress.Stage);
+    }
+
+    private void BuildTasksStep()
+    {
+        var box = new TextBox
+        {
+            Text = onboardingTasks,
+            PlaceholderText = T("oobeTasksHint"),
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 140,
+            CornerRadius = new CornerRadius(12),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Palette("NomiGlassEdge"),
+            Background = Palette("NomiGlassStrong")
+        };
+        AutomationProperties.SetName(box, T("oobe-tasksTitle"));
+        AutomationProperties.SetHelpText(box, T("oobeTasksHelp"));
+        AutomationProperties.SetAutomationId(box, "OnboardingTasks");
+        var finish = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
+        finish.Invoked += (_, args) => { args.Handled = true; onboardingTasks = box.Text; CompleteOnboarding(); };
+        box.KeyboardAccelerators.Add(finish);
+        var count = Text("", 12.5, "NomiInk3");
+        AutomationProperties.SetLiveSetting(count, AutomationLiveSetting.Polite);
+        void Count()
+        {
+            var lines = Onboarding.TaskLines(box.Text).Count;
+            count.Text = lines == 0 ? T("oobeTasksNone") : lines == 1 ? T("oobeTasksOne") : string.Format(CultureInfo.CurrentCulture, T("oobeTasksMany"), lines);
+        }
+        box.TextChanged += (_, _) => { onboardingTasks = box.Text; Count(); };
+        Count();
+        onboardingBody!.Children.Add(box);
+        onboardingBody.Children.Add(count);
+        onboardingBody.Children.Add(Text(T("oobeTasksHelp"), 12.5, "NomiInk3"));
+    }
+
+    private void ShowTour()
+    {
+        profile.TourShown = true;
+        SaveProfile();
+        ShowToast(T("oobeTour"), null, null);
+    }
+}

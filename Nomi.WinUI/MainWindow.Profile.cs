@@ -250,6 +250,9 @@ public sealed partial class MainWindow
         var feedback = Chip(T("feedback"), "NomiChip", "\uED15", "Feedback");
         feedback.Click += async (_, _) => await Launcher.LaunchUriAsync(new Uri(FeedbackUrl));
         links.Children.Add(feedback);
+        var replay = Chip(T("oobeReplay"), "NomiChip", "", "ReplayOnboarding");
+        replay.Click += (_, _) => ShowOnboarding(true);
+        links.Children.Add(replay);
         SettingsBody.Children.Add(links);
         BuildUpdates();
         SettingsBody.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("version"),
