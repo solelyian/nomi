@@ -22,6 +22,9 @@ public sealed class Signal
 public sealed record Day(TimeSpan Start, TimeSpan LunchStart, TimeSpan LunchEnd, TimeSpan End)
 {
     public static readonly Day Default = new(new(9, 0, 0), new(12, 30, 0), new(13, 30, 0), new(18, 0, 0));
+    public static readonly DayOfWeek[] Weekdays = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
+
+    public IReadOnlyList<DayOfWeek> Workdays { get; init; } = Weekdays;
 
     public DateTimeOffset At(DateTimeOffset now, TimeSpan time) =>
         new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, now.Offset).Add(time);
@@ -39,7 +42,7 @@ public sealed record Day(TimeSpan Start, TimeSpan LunchStart, TimeSpan LunchEnd,
     public DateTimeOffset NextStart(DateTimeOffset now)
     {
         var day = now.Date.AddDays(1);
-        while (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) day = day.AddDays(1);
+        for (var i = 0; i < 7 && !Workdays.Contains(day.DayOfWeek); i++) day = day.AddDays(1);
         return new DateTimeOffset(day.Add(Start), now.Offset);
     }
     public bool Valid => Start < LunchStart && LunchStart < LunchEnd && LunchEnd < End;
@@ -63,6 +66,9 @@ public sealed class Profile
     public string Motion { get; set; } = "system";
     public string Contrast { get; set; } = "standard";
     public bool Onboarded { get; set; }
+    public string OnboardingStep { get; set; } = Onboarding.Steps[0];
+    public List<DayOfWeek> WorkingDays { get; set; } = [.. Day.Weekdays];
+    public bool TourShown { get; set; }
     public string? AgendaSource { get; set; }
     public bool CheckUpdates { get; set; } = true;
     public bool KeepRunning { get; set; } = true;
@@ -81,7 +87,7 @@ public sealed class Profile
         get
         {
             var day = new Day(DayStart, LunchStart, LunchEnd, DayEnd);
-            return day.Valid ? day : Day.Default;
+            return (day.Valid ? day : Day.Default) with { Workdays = WorkingDays.Count > 0 ? WorkingDays : Day.Weekdays };
         }
     }
 
@@ -100,6 +106,9 @@ public sealed class Profile
         Corrections = Corrections.Where(item => !string.IsNullOrWhiteSpace(item)).Select(item => item.Trim()).Distinct().Take(20).ToList();
         Dismissed = Dismissed.Distinct().TakeLast(200).ToList();
         Muted = Muted.Distinct().ToList();
+        WorkingDays = WorkingDays.Where(Enum.IsDefined).Distinct().Order().ToList();
+        if (WorkingDays.Count == 0) WorkingDays = [.. Day.Weekdays];
+        if (!Onboarding.Steps.Contains(OnboardingStep)) OnboardingStep = Onboarding.Steps[0];
         if (AgendaSource is { } source && !Nomi.AgendaSource.Valid(source)) AgendaSource = null;
     }
 
