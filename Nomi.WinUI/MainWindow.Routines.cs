@@ -19,6 +19,7 @@ public sealed partial class MainWindow
     private PhraseResult? routineDraft;
     private string routinePhrase = "";
     private Routine? readyRoutine;
+    private DateTime readyDate;
     private double lastIdle;
     private DateTimeOffset? agendaFetched;
     private IReadOnlyList<Meeting> todayMeetings = [];
@@ -69,7 +70,7 @@ public sealed partial class MainWindow
     private void CheckRoutines(string? happened = null)
     {
         var now = Now;
-        if (readyRoutine is { } shown && (!routines.Items.Contains(shown) || shown.LastRun?.Date == now.Date)) readyRoutine = null;
+        if (readyRoutine is { } shown && (!routines.Items.Contains(shown) || shown.LastRun?.Date == now.Date || readyDate != now.Date)) readyRoutine = null;
         var idle = IdleMinutes();
         var back = lastIdle >= 10 && idle < 1;
         if (happened is null) lastIdle = idle;
@@ -77,6 +78,7 @@ public sealed partial class MainWindow
         var moment = new RoutineMoment(now, profile.Day, happened, happened is null ? idle : 0, back, Agenda.FirstMeetingEnd(Meetings(now), profile.Day));
         if (routines.Ready(moment).FirstOrDefault() is not { } due) return;
         readyRoutine = due;
+        readyDate = now.Date;
         NotifyAway("Nomi", T("routineReady"), "routines");
         if (happened is not null) return;
         if (!Busy) ShowToast(string.Format(CultureInfo.CurrentCulture, T("routineReadyToast"), due.Name), T("routineSee"), () => Show("routines"));

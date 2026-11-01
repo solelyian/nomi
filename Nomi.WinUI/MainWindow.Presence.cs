@@ -16,6 +16,8 @@ public sealed partial class MainWindow
 
     public bool StartsHidden { get; private set; }
 
+    public bool StartsMinimized { get; private set; }
+
     private bool Away => hidden || !windowActive;
 
     private void StartPresence(bool background)
@@ -50,8 +52,15 @@ public sealed partial class MainWindow
         };
         Activated += (_, args) => windowActive = args.WindowActivationState != WindowActivationState.Deactivated;
         StartsHidden = background && profile.KeepRunning;
+        StartsMinimized = background && !profile.KeepRunning;
         if (!StartsHidden) return;
         hidden = true;
+        StartBackground();
+    }
+
+    public void ShowMinimized()
+    {
+        presence?.Minimize();
         StartBackground();
     }
 

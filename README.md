@@ -178,7 +178,8 @@ Ouvrir, Capturer une tâche, Quitter Nomi), pour que routines et rappels continu
 Quand la fenêtre n’est pas au premier plan, une notification Windows signale une
 routine prête ou une nouvelle version, jamais pendant une tâche en mode calme.
 « Lancer Nomi avec Windows » (désactivé par défaut) démarre Nomi discrètement
-(`--background`). Une seule instance tourne : relancer Nomi ramène la fenêtre
+(`--background`) : dans la zone de notification, ou réduit dans la barre des tâches
+si Nomi n’y reste pas. Une seule instance tourne : relancer Nomi ramène la fenêtre
 (`Nomi.WinUI/Presence.cs`, `checks/windows-presence.ps1`). Tout se règle dans
 Préférences › Présence.
 
