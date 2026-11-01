@@ -28,3 +28,41 @@ try {
 finally {
     if (!$process.HasExited) { Stop-Process -Id $process.Id }
 }
+Add-Type -Namespace NomiPresence -Name Window -MemberDefinition '[DllImport("user32.dll")] public static extern bool IsIconic(System.IntPtr window);'
+function Start-Background($profile, $expected) {
+    [System.IO.File]::WriteAllText((Join-Path $env:LOCALAPPDATA "Nyne\Nomi\profile.json"), $profile)
+    if (Test-Path "$logs\startup.log") { Remove-Item "$logs\startup.log" }
+    $started = Start-Process "$app\Nomi.WinUI.exe" -ArgumentList "--background" -WorkingDirectory $env:WINDIR -PassThru
+    $deadline = (Get-Date).AddSeconds(45)
+    do {
+        Start-Sleep -Milliseconds 500
+        $ready = (Test-Path "$logs\startup.log") -and (Select-String -Path "$logs\startup.log" -Pattern $expected -Quiet)
+    } while (!$ready -and !$started.HasExited -and (Get-Date) -lt $deadline)
+    if (!$ready) { throw "A start with Windows did not log '$expected'." }
+    Start-Sleep -Seconds 5
+    $started.Refresh()
+    if ($started.HasExited) { throw "Nomi exited after a start with Windows: $($started.ExitCode)" }
+    return $started
+}
+$quiet = Start-Background '{"Onboarded":true,"CheckUpdates":false}' "Started in the notification area"
+try {
+    if ($quiet.MainWindowHandle -ne 0 -and [NomiPresence.Native]::IsWindowVisible($quiet.MainWindowHandle)) { throw "A start with Windows showed the window." }
+    $again = Start-Process "$app\Nomi.WinUI.exe" -ArgumentList "--background" -WorkingDirectory $env:WINDIR -PassThru
+    if (!$again.WaitForExit(30000)) { Stop-Process -Id $again.Id; throw "A second start with Windows kept running." }
+    Start-Sleep -Seconds 3
+    $quiet.Refresh()
+    if ($quiet.MainWindowHandle -ne 0 -and [NomiPresence.Native]::IsWindowVisible($quiet.MainWindowHandle)) { throw "A second start with Windows brought the window back." }
+    Write-Host "A start with Windows stays in the notification area, even when Windows starts Nomi twice."
+}
+finally {
+    if (!$quiet.HasExited) { Stop-Process -Id $quiet.Id }
+}
+$minimized = Start-Background '{"Onboarded":true,"CheckUpdates":false,"KeepRunning":false}' "Started minimized"
+try {
+    $minimized.Refresh()
+    if ($minimized.MainWindowHandle -eq 0 -or ![NomiPresence.Window]::IsIconic($minimized.MainWindowHandle)) { throw "Without the notification area, a start with Windows did not stay minimized." }
+    Write-Host "Without the notification area, a start with Windows stays minimized in the taskbar."
+}
+finally {
+    if (!$minimized.HasExited) { Stop-Process -Id $minimized.Id }
+}
