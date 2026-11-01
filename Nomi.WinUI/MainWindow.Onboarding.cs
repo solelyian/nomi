@@ -499,7 +499,7 @@ public sealed partial class MainWindow
     {
         onboardingModelState = OnboardingModelState();
         var points = new StackPanel { Spacing = 10 };
-        foreach (var key in new[] { "oobeModelOffline", "oobeModelPrivate", "oobeModelAccelerator" })
+        foreach (var key in new[] { "oobeModelOffline", "oobeModelPrivate" })
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
             row.Children.Add(new FontIcon { Glyph = "\uE73E", FontSize = 13, Foreground = Palette("NomiAccent") });
@@ -507,6 +507,7 @@ public sealed partial class MainWindow
             points.Children.Add(row);
         }
         onboardingBody!.Children.Add(points);
+        onboardingBody.Children.Add(HardwareCard());
 
         var card = new StackPanel { Spacing = 12 };
         var name = Text(EngineLabel(), 15);
