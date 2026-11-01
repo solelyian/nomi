@@ -106,6 +106,7 @@ public sealed partial class MainWindow
     private void Capture()
     {
         Summon(null);
+        if (onboarding is not null) return;
         CloseSheet();
         if (view != "board") Show("board");
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, FocusQuickAdd);

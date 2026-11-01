@@ -167,7 +167,7 @@ public sealed partial class MainWindow : Window
                 Splash.Visibility = Visibility.Collapsed;
                 SplashProgress.IsIndeterminate = false;
                 if (inference.HasModel && !inference.Ready && modelPreparation is null) _ = PrepareModel();
-                if (!profile.Onboarded) ShowWelcome();
+                if (!profile.Onboarded) ShowOnboarding();
             }
             if (!motion) { Done(); return; }
             var board = new Storyboard();
@@ -586,6 +586,7 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(EditButton, T("editRequest"));
         AutomationProperties.SetLiveSetting(WorkingTitle, AutomationLiveSetting.Polite);
         EmptyAction.Content = DownloadLabel();
+        UpdateOnboardingModel();
         AutomationProperties.SetName(EmptyAction, (string)EmptyAction.Content);
         AutomationProperties.SetLiveSetting(StatusText, AutomationLiveSetting.Polite);
         RenderDocuments(draft);
@@ -967,6 +968,7 @@ public sealed partial class MainWindow : Window
         PrepareButton.Visibility = inference.Ready || preparing ? Visibility.Collapsed : Visibility.Visible;
         PrepareCancel.Visibility = preparing ? Visibility.Visible : Visibility.Collapsed;
         EmptyAction.Content = DownloadLabel();
+        UpdateOnboardingModel();
         if (view == "workspace" && CurrentDraft.Output.Length == 0) RenderResult(CurrentDraft);
         UpdateControls();
     }
@@ -1021,7 +1023,7 @@ public sealed partial class MainWindow : Window
         {
             modelPreparation = null;
             UpdateEngine();
-            if (inference.Ready) RequestBox.Focus(FocusState.Programmatic);
+            if (inference.Ready && onboarding is null) RequestBox.Focus(FocusState.Programmatic);
         }
     }
 
@@ -1452,6 +1454,7 @@ public sealed partial class MainWindow : Window
 
     private void CommandInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
+        if (onboarding is not null) return;
         args.Handled = true;
         if (PaletteOverlay.Visibility == Visibility.Visible) ClosePalette();
         else OpenPalette();
@@ -1459,6 +1462,7 @@ public sealed partial class MainWindow : Window
 
     private void ViewShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
+        if (onboarding is not null) return;
         var index = (int)sender.Key - (int)VirtualKey.Number1;
         string[] views = ["today", "board", "focus", "workspace", "routines"];
         if (index < 0 || index >= views.Length) return;
@@ -1469,6 +1473,7 @@ public sealed partial class MainWindow : Window
 
     private void NewTaskInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
+        if (onboarding is not null) return;
         args.Handled = true;
         CloseSheet();
         if (view != "board") Show("board");
