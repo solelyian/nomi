@@ -330,7 +330,7 @@ public sealed partial class MainWindow
 
     private void BuildWelcomeStep()
     {
-        var tagline = Text(T("tagline"), 18, "NomiAccent");
+        var tagline = Text(T("oobeTagline"), 18, "NomiAccent");
         tagline.FontWeight = FontWeights.SemiBold;
         onboardingBody!.Children.Insert(2, tagline);
         OnboardingChoice("OnboardingLanguage", T("language"), T("oobeLanguageHelp"), ["Français", "English"], language == "fr" ? 0 : 1, value =>
@@ -431,8 +431,9 @@ public sealed partial class MainWindow
             var id = $"OnboardingWorkday_{weekday}";
             AutomationProperties.SetName(toggle, full);
             AutomationProperties.SetAutomationId(toggle, id);
-            toggle.Click += (_, _) =>
+            void Changed(object sender, RoutedEventArgs args)
             {
+                if (toggle.IsChecked == on) return;
                 if (on && profile.WorkingDays.Count == 1) { toggle.IsChecked = true; ShowToast(T("oobeWorkingDaysOne"), null, null); return; }
                 ApplyOnboarding(() =>
                 {
@@ -440,7 +441,9 @@ public sealed partial class MainWindow
                     else profile.WorkingDays.Add(weekday);
                     profile.Normalize();
                 }, id);
-            };
+            }
+            toggle.Checked += Changed;
+            toggle.Unchecked += Changed;
             days.Children.Add(toggle);
         }
         onboardingBody.Children.Add(days);
