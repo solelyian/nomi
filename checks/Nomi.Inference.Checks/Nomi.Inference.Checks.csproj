@@ -25,6 +25,8 @@
     <Compile Include="../../Nomi.WinUI/Updates.cs" Link="Updates.cs" />
     <Compile Include="../../Nomi.WinUI/Onboarding.cs" Link="Onboarding.cs" />
     <Compile Include="../../Nomi.WinUI/Hardware.cs" Link="Hardware.cs" />
+    <Compile Include="../../Nomi.WinUI/TaskPhrase.cs" Link="TaskPhrase.cs" />
+    <Compile Include="../../Nomi.WinUI/Reminders.cs" Link="Reminders.cs" />
     <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../vision/*" Link="vision/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/inference.json" Link="content/inference.json" CopyToOutputDirectory="PreserveNewest" />

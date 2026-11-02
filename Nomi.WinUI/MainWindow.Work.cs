@@ -91,6 +91,7 @@ public sealed partial class MainWindow
         if (focusState != "idle") UpdateFocusPill();
         if (tick % 30 != 0) return;
         CheckRoutines();
+        CheckReminders();
         _ = RefreshAgenda(false);
         _ = CheckForUpdates(false);
         var signature = string.Join('|', board.Suggestions(now).Select(item => item.Id));
@@ -280,21 +281,26 @@ public sealed partial class MainWindow
         {
             if (args.Key != VirtualKey.Enter || box.Text.Trim().Length == 0) return;
             args.Handled = true;
-            AddTask(box.Text);
+            AddTask(box.Text, InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down));
         };
+        box.TextChanged += (_, _) => PhraseChanged(box);
+        AutomationProperties.SetHelpText(box, T("quickAddHelp"));
         quickAdd = box;
         return box;
     }
 
     private void FocusQuickAdd() => quickAdd?.Focus(FocusState.Programmatic);
 
-    private void AddTask(string title)
+    private void AddTask(string title, bool raw = false)
     {
-        var task = board.Add(title, view == "board" ? addColumn : Columns.Todo, view == "board" ? boardSpace : contextId);
+        var column = view == "board" ? addColumn : Columns.Todo;
+        var space = view == "board" ? boardSpace : contextId;
+        var task = raw ? board.Add(title, column, space) : board.Add(CurrentPhrase(title), column, space);
+        ResetPhrase();
         addColumn = Columns.Todo;
         Refresh();
         FocusQuickAdd();
-        ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskAdded"), task.Title), T("open"), () => OpenSheet(task.Id));
+        ShowToast(TaskAddedText(task), T("open"), () => OpenSheet(task.Id));
     }
 
     private void Move(WorkTask task, string column, double? order = null)
@@ -319,6 +325,9 @@ public sealed partial class MainWindow
     {
         BoardHeader.Children.Clear();
         BoardHeader.ColumnDefinitions.Clear();
+        BoardHeader.RowDefinitions.Clear();
+        BoardHeader.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        BoardHeader.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var scope = Current.Contexts.FirstOrDefault(item => item.Id == boardSpace);
@@ -357,6 +366,12 @@ public sealed partial class MainWindow
         add.Children.Add(button);
         Grid.SetColumn(add, 1);
         BoardHeader.Children.Add(add);
+        var preview = PhrasePreview();
+        preview.HorizontalAlignment = HorizontalAlignment.Right;
+        preview.Margin = new Thickness(0, 8, 0, 0);
+        Grid.SetRow(preview, 1);
+        Grid.SetColumnSpan(preview, 2);
+        BoardHeader.Children.Add(preview);
 
         BoardColumns.Children.Clear();
         BoardColumns.ColumnDefinitions.Clear();
@@ -1402,10 +1417,14 @@ public sealed partial class MainWindow
 
     // Toast
 
-    private void ShowToast(string message, string? action, Action? run)
+    private void ShowToast(string message, string? action, Action? run, string? later = null, Action? runLater = null)
     {
         ToastText.Text = message;
         toastAction = run;
+        toastLater = runLater;
+        ToastLater.Visibility = later is null ? Visibility.Collapsed : Visibility.Visible;
+        ToastLater.Content = later ?? "";
+        if (later is not null) AutomationProperties.SetName(ToastLater, later);
         ToastAction.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
         ToastAction.Content = action ?? "";
         if (action is not null) AutomationProperties.SetName(ToastAction, action);
@@ -1425,6 +1444,7 @@ public sealed partial class MainWindow
         sender.Stop();
         Toast.Visibility = Visibility.Collapsed;
         toastAction = null;
+        toastLater = null;
     }
 
     private void ToastActionClicked(object sender, RoutedEventArgs args)

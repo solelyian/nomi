@@ -35,6 +35,8 @@ public sealed class WorkTask
     public DateTimeOffset? RunningSince { get; set; }
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     public DateTimeOffset? Completed { get; set; }
+    public List<string> Reminded { get; set; } = [];
+    public DateTimeOffset? Snoozed { get; set; }
     public double Order { get; set; }
 
     public double Spent(DateTimeOffset now) =>
@@ -103,6 +105,16 @@ public sealed class TaskBoard
         };
         task.Estimate = Math.Max(5, (int)(Math.Round(30 * Pace().Ratio / 5) * 5));
         Tasks.Add(task);
+        Save();
+        return task;
+    }
+
+    public WorkTask Add(TaskPhraseResult phrase, string column = Columns.Todo, string? space = null, string origin = "manual")
+    {
+        var task = Add(phrase.Title, column, phrase.Space ?? space, origin);
+        if (phrase.Due is null && phrase.Minutes is null) return task;
+        task.Due = phrase.Due;
+        if (phrase.Minutes is int minutes) task.Estimate = minutes;
         Save();
         return task;
     }

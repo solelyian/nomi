@@ -96,6 +96,11 @@ public sealed partial class MainWindow
         AddSetting(T("captureShortcut"), T("captureShortcutHelp"), [T("on"), T("off")], profile.CaptureHotKey ? 0 : 1,
             value => ChangeProfile(() => profile.CaptureHotKey = value == 0));
         if (hotKeyTaken) SettingsBody.Children.Add(Text(T("captureShortcutTaken"), 12, "NomiAccent"));
+        AddSetting(T("dueReminders"), T("dueRemindersHelp"), [T("on"), T("off")], profile.DueReminders ? 0 : 1,
+            value => ChangeProfile(() => profile.DueReminders = value == 0));
+        if (profile.DueReminders)
+            AddSetting(T("reminderLead"), T("reminderLeadHelp"), [T("reminderLeadStart"), T("reminderLeadQuarter"), T("reminderLeadHour")],
+                Math.Max(0, Array.IndexOf(ReminderLeads.All, profile.ReminderLead)), value => ChangeProfile(() => profile.ReminderLead = ReminderLeads.All[value]));
         if (!profile.KeepRunning) return;
         AddSetting(T("notifications"), T("notificationsHelp"), [T("on"), T("off")], profile.Notifications ? 0 : 1,
             value => ChangeProfile(() => profile.Notifications = value == 0));
