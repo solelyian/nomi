@@ -79,7 +79,7 @@ public sealed partial class MainWindow
         sees.VerticalAlignment = VerticalAlignment.Center;
         AutomationProperties.SetAutomationId(sees, "ChatContext");
         bar.Children.Add(sees);
-        var toggle = Chip(chatHidden ? T("chatShow") : T("chatHide"), "NomiGhost", chatHidden ? "\uE7B3" : "\uED1A", "ChatContextToggle");
+        var toggle = Chip(chatHidden ? T("chatShow") : T("chatHide"), "NomiGhost", chatHidden ? "\uE7B3" : "\uE72E", "ChatContextToggle");
         toggle.Click += (_, _) => { chatHidden = !chatHidden; BuildConversation(); };
         bar.Children.Add(toggle);
         var fresh = Chip(T("chatNew"), "NomiGhost", "\uE710", "ChatNew");

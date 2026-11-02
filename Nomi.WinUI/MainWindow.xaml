@@ -365,7 +365,7 @@
                             <FontIcon Glyph="&#xE724;" FontSize="16" />
                         </Button>
                     </Grid>
-                    <TextBlock x:Name="ChatStatus" Grid.Row="3" FontSize="12" Foreground="{ThemeResource NomiInk3}" MaxLines="1"
+                    <TextBlock x:Name="ChatStatus" Grid.Row="3" Opacity="0" Height="1" FontSize="12" Foreground="{ThemeResource NomiInk3}" MaxLines="1"
                                TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="ChatStatus" />
                 </Grid>
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
