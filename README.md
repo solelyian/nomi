@@ -183,6 +183,24 @@ Nomi vérifie au plus une fois par jour la dernière version publiée sur GitHub
 (désactivable dans les préférences). Il affiche un lien, sans rien télécharger ni
 installer.
 
+### Une phrase devient une tâche, rappels d’échéance
+
+La saisie du Tableau (et donc `Ctrl+Alt+Espace`, la palette `Ctrl+K` et la première
+tâche de l’accueil) lit la phrase localement : « appeler Marc demain après le déjeuner,
+20 min #Acme » donne la tâche « Appeler Marc », l’échéance, la durée et l’espace. Les
+moments en mots (après le déjeuner, fin de journée…) suivent vos repères de journée.
+Une ligne « Compris » montre ce que Nomi a lu ; chaque élément se retire et revient
+dans le titre. Entrée enregistre l’interprétation, Maj+Entrée garde le texte tel quel.
+Si des mots de temps restent incompris, « Demander à Nomi de lire la phrase » utilise
+le modèle local ; sa proposition s’affiche « Nomi propose » et n’est enregistrée que si
+vous validez. « Chaque lundi… » propose d’en faire une routine.
+
+Les rappels d’échéance (Préférences › Présence, activés par défaut) arrivent une seule
+fois, au moment de commencer pour finir à temps (échéance − estimation − 10 min), 15 min
+ou 1 h avant. Hors horaires, ils passent au prochain jour travaillé ; en mode calme ils
+attendent la fin de la tâche en cours, sauf dans les 15 dernières minutes. Actions :
+Commencer, Plus tard (15 min).
+
 ### Nomi toujours présent
 
 Fermer la fenêtre laisse Nomi dans la zone de notification (clic : rouvrir ; menu :
