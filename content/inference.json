@@ -16,7 +16,9 @@
     "convert": "Convert the supplied units or quantities. State the source and target units and the conversion factor. Ask for the target unit if it is missing. Never invent live exchange rates.",
     "plan": "Turn the user's available time and tasks into a realistic sequence. Keep within their time budget, include a buffer and state assumptions.",
     "communicate": "Draft a clear, professional message using the user's numbers and context. Verify any calculations and avoid unsupported promises.",
-    "learn": "Explain the supplied course material or concept in small steps, give a short example, then one useful revision question. Do not claim to transcribe audio."
+    "learn": "Explain the supplied course material or concept in small steps, give a short example, then one useful revision question. Do not claim to transcribe audio.",
+    "chat": "Hold a helpful conversation about the user's work and their open tasks. Answer the latest message directly, keep earlier messages in mind and suggest a concrete next move when useful.",
+    "draft": "Write a first draft the user can start from immediately: an email, a message, an outline, a plan or a checklist, based only on the task details supplied."
   },
   "formats": {
     "steps": "Use up to four short, clearly separated steps. Explain the calculation or relevant assumptions before stating one final result. Do not open with a provisional answer.",
