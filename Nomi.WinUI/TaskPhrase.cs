@@ -51,7 +51,7 @@ public static class TaskPhrase
         (new(@"\b(?:à\s+)?midi\b|\b(?:at\s+)?noon\b", Options), _ => new TimeSpan(12, 0, 0))
     ];
 
-    private static readonly Regex DueLead = new(@"(?:avant|pour|d['’]ici|by|before|due|until|jusqu['’]à)\s+$", Options);
+    private static readonly Regex DueLead = new(@"\b(?:avant|pour|d['’]ici|by|before|due|until|jusqu['’]à)\s+$", Options);
     private static readonly Regex Today = new(@"\baujourd['’]hui\b|\btoday\b", Options);
     private static readonly Regex AfterTomorrow = new(@"\bapr[eè]s-demain\b|\b(?:the\s+)?day\s+after\s+tomorrow\b", Options);
     private static readonly Regex Tomorrow = new(@"\bdemain\b|\btomorrow\b", Options);
