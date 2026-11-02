@@ -43,7 +43,7 @@ static class ConversationChecks
         Check(Conversation.Context(many, now, Day.Default, _ => null).Count == Conversation.MaxTasks, "task list is capped");
         Check(Conversation.Context([], now, Day.Default, _ => null).Text.Contains("no open tasks"), "empty board");
 
-        var history = Enumerable.Range(0, 40).Select(i => new ChatMessage
+        var history = Enumerable.Range(0, 40).Select(i => new ChatEntry
         {
             Role = i % 2 == 0 ? "user" : "nomi",
             Text = $"Sujet {i} " + new string('a', 600)
@@ -52,7 +52,7 @@ static class ConversationChecks
         Check(full.Length <= Conversation.Budget, "prompt fits the model");
         Check(full.Contains("Sujet 39") && full.EndsWith("User: Et maintenant ?"), "newest messages are kept");
         Check(full.Contains("Earlier topics, summarised: Sujet 0"), "older messages are summarised");
-        var shortPrompt = Conversation.Prompt(context, [new ChatMessage { Text = "Bonjour" }], "Ça va ?");
+        var shortPrompt = Conversation.Prompt(context, [new ChatEntry { Text = "Bonjour" }], "Ça va ?");
         Check(shortPrompt.Contains("User: Bonjour") && !shortPrompt.Contains("Earlier topics"), "short conversations are complete");
         Check(Conversation.Prompt(context, [], new string('q', 5000)).Length <= Conversation.Budget, "long questions are cut");
 
@@ -78,7 +78,7 @@ static class ConversationChecks
 
         var file = Path.Combine(Path.GetTempPath(), $"nomi-chat-{Guid.NewGuid():N}.json");
         var store = new ChatStore(file);
-        for (var i = 0; i < ChatStore.Limit + 5; i++) store.Add(new ChatMessage { Text = $"m{i}" });
+        for (var i = 0; i < ChatStore.Limit + 5; i++) store.Add(new ChatEntry { Text = $"m{i}" });
         var reloaded = new ChatStore(file);
         reloaded.Load();
         Check(reloaded.Items.Count == ChatStore.Limit && reloaded.Items[0].Text == "m5", "conversation is capped and reloaded");

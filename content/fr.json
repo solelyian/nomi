@@ -674,7 +674,25 @@
     "trayQuit": "Quitter Nomi",
     "trayHintTitle": "Nomi reste disponible",
     "trayHint": "Nomi continue dans la zone de notification. Ctrl+Alt+Espace capture une tâche depuis n’importe quelle application.",
-    "shortcutCapture": "Capturer une tâche, partout"
+    "shortcutCapture": "Capturer une tâche, partout",
+    "draftWrite": "Écrire le premier pas",
+    "draftWriting": "Nomi écrit le premier pas…",
+    "draftTitle": "Premier pas",
+    "draftKind": "Type de brouillon",
+    "draftMail": "Mail",
+    "draftMessage": "Message",
+    "draftOutline": "Plan de document",
+    "draftPlan": "Plan d’action",
+    "draftChecklist": "Liste à préparer",
+    "draftCopy": "Copier",
+    "draftCopied": "Brouillon copié.",
+    "draftToNote": "Ajouter à la note",
+    "draftAdded": "Brouillon ajouté à la note.",
+    "draftAgain": "Régénérer",
+    "draftNeedsModel": "Téléchargez le modèle local pour que Nomi écrive le premier pas.",
+    "draftEmpty": "Nomi n’a pas pu écrire de brouillon. Réessayez ou changez le type.",
+    "draftReady": "Premier pas prêt : {0}.",
+    "draftOffer": "Nomi peut écrire le premier pas"
   },
   "actions": [
     {

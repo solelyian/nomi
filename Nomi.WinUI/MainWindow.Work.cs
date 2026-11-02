@@ -1113,6 +1113,12 @@ public sealed partial class MainWindow
             if (upcoming.Length == 0) steps.Children.Add(Text(T("planEmpty"), 12.5, "NomiInk3"));
         }
         CompanionBody.Children.Add(Inner(T("nextSteps"), steps, "CompanionSteps"));
+        if (task is { Column: Columns.Doing } started && draftTaskId != started.Id && (inference.Ready || inference.HasModel))
+        {
+            var offer = Chip(T("draftOffer"), "NomiGhost", "", "CompanionDraft");
+            offer.Click += async (_, _) => { OpenSheet(started.Id); await WriteFirstStep(started.Id); };
+            CompanionBody.Children.Add(offer);
+        }
 
         var context = new StackPanel { Spacing = 6 };
         if (insight is not null)
@@ -1152,6 +1158,7 @@ public sealed partial class MainWindow
     {
         if (SheetOverlay.Visibility != Visibility.Visible) return;
         splitting?.Cancel();
+        ResetDraft();
         SheetOverlay.Visibility = Visibility.Collapsed;
         var id = sheetTaskId;
         sheetTaskId = null;
@@ -1332,6 +1339,7 @@ public sealed partial class MainWindow
             if (!inference.Ready && !inference.HasModel) split.Children.Add(Text(T("splitNeedsModel"), 11.5, "NomiInk3"));
         }
         SheetBody.Children.Add(split);
+        SheetBody.Children.Add(DraftSection(task));
 
         var note = new TextBox { Text = task.Note, PlaceholderText = T("noteHint"), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 72 };
         AutomationProperties.SetName(note, T("note"));

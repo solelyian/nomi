@@ -21,7 +21,7 @@ public sealed class ChatAction
     public bool Done { get; set; }
 }
 
-public sealed class ChatMessage
+public sealed class ChatEntry
 {
     public string Role { get; set; } = "user";
     public string Text { get; set; } = "";
@@ -35,13 +35,13 @@ public sealed class ChatStore(string? file = null)
 {
     public const int Limit = 60;
     public string Path { get; } = file ?? System.IO.Path.Combine(SecureFile.Folder, "conversation.json");
-    public List<ChatMessage> Items { get; private set; } = [];
+    public List<ChatEntry> Items { get; private set; } = [];
 
     public void Load()
     {
         try
         {
-            Items = SecureFile.Read(Path) is { } text ? JsonSerializer.Deserialize<List<ChatMessage>>(text) ?? [] : [];
+            Items = SecureFile.Read(Path) is { } text ? JsonSerializer.Deserialize<List<ChatEntry>>(text) ?? [] : [];
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -51,7 +51,7 @@ public sealed class ChatStore(string? file = null)
         foreach (var item in Items) item.Actions = item.Actions.Where(action => ChatActions.All.Contains(action.Kind)).ToList();
     }
 
-    public void Add(ChatMessage message)
+    public void Add(ChatEntry message)
     {
         Items.Add(message);
         if (Items.Count > Limit) Items.RemoveRange(0, Items.Count - Limit);
@@ -107,7 +107,7 @@ public static class Conversation
         return new(text.ToString().Trim(), refs, open.Length);
     }
 
-    public static string Prompt(ChatContext context, IReadOnlyList<ChatMessage> earlier, string question)
+    public static string Prompt(ChatContext context, IReadOnlyList<ChatEntry> earlier, string question)
     {
         question = Short(question.Trim(), QuestionLimit);
         var room = Budget - context.Text.Length - question.Length - 420;

@@ -674,7 +674,25 @@
     "trayQuit": "Quit Nomi",
     "trayHintTitle": "Nomi stays available",
     "trayHint": "Nomi keeps running in the notification area. Ctrl+Alt+Space captures a task from any app.",
-    "shortcutCapture": "Capture a task, anywhere"
+    "shortcutCapture": "Capture a task, anywhere",
+    "draftWrite": "Write the first step",
+    "draftWriting": "Nomi is writing the first step…",
+    "draftTitle": "First step",
+    "draftKind": "Draft type",
+    "draftMail": "Email",
+    "draftMessage": "Message",
+    "draftOutline": "Document outline",
+    "draftPlan": "Action plan",
+    "draftChecklist": "Checklist",
+    "draftCopy": "Copy",
+    "draftCopied": "Draft copied.",
+    "draftToNote": "Add to the note",
+    "draftAdded": "Draft added to the note.",
+    "draftAgain": "Write again",
+    "draftNeedsModel": "Download the local model so Nomi can write the first step.",
+    "draftEmpty": "Nomi could not write a draft. Try again or change the type.",
+    "draftReady": "First step ready: {0}.",
+    "draftOffer": "Nomi can write the first step"
   },
   "actions": [
     {
