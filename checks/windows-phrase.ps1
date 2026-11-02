@@ -32,7 +32,7 @@ $process = Launch $app $logs
 try {
     Invoke (WaitFor $process "NavBoard" 30)
     $box = WaitFor $process "BoardQuickAdd" 30
-    $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("appeler Marc demain après le déjeuner, 20 min")
+    $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("appeler Marc demain apr$([char]0xE8)s le d$([char]0xE9)jeuner, 20 min")
     $understood = WaitFor $process "PhraseUnderstood" 10
     if ($understood.Current.Name -notmatch "^Compris") { throw "Unexpected understood line: $($understood.Current.Name)" }
     Write-Host "Understood line: $($understood.Current.Name)"

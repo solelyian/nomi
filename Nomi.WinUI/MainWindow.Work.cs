@@ -325,6 +325,9 @@ public sealed partial class MainWindow
     {
         BoardHeader.Children.Clear();
         BoardHeader.ColumnDefinitions.Clear();
+        BoardHeader.RowDefinitions.Clear();
+        BoardHeader.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        BoardHeader.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         BoardHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var scope = Current.Contexts.FirstOrDefault(item => item.Id == boardSpace);
@@ -357,15 +360,18 @@ public sealed partial class MainWindow
         var box = QuickAdd("BoardQuickAdd");
         box.MinWidth = 220;
         box.VerticalAlignment = VerticalAlignment.Center;
-        var entry = new StackPanel { Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
-        entry.Children.Add(box);
-        entry.Children.Add(PhrasePreview());
-        add.Children.Add(entry);
+        add.Children.Add(box);
         var button = Primary(T("addTask"), "BoardAdd");
         button.Click += (_, _) => { if (box.Text.Trim().Length > 0) AddTask(box.Text); else box.Focus(FocusState.Programmatic); };
         add.Children.Add(button);
         Grid.SetColumn(add, 1);
         BoardHeader.Children.Add(add);
+        var preview = PhrasePreview();
+        preview.HorizontalAlignment = HorizontalAlignment.Right;
+        preview.Margin = new Thickness(0, 8, 0, 0);
+        Grid.SetRow(preview, 1);
+        Grid.SetColumnSpan(preview, 2);
+        BoardHeader.Children.Add(preview);
 
         BoardColumns.Children.Clear();
         BoardColumns.ColumnDefinitions.Clear();
