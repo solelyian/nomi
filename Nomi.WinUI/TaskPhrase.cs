@@ -51,7 +51,7 @@ public static class TaskPhrase
         (new(@"\b(?:à\s+)?midi\b|\b(?:at\s+)?noon\b", Options), _ => new TimeSpan(12, 0, 0))
     ];
 
-    private static readonly Regex DueLead = new(@"(?:\b(?:avant|pour|d['’]ici|by|before|due|until|jusqu['’]à)\s+)?", Options);
+    private static readonly Regex DueLead = new(@"(?:avant|pour|d['’]ici|by|before|due|until|jusqu['’]à)\s+$", Options);
     private static readonly Regex Today = new(@"\baujourd['’]hui\b|\btoday\b", Options);
     private static readonly Regex AfterTomorrow = new(@"\bapr[eè]s-demain\b|\b(?:the\s+)?day\s+after\s+tomorrow\b", Options);
     private static readonly Regex Tomorrow = new(@"\bdemain\b|\btomorrow\b", Options);
@@ -362,7 +362,7 @@ public static class TaskPhrase
     }
 
     public static string ModelInstruction(DateTimeOffset now, Day day) => string.Format(CultureInfo.InvariantCulture,
-        "Read one task sentence written by the user. Today is {0:dddd yyyy-MM-dd} and it is {0:HH:mm}. The user's day starts at {1:hh\:mm}, lunch is {2:hh\:mm}-{3:hh\:mm} and the day ends at {4:hh\:mm}. " +
+        "Read one task sentence written by the user. Today is {0:dddd yyyy-MM-dd} and it is {0:HH:mm}. The user's day starts at {1:hh':'mm}, lunch is {2:hh':'mm}-{3:hh':'mm} and the day ends at {4:hh':'mm}. " +
         "Reply with exactly three lines and nothing else:\nTitle: <the task, short, in the user's language, without the date or duration>\nDue: <yyyy-MM-dd HH:mm, or none>\nMinutes: <whole number of minutes the task takes, or none>\n" +
         "Only use a due date or a duration that the sentence states or clearly implies. Never invent one.",
         now, day.Start, day.LunchStart, day.LunchEnd, day.End);
@@ -385,7 +385,7 @@ public static class TaskPhrase
         {
             if (!DateTime.TryParseExact(dueLine.Groups["d"].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)) return null;
             var time = day.End;
-            if (dueLine.Groups["t"].Success && !TimeSpan.TryParseExact(dueLine.Groups["t"].Value, @"hh\:mm", CultureInfo.InvariantCulture, out time)) return null;
+            if (dueLine.Groups["t"].Success && !TimeSpan.TryParseExact(dueLine.Groups["t"].Value, @"hh':'mm", CultureInfo.InvariantCulture, out time)) return null;
             due = new DateTimeOffset(date.Add(time), now.Offset);
             if (due < now.AddMinutes(-1) || due > now.AddYears(2)) return null;
             parts.Add(new(PhraseKinds.Date, ""));

@@ -88,6 +88,7 @@ WorkChecks.Run();
 RoutineChecks.Run();
 RescueChecks.Run();
 OnboardingChecks.Run();
+TaskPhraseChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ModelChecks.RunAsync(args);
 
