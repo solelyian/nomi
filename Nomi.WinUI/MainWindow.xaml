@@ -480,6 +480,7 @@
                 <FontIcon Glyph="&#xE73E;" FontSize="13" Foreground="{ThemeResource NomiSage}" VerticalAlignment="Center" />
                 <TextBlock x:Name="ToastText" FontSize="13" Foreground="{ThemeResource NomiInk}" VerticalAlignment="Center" MaxWidth="420" TextWrapping="Wrap" />
                 <Button x:Name="ToastAction" Style="{StaticResource NomiChip}" Click="ToastActionClicked" />
+                <Button x:Name="ToastLater" Style="{StaticResource NomiChip}" Click="ToastLaterClicked" Visibility="Collapsed" />
             </StackPanel>
         </Border>
 

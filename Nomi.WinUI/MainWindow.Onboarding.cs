@@ -120,7 +120,7 @@ public sealed partial class MainWindow
 
     private void CompleteOnboarding()
     {
-        foreach (var title in Onboarding.TaskLines(onboardingTasks)) board.Add(title, Columns.Todo, null);
+        foreach (var title in Onboarding.TaskLines(onboardingTasks)) board.Add(ReadPhrase(title), Columns.Todo, null);
         onboardingTasks = "";
         profile.Onboarded = true;
         profile.OnboardingStep = Onboarding.Welcome;

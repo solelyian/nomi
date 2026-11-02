@@ -109,6 +109,16 @@ public sealed class TaskBoard
         return task;
     }
 
+    public WorkTask Add(TaskPhraseResult phrase, string column = Columns.Todo, string? space = null, string origin = "manual")
+    {
+        var task = Add(phrase.Title, column, phrase.Space ?? space, origin);
+        if (phrase.Due is null && phrase.Minutes is null) return task;
+        task.Due = phrase.Due;
+        if (phrase.Minutes is int minutes) task.Estimate = minutes;
+        Save();
+        return task;
+    }
+
     private double NextOrder(string column) =>
         Tasks.Where(task => task.Column == column).Select(task => task.Order).DefaultIfEmpty(0).Max() + 1;
 

@@ -1367,8 +1367,8 @@ public sealed partial class MainWindow : Window
             }));
             direct.Add(new Command($"{T("createTask")} « {query} »", T("createTaskHelp"), T("board"), () =>
             {
-                var task = board.Add(query, Columns.Todo, contextId, "palette");
-                ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskAdded"), task.Title), T("open"), () => OpenSheet(task.Id));
+                var task = board.Add(ReadPhrase(query), Columns.Todo, contextId, "palette");
+                ShowToast(TaskAddedText(task), T("open"), () => OpenSheet(task.Id));
                 if (view is "board" or "today") Refresh();
                 else BuildCompanion();
             }));

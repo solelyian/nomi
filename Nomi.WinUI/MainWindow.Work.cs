@@ -91,6 +91,7 @@ public sealed partial class MainWindow
         if (focusState != "idle") UpdateFocusPill();
         if (tick % 30 != 0) return;
         CheckRoutines();
+        CheckReminders();
         _ = RefreshAgenda(false);
         _ = CheckForUpdates(false);
         var signature = string.Join('|', board.Suggestions(now).Select(item => item.Id));
@@ -280,21 +281,26 @@ public sealed partial class MainWindow
         {
             if (args.Key != VirtualKey.Enter || box.Text.Trim().Length == 0) return;
             args.Handled = true;
-            AddTask(box.Text);
+            AddTask(box.Text, InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down));
         };
+        box.TextChanged += (_, _) => PhraseChanged(box);
+        AutomationProperties.SetHelpText(box, T("quickAddHelp"));
         quickAdd = box;
         return box;
     }
 
     private void FocusQuickAdd() => quickAdd?.Focus(FocusState.Programmatic);
 
-    private void AddTask(string title)
+    private void AddTask(string title, bool raw = false)
     {
-        var task = board.Add(title, view == "board" ? addColumn : Columns.Todo, view == "board" ? boardSpace : contextId);
+        var column = view == "board" ? addColumn : Columns.Todo;
+        var space = view == "board" ? boardSpace : contextId;
+        var task = raw ? board.Add(title, column, space) : board.Add(CurrentPhrase(title), column, space);
+        ResetPhrase();
         addColumn = Columns.Todo;
         Refresh();
         FocusQuickAdd();
-        ShowToast(string.Format(CultureInfo.CurrentCulture, T("taskAdded"), task.Title), T("open"), () => OpenSheet(task.Id));
+        ShowToast(TaskAddedText(task), T("open"), () => OpenSheet(task.Id));
     }
 
     private void Move(WorkTask task, string column, double? order = null)
@@ -351,7 +357,10 @@ public sealed partial class MainWindow
         var box = QuickAdd("BoardQuickAdd");
         box.MinWidth = 220;
         box.VerticalAlignment = VerticalAlignment.Center;
-        add.Children.Add(box);
+        var entry = new StackPanel { Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+        entry.Children.Add(box);
+        entry.Children.Add(PhrasePreview());
+        add.Children.Add(entry);
         var button = Primary(T("addTask"), "BoardAdd");
         button.Click += (_, _) => { if (box.Text.Trim().Length > 0) AddTask(box.Text); else box.Focus(FocusState.Programmatic); };
         add.Children.Add(button);
@@ -1402,10 +1411,14 @@ public sealed partial class MainWindow
 
     // Toast
 
-    private void ShowToast(string message, string? action, Action? run)
+    private void ShowToast(string message, string? action, Action? run, string? later = null, Action? runLater = null)
     {
         ToastText.Text = message;
         toastAction = run;
+        toastLater = runLater;
+        ToastLater.Visibility = later is null ? Visibility.Collapsed : Visibility.Visible;
+        ToastLater.Content = later ?? "";
+        if (later is not null) AutomationProperties.SetName(ToastLater, later);
         ToastAction.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
         ToastAction.Content = action ?? "";
         if (action is not null) AutomationProperties.SetName(ToastAction, action);
@@ -1425,6 +1438,7 @@ public sealed partial class MainWindow
         sender.Stop();
         Toast.Visibility = Visibility.Collapsed;
         toastAction = null;
+        toastLater = null;
     }
 
     private void ToastActionClicked(object sender, RoutedEventArgs args)

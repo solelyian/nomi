@@ -119,9 +119,9 @@ public sealed partial class MainWindow
         Close();
     }
 
-    private void NotifyAway(string title, string text, string target)
+    private void NotifyAway(string title, string text, string target, bool urgent = false)
     {
-        if (presence is null || !profile.KeepRunning || !profile.Notifications || !Away || Busy) return;
+        if (presence is null || !profile.KeepRunning || !profile.Notifications || !Away || (Busy && !urgent)) return;
         pendingTarget = target;
         presence.Notify(title, text);
     }
