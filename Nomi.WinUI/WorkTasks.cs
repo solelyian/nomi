@@ -35,6 +35,8 @@ public sealed class WorkTask
     public DateTimeOffset? RunningSince { get; set; }
     public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
     public DateTimeOffset? Completed { get; set; }
+    public List<string> Reminded { get; set; } = [];
+    public DateTimeOffset? Snoozed { get; set; }
     public double Order { get; set; }
 
     public double Spent(DateTimeOffset now) =>

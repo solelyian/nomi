@@ -74,6 +74,8 @@ public sealed class Profile
     public bool KeepRunning { get; set; } = true;
     public bool CaptureHotKey { get; set; } = true;
     public bool Notifications { get; set; } = true;
+    public bool DueReminders { get; set; } = true;
+    public string ReminderLead { get; set; } = ReminderLeads.Start;
     public bool TrayHintShown { get; set; }
     public DateTimeOffset? UpdateChecked { get; set; }
     public string? LatestVersion { get; set; }
@@ -95,6 +97,7 @@ public sealed class Profile
     {
         if (Language is not ("fr" or "en")) Language = "fr";
         if (Theme is not ("system" or "light" or "dark")) Theme = "system";
+        if (!ReminderLeads.All.Contains(ReminderLead)) ReminderLead = ReminderLeads.Start;
         if (!NumberModes.All.Contains(Numbers)) Numbers = NumberModes.Words;
         if (Response is not ("steps" or "summary")) Response = "steps";
         if (StepSize is not ("small" or "medium")) StepSize = "small";
