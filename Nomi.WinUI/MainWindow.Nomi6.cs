@@ -66,6 +66,13 @@ public sealed partial class MainWindow
             row.Children.Add(button);
             return button;
         }
+        if (entry.Failed)
+        {
+            var retry = Chip(T("nomiRetry"), "NomiChip", "\uE72C", "NomiRetry");
+            retry.Click += async (_, _) => await Regenerate(entry);
+            row.Children.Add(retry);
+            return row;
+        }
         Tool(0, "\uE8C8", T("nomiCopy"), "NomiCopy").Click += (_, _) =>
         {
             var package = new DataPackage();
@@ -117,6 +124,6 @@ public sealed partial class MainWindow
         AutomationProperties.SetName(stack, T("nomiDetails"));
         stack.Children.Add(grid);
         stack.Children.Add(Text(T("nomiDetPrivate"), 12, "NomiInk3"));
-        return stack;
+        return Labeled(stack, T("nomiDetails"), "NomiDetailsPanel");
     }
 }

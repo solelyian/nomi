@@ -337,7 +337,6 @@ public sealed partial class MainWindow : Window
             ["spaces"] = SpacesPanel,
             ["settings"] = SettingsPanel,
             ["routines"] = RoutinesPanel,
-            ["conversation"] = ConversationPanel,
             ["nomi"] = NomiPanel
         };
         foreach (var (key, element) in panels) element.Visibility = key == view ? Visibility.Visible : Visibility.Collapsed;
@@ -350,6 +349,8 @@ public sealed partial class MainWindow : Window
         else if (view == "nomi") BuildNomi();
         AsideColumn.Width = new GridLength(view == "nomi" ? 0 : 300);
         Aside.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
+        CommandBar.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
+        Views.Margin = new Thickness(0, 6, 0, view == "nomi" ? 0 : 76);
         RefreshWorkspace();
         RefreshAside();
         BuildCompanion();
@@ -1373,7 +1374,7 @@ public sealed partial class MainWindow : Window
                 RequestBox.Text = query;
                 RequestBox.SelectionStart = query.Length;
             }));
-            direct.Add(new Command($"{T("chatAsk")} « {query} »", T("chatIntro"), T("conversation"), () => OpenNomi(query)));
+            direct.Add(new Command($"{T("chatAsk")} « {query} »", T("chatIntro"), "Nomi", () => OpenNomi(query)));
             direct.Add(new Command($"{T("createTask")} « {query} »", T("createTaskHelp"), T("board"), () =>
             {
                 var task = board.Add(ReadPhrase(query), Columns.Todo, contextId, "palette");
@@ -1386,7 +1387,7 @@ public sealed partial class MainWindow : Window
             {
                 new Command(T("today"), T("todayIntro"), T("navigation"), () => Show("today")),
                 new Command(T("board"), T("boardIntro"), T("navigation"), () => Show("board")),
-                new Command(T("conversation"), T("chatIntro"), T("navigation"), () => OpenNomi()),
+                new Command("Nomi", T("chatIntro"), T("navigation"), () => OpenNomi()),
                 new Command(focusState == "idle" ? T("focusStart") : T("focus"), T("focusIntro"), T("focus"), () => Show("focus")),
                 new Command(T("assistant"), T("assistantIntro"), T("navigation"), () => Show("workspace"))
             })
@@ -1474,7 +1475,7 @@ public sealed partial class MainWindow : Window
     {
         if (onboarding is not null) return;
         var index = (int)sender.Key - (int)VirtualKey.Number1;
-        string[] views = ["today", "board", "focus", "nomi", "routines", "nomi"];
+        string[] views = ["today", "board", "focus", "nomi", "routines"];
         if (index < 0 || index >= views.Length) return;
         args.Handled = true;
         CloseSheet();

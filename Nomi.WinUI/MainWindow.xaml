@@ -343,32 +343,6 @@
                     <StackPanel x:Name="RoutinesBody" Spacing="14" MaxWidth="760" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
                 <Grid x:Name="NomiPanel" Visibility="Collapsed" />
-                <Grid x:Name="ConversationPanel" Visibility="Collapsed" RowSpacing="12" Padding="4,4,4,8" MaxWidth="820" HorizontalAlignment="Left">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel x:Name="ConversationHead" Spacing="8" />
-                    <ScrollViewer x:Name="ConversationScroll" Grid.Row="1" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel x:Name="ConversationList" Spacing="12" Padding="0,4,12,8" />
-                    </ScrollViewer>
-                    <Grid Grid.Row="2" ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="ChatBox" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="1500" MinHeight="44" MaxHeight="160"
-                                 AutomationProperties.AutomationId="ChatBox" />
-                        <Button x:Name="ChatSend" Grid.Column="1" Style="{StaticResource AccentButtonStyle}" Height="44" Width="48" CornerRadius="12"
-                                VerticalAlignment="Bottom" AutomationProperties.AutomationId="ChatSend">
-                            <FontIcon Glyph="&#xE724;" FontSize="16" />
-                        </Button>
-                    </Grid>
-                    <TextBlock x:Name="ChatStatus" Grid.Row="3" Opacity="0" Height="1" FontSize="12" Foreground="{ThemeResource NomiInk3}" MaxLines="1"
-                               TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="ChatStatus" />
-                </Grid>
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SettingsBody" Spacing="14" MaxWidth="620" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
@@ -389,7 +363,7 @@
                 </Grid>
 
                 <!-- Floating command bar -->
-                <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MaxWidth="708" ColumnSpacing="10">
+                <Grid x:Name="CommandBar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MaxWidth="708" ColumnSpacing="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />

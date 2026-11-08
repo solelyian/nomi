@@ -77,7 +77,7 @@ public sealed partial class MainWindow
         }
         catch (Exception error) when (error is InferenceException or HttpRequestException or IOException or System.Text.Json.JsonException)
         {
-            entry.Stopped = true;
+            entry.Failed = true;
             entry.Text = T("chatError");
             AnnounceNomi(T("chatError"));
         }

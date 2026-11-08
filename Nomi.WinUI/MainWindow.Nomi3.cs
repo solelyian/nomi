@@ -87,16 +87,22 @@ public sealed partial class MainWindow
         line.Margin = new Thickness(0, 6, 0, 26);
         stack.Children.Add(line);
         stack.Children.Add(NomiComposer());
-        var suggestions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 16, 0, 0) };
+        var suggestions = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 16, 0, 0) };
+        StackPanel? pair = null;
         foreach (var (key, glyph) in new[] { ("nomiSuggest1", "\uE8BF"), ("nomiSuggest2", "\uE823"), ("nomiSuggest3", "\uE8A5"), ("nomiSuggest4", "\uE8FD") })
         {
             var text = T(key);
             var chip = Chip(text, "NomiChip", glyph, $"NomiSuggest_{key[^1]}");
             chip.FontSize = 13;
             chip.Click += async (_, _) => await SendNomi(text);
-            suggestions.Children.Add(chip);
+            if (pair is null || pair.Children.Count == 2)
+            {
+                pair = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
+                suggestions.Children.Add(pair);
+            }
+            pair.Children.Add(chip);
         }
-        stack.Children.Add(new ScrollViewer { Content = suggestions, HorizontalScrollMode = ScrollMode.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollMode = ScrollMode.Disabled, HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(suggestions);
         return stack;
     }
 }

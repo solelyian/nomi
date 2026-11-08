@@ -34,6 +34,7 @@ public sealed class ChatEntry
     public string[] Documents { get; set; } = [];
     public double Seconds { get; set; }
     public bool Stopped { get; set; }
+    public bool Failed { get; set; }
 }
 
 public sealed class ChatThread

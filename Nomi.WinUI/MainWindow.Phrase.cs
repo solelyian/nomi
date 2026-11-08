@@ -135,7 +135,7 @@ public sealed partial class MainWindow
         {
             if (!inference.HasModel)
             {
-                ShowToast(T("phraseNeedsModel"), T("assistant"), () => Show("workspace"));
+                ShowToast(T("phraseNeedsModel"), T("nomiDownload"), () => Show("nomi"));
                 return;
             }
             await PrepareModel();

@@ -44,7 +44,8 @@ public sealed partial class MainWindow
             };
             stack.Children.Add(download);
         }
-        return new ScrollViewer { Content = stack, VerticalAlignment = VerticalAlignment.Center };
+        stack.HorizontalAlignment = HorizontalAlignment.Center;
+        return new ScrollViewer { Content = stack, HorizontalScrollMode = ScrollMode.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalContentAlignment = VerticalAlignment.Center };
     }
 
     private async Task AttachNomiDocuments()

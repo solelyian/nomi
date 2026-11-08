@@ -21,54 +21,48 @@ function Invoke($element) {
 }
 $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
-$history = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\history.json"
-if (Test-Path $history) { Remove-Item $history }
+$chats = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\conversations.json"
+if (Test-Path $chats) { Remove-Item $chats }
 Set-NomiOnboarded
 $personalize = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
 Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value 1 -Type DWord
 $process = Launch $app $logs
 try {
-    Invoke (WaitFor $process "NavAssistant" 60 { param($e) $e.Current.IsEnabled })
-    $launch = WaitFor $process "LaunchButton" 300 { param($e) $e.Current.IsEnabled }
-    Write-Host "Installed application loaded the downloaded model."
-    $request = Find $process "RequestBox"
-    $request.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue(
-        "Un article coûte 80 €. Remise de 15 %, puis TVA de 20 %. Quel est le prix final ?")
+    Invoke (WaitFor $process "NavNomi" 60 { param($e) $e.Current.IsEnabled })
+    $box = WaitFor $process "NomiBox" 300 { param($e) $e.Current.IsEnabled }
+    Write-Host "Installed application opened the Nomi page with the downloaded model."
+    Capture $process "artifacts/ui-nomi-empty.png"
+    $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue(
+        "An item costs 80 EUR. 15% discount, then 20% VAT. What is the final price?")
     Start-Sleep -Seconds 1
-    Invoke $launch
-    [void](WaitFor $process "WorkingTitle" 30 { param($e) -not $e.Current.IsOffscreen })
+    Invoke (WaitFor $process "NomiSend" 10 { param($e) $e.Current.IsEnabled })
+    [void](WaitFor $process "NomiSteps" 30 { param($e) -not $e.Current.IsOffscreen })
     Start-Sleep -Seconds 4
     Capture $process "artifacts/ui-working.png"
-    $copy = WaitFor $process "CopyButton" 420 { param($e) $e.Current.IsEnabled -and -not $e.Current.IsOffscreen }
+    $copy = WaitFor $process "NomiCopy" 420 { param($e) $e.Current.IsEnabled -and -not $e.Current.IsOffscreen }
     Start-Sleep -Seconds 2
     Capture $process "artifacts/ui-result.png"
     Invoke $copy
     Start-Sleep -Milliseconds 400
     Capture $process "artifacts/ui-copied.png"
-    $label = (Find $process "CopyLabel").Current.Name
-    if ($label -notin "Copié", "Copied") { throw "Copy confirmation not shown: '$label'" }
-    if (!(Test-Path $history)) { throw "History was not saved locally." }
-    $entries = Read-NomiFile $history $app | ConvertFrom-Json
-    if (@($entries).Count -lt 1 -or !$entries[0].Output) { throw "History entry has no answer." }
-    Write-Host "Answer rendered, copy confirmed, history saved ($(@($entries).Count) entry)."
+    $label = (Find $process "ToastText").Current.Name
+    if ($label -notmatch "copi") { throw "Copy confirmation not shown: '$label'" }
+    Invoke (WaitFor $process "NomiDetails" 10 { param($e) $e.Current.IsEnabled })
+    [void](WaitFor $process "NomiDetailsPanel" 10 { param($e) $true })
+    Capture $process "artifacts/ui-details.png"
+    if (!(Test-Path $chats)) { throw "The conversation was not saved locally." }
+    $threads = Read-NomiFile $chats $app | ConvertFrom-Json
+    if (@($threads).Count -ne 1 -or @($threads[0].Items).Count -lt 2 -or !$threads[0].Items[1].Text) { throw "Saved conversation has no answer." }
+    Write-Host "Answer rendered, copy confirmed, routing details shown, conversation saved."
     Stop-Process -Id $process.Id
     Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value 0 -Type DWord
     $process = Launch $app $logs
-    Invoke (WaitFor $process "NavAssistant" 60 { param($e) $e.Current.IsEnabled })
-    $deadline = (Get-Date).AddSeconds(60)
-    do {
-        Start-Sleep -Seconds 2
-        $buttons = $A::FromHandle($process.MainWindowHandle).FindAll(
-            [System.Windows.Automation.TreeScope]::Descendants,
-            (New-Object System.Windows.Automation.PropertyCondition($A::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)))
-        $item = $buttons | Where-Object { $_.Current.Name -match '^(Rouvrir|Reopen) ' } | Select-Object -First 1
-    } while (!$item -and (Get-Date) -lt $deadline)
-    if (!$item) { throw "History entry not listed after restart." }
-    Invoke $item
-    [void](WaitFor $process "CopyButton" 30 { param($e) -not $e.Current.IsOffscreen })
+    Invoke (WaitFor $process "NavNomi" 60 { param($e) $e.Current.IsEnabled })
+    Invoke (WaitFor $process "NomiThread" 60 { param($e) -not $e.Current.IsOffscreen })
+    [void](WaitFor $process "NomiCopy" 30 { param($e) -not $e.Current.IsOffscreen })
     Start-Sleep -Seconds 2
     Capture $process "artifacts/ui-result-dark.png"
-    Write-Host "History entry reopened after restart in the dark theme."
+    Write-Host "Conversation reopened from the history after restart in the dark theme."
 }
 finally {
     if (Test-Path "$logs\startup.log") { Get-Content "$logs\startup.log" }

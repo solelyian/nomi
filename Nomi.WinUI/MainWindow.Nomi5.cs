@@ -15,11 +15,12 @@ public sealed partial class MainWindow
         var grid = new Grid();
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var list = new StackPanel { Spacing = 22, MaxWidth = 720, Padding = new Thickness(24, 10, 24, 24), HorizontalAlignment = HorizontalAlignment.Stretch };
+        var list = new StackPanel { Spacing = 22, MaxWidth = 720, Padding = new Thickness(24, 10, 24, 24), HorizontalAlignment = HorizontalAlignment.Center };
         AutomationProperties.SetName(list, thread.Title);
         foreach (var entry in thread.Items) list.Children.Add(entry.Role == "user" ? UserBubble(entry) : NomiMessage(entry));
-        nomiScroll = new ScrollViewer { Content = list, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        nomiScroll = new ScrollViewer { Content = list, HorizontalScrollMode = ScrollMode.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         grid.Children.Add(nomiScroll);
+        nomiScroll.SizeChanged += (_, args) => list.Width = Math.Min(720, Math.Max(0, args.NewSize.Width));
         DispatcherQueue.TryEnqueue(() => nomiScroll?.ChangeView(null, nomiScroll.ScrollableHeight, null, true));
         var bottom = new StackPanel { Padding = new Thickness(20, 0, 20, 4) };
         bottom.Children.Add(NomiComposer());
@@ -43,6 +44,7 @@ public sealed partial class MainWindow
             stack.Children.Add(new Border { Child = file, Background = Palette("NomiSurface2"), CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 7, 10, 7) });
         }
         var body = Text(entry.Text, 15.5);
+        body.TextWrapping = TextWrapping.Wrap;
         body.IsTextSelectionEnabled = true;
         stack.Children.Add(body);
         var bubble = new Border
@@ -50,9 +52,7 @@ public sealed partial class MainWindow
             Child = stack, HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 560, Padding = new Thickness(15, 11, 15, 11),
             CornerRadius = new CornerRadius(20, 20, 6, 20), Background = Palette("NomiSurface"), BorderBrush = Palette("NomiLine"), BorderThickness = new Thickness(1)
         };
-        AutomationProperties.SetName(bubble, $"{T("chatYou")} : {entry.Text}");
-        AutomationProperties.SetAutomationId(bubble, "NomiUser");
-        return bubble;
+        return Labeled(bubble, $"{T("chatYou")} : {entry.Text}", "NomiUser");
     }
 
     private UIElement NomiMessage(ChatEntry entry)
@@ -65,21 +65,28 @@ public sealed partial class MainWindow
         var body = new StackPanel { Spacing = 8 };
         Grid.SetColumn(body, 1);
         grid.Children.Add(body);
-        if (entry.Steps.Length > 0) body.Children.Add(StepsView(entry, live));
+        if (entry.Steps.Length > 0 && !entry.Failed) body.Children.Add(StepsView(entry, live));
         foreach (var paragraph in entry.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var text = RichText(paragraph, 15);
             text.IsTextSelectionEnabled = true;
             text.LineHeight = 24;
+            text.TextWrapping = TextWrapping.Wrap;
             body.Children.Add(text);
         }
         if (live && entry.Text.Length == 0) body.Children.Add(new ProgressBar { IsIndeterminate = true, MaxWidth = 160, HorizontalAlignment = HorizontalAlignment.Left });
         if (entry.Stopped) body.Children.Add(Text(T("nomiStopped"), 13, "NomiInk3"));
-        if (!live && entry.Actions.Count > 0) body.Children.Add(ActionCards(entry));
+        if (!live && !entry.Failed && entry.Actions.Count > 0) body.Children.Add(ActionCards(entry));
         if (!live) body.Children.Add(MessageTools(entry));
-        AutomationProperties.SetName(grid, $"Nomi : {entry.Text}");
-        AutomationProperties.SetAutomationId(grid, "NomiAnswer");
-        return grid;
+        return Labeled(grid, $"Nomi : {entry.Text}", "NomiAnswer");
+    }
+
+    private static ContentControl Labeled(UIElement content, string name, string id)
+    {
+        var control = new ContentControl { Content = content, IsTabStop = false, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        AutomationProperties.SetName(control, name);
+        AutomationProperties.SetAutomationId(control, id);
+        return control;
     }
 
     private UIElement StepsView(ChatEntry entry, bool live)
@@ -94,7 +101,10 @@ public sealed partial class MainWindow
             row.Children.Add(Text(T($"nomiStep_{entry.Steps[index]}"), 13.5, current ? "NomiInk" : "NomiInk2"));
             steps.Children.Add(row);
         }
-        if (live) return steps;
+        if (live)
+        {
+            return Labeled(steps, T("nomiStepsLive"), "NomiSteps");
+        }
         var expander = new Expander
         {
             Header = Text(string.Format(CultureInfo.CurrentCulture, T("nomiThought"), entry.Seconds.ToString("0.#", CultureInfo.CurrentCulture)), 13, "NomiInk3"),

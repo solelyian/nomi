@@ -65,7 +65,7 @@ public sealed partial class MainWindow
         attach.Click += async (_, _) => await AttachNomiDocuments();
         row.Children.Add(attach);
         var count = ChatContextNow().Count;
-        var sees = Chip(chatHidden ? T("chatHidden") : string.Format(CultureInfo.CurrentCulture, T("nomiTasksVisible"), count), "NomiGhost", chatHidden ? "\uE72E" : "\uE8FD", "NomiContext");
+        var sees = Chip(chatHidden ? T("chatHidden") : string.Format(CultureInfo.CurrentCulture, T(count == 1 ? "nomiTasksVisibleOne" : "nomiTasksVisible"), count), "NomiGhost", chatHidden ? "\uE72E" : "\uE8FD", "NomiContext");
         sees.FontSize = 12.5;
         ToolTipService.SetToolTip(sees, chatHidden ? T("chatShow") : T("chatHide"));
         sees.Click += (_, _) => { chatHidden = !chatHidden; BuildNomi(); };

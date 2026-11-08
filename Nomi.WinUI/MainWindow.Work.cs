@@ -1370,7 +1370,7 @@ public sealed partial class MainWindow
         {
             if (!inference.HasModel)
             {
-                ShowToast(T("splitNeedsModel"), T("assistant"), () => { CloseSheet(); Show("workspace"); });
+                ShowToast(T("splitNeedsModel"), T("nomiDownload"), () => { CloseSheet(); Show("nomi"); });
                 return;
             }
             await PrepareModel();
