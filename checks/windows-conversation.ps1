@@ -21,38 +21,52 @@ function Invoke($element) {
 }
 $app = Join-Path $env:RUNNER_TEMP "Nomi installed"
 $logs = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\logs"
-$chat = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\conversation.json"
-if (Test-Path $chat) { Remove-Item $chat }
+$chats = Join-Path $env:LOCALAPPDATA "Nyne\Nomi\conversations.json"
+if (Test-Path $chats) { Remove-Item $chats }
 Set-NomiOnboarded
 $process = Launch $app $logs
 try {
     Invoke (WaitFor $process "ChatButton" 30)
-    $box = WaitFor $process "ChatBox" 15
-    $context = WaitFor $process "ChatContext" 10
-    if ($context.Current.Name -notmatch "^Nomi ") { throw "Unexpected context line: $($context.Current.Name)" }
-    Write-Host "Context line: $($context.Current.Name)"
-    $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("Par quoi je commence aujourd'hui ?")
-    Invoke (WaitFor $process "ChatSend" 10)
-    WaitFor $process "ChatUser" 15 | Out-Null
-    $deadline = (Get-Date).AddSeconds(30)
+    $deadline = (Get-Date).AddSeconds(20)
     do {
-        $state = @("ChatOpenAssistant", "ChatStop", "ChatNomi", "ChatRetry") | Where-Object { Find $process $_ } | Select-Object -First 1
-        if ($state) { break }
+        $entry = @("NomiBox", "NomiDownload") | Where-Object { Find $process $_ } | Select-Object -First 1
+        if ($entry) { break }
         Start-Sleep -Milliseconds 500
     } while ((Get-Date) -lt $deadline)
-    if (!$state) { throw "No answer, loading, error or missing model state after sending." }
+    if (!$entry) { throw "The Nomi page opened neither the composer nor the model download." }
+    WaitFor $process "NomiNew" 10 | Out-Null
+    WaitFor $process "NomiSearch" 10 | Out-Null
+    if ($entry -eq "NomiDownload") {
+        Capture $process "artifacts/ui-nomi-nomodel.png"
+        Write-Host "Nomi page shows the local model download."
+        return
+    }
+    WaitFor $process "NomiSuggest_1" 10 | Out-Null
+    WaitFor $process "NomiLevel" 10 | Out-Null
+    Capture $process "artifacts/ui-nomi-empty.png"
+    $box = WaitFor $process "NomiBox" 10
+    $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("Where do I start today?")
+    Invoke (WaitFor $process "NomiSend" 10)
+    WaitFor $process "NomiUser" 15 | Out-Null
+    $deadline = (Get-Date).AddSeconds(240)
+    do {
+        $state = @("NomiCopy", "NomiStop") | Where-Object { Find $process $_ } | Select-Object -First 1
+        if ($state -eq "NomiCopy") { break }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+    if (!$state) { throw "No answer or loading state after sending." }
     Write-Host "State after sending: $state"
-    Capture $process "artifacts/ui-conversation.png"
-    Start-Sleep -Seconds 1
-    if (!(Test-Path $chat)) { throw "The conversation was not saved." }
-    $raw = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($chat))
-    if ($raw -match "commence") { throw "The conversation is readable on disk." }
-    if ($state -eq "ChatStop") { Invoke (Find $process "ChatStop"); Start-Sleep -Seconds 2 }
-    Invoke (WaitFor $process "ChatNew" 15)
-    Start-Sleep -Seconds 1
-    if (Test-Path $chat) { throw "New conversation left the file on disk." }
-    WaitFor $process "Chat_chatExample1" 10 | Out-Null
-    Write-Host "Conversation sent, saved encrypted and cleared."
+    Capture $process "artifacts/ui-nomi-chat.png"
+    if ($state -eq "NomiStop") { Invoke (Find $process "NomiStop"); Start-Sleep -Seconds 2 }
+    WaitFor $process "NomiCopy" 15 | Out-Null
+    if (!(Test-Path $chats)) { throw "The conversation was not saved." }
+    $raw = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($chats))
+    if ($raw -match "Where do I start") { throw "The conversation is readable on disk." }
+    WaitFor $process "NomiThread" 10 | Out-Null
+    Invoke (WaitFor $process "NomiNewTop" 10)
+    WaitFor $process "NomiSuggest_1" 10 | Out-Null
+    if (!(Test-Path $chats)) { throw "A new conversation must keep the previous one." }
+    Write-Host "Nomi page sent, answered, saved encrypted and kept the conversation in the history."
 } finally {
     if (!$process.HasExited) { Stop-Process -Id $process.Id -Force }
 }
