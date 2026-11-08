@@ -27,6 +27,94 @@ public sealed class ChatEntry
     public string Text { get; set; } = "";
     public DateTimeOffset Time { get; set; } = DateTimeOffset.Now;
     public List<ChatAction> Actions { get; set; } = [];
+    public string Level { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string Reason { get; set; } = "";
+    public string[] Steps { get; set; } = [];
+    public string[] Documents { get; set; } = [];
+    public double Seconds { get; set; }
+    public bool Stopped { get; set; }
+}
+
+public sealed class ChatThread
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..12];
+    public string Title { get; set; } = "";
+    public DateTimeOffset Updated { get; set; } = DateTimeOffset.Now;
+    public List<ChatEntry> Items { get; set; } = [];
+
+    public static string TitleFrom(string question)
+    {
+        var line = question.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "";
+        return line.Length <= 48 ? line : line[..47].TrimEnd() + "…";
+    }
+}
+
+public sealed class ThreadStore(string? file = null, string? legacy = null)
+{
+    public const int Limit = 50;
+    public string Path { get; } = file ?? System.IO.Path.Combine(SecureFile.Folder, "conversations.json");
+    public string Legacy { get; } = legacy ?? System.IO.Path.Combine(SecureFile.Folder, "conversation.json");
+    public List<ChatThread> Threads { get; private set; } = [];
+
+    public void Load()
+    {
+        try
+        {
+            Threads = SecureFile.Read(Path) is { } text ? JsonSerializer.Deserialize<List<ChatThread>>(text) ?? [] : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            Threads = [];
+        }
+        if (Threads.Count == 0 && File.Exists(Legacy))
+        {
+            var old = new ChatStore(Legacy);
+            old.Load();
+            if (old.Items.Count > 0)
+                Threads.Add(new ChatThread { Title = ChatThread.TitleFrom(old.Items.FirstOrDefault(item => item.Role == "user")?.Text ?? "Nomi"), Updated = old.Items[^1].Time, Items = old.Items });
+            Save();
+            SecureFile.Delete(Legacy);
+        }
+        foreach (var thread in Threads)
+        {
+            thread.Items = thread.Items.Where(item => item.Role is "user" or "nomi" && item.Text.Length + item.Actions.Count > 0).TakeLast(ChatStore.Limit).ToList();
+            foreach (var item in thread.Items) item.Actions = item.Actions.Where(action => ChatActions.All.Contains(action.Kind)).ToList();
+        }
+        Threads = Threads.Where(thread => thread.Items.Count > 0).OrderByDescending(thread => thread.Updated).Take(Limit).ToList();
+    }
+
+    public ChatThread? Find(string? id) => id is null ? null : Threads.FirstOrDefault(thread => thread.Id == id);
+
+    public void Add(ChatThread thread, ChatEntry entry)
+    {
+        thread.Items.Add(entry);
+        if (thread.Items.Count > ChatStore.Limit) thread.Items.RemoveRange(0, thread.Items.Count - ChatStore.Limit);
+        thread.Updated = entry.Time;
+        if (!Threads.Contains(thread)) Threads.Insert(0, thread);
+        Threads = Threads.OrderByDescending(item => item.Updated).Take(Limit).ToList();
+        Save();
+    }
+
+    public void Delete(ChatThread thread)
+    {
+        Threads.Remove(thread);
+        if (Threads.Count == 0) SecureFile.Delete(Path);
+        else Save();
+    }
+
+    public IEnumerable<ChatThread> Search(string query) => query.Trim().Length == 0 ? Threads
+        : Threads.Where(thread => thread.Title.Contains(query.Trim(), StringComparison.CurrentCultureIgnoreCase)
+            || thread.Items.Any(item => item.Text.Contains(query.Trim(), StringComparison.CurrentCultureIgnoreCase)));
+
+    public void Save() => SecureFile.Write(Path, JsonSerializer.Serialize(Threads));
+
+    public void Clear()
+    {
+        Threads.Clear();
+        SecureFile.Delete(Path);
+        SecureFile.Delete(Legacy);
+    }
 }
 
 public sealed record ChatContext(string Text, IReadOnlyDictionary<string, string> Refs, int Count);
