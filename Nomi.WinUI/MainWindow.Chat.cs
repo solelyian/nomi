@@ -37,7 +37,7 @@ public sealed partial class MainWindow
         else DispatcherQueue.TryEnqueue(() => ChatBox.Focus(FocusState.Programmatic));
     }
 
-    private void OpenChatClicked(object sender, RoutedEventArgs args) => OpenChat();
+    private void OpenChatClicked(object sender, RoutedEventArgs args) => OpenNomi();
 
     private void WireChat()
     {
@@ -252,7 +252,7 @@ public sealed partial class MainWindow
         if (action.Kind != ChatActions.Create && task is not { Column: not Columns.Done })
         {
             ShowToast(T("chatActGone"), null, null);
-            BuildConversation();
+            if (view == "nomi") BuildNomi();
             return;
         }
         switch (action.Kind)
@@ -276,13 +276,13 @@ public sealed partial class MainWindow
                 break;
             case ChatActions.Split:
                 action.Done = true;
-                chat.Save();
+                threads.Save();
                 OpenSheet(task!.Id);
                 await SplitTask(task.Id);
                 break;
             case ChatActions.Focus:
                 action.Done = true;
-                chat.Save();
+                threads.Save();
                 focusTaskId = task!.Id;
                 Show("focus");
                 break;
@@ -291,16 +291,16 @@ public sealed partial class MainWindow
         void Finish(string message, System.Action undo)
         {
             action.Done = true;
-            chat.Save();
-            BuildConversation();
+            threads.Save();
+            if (view == "nomi") BuildNomi();
             BuildCompanion();
             ShowToast(message, T("undo"), () =>
             {
                 undo();
                 action.Done = false;
-                chat.Save();
+                threads.Save();
                 Refresh();
-                Announce(ChatStatus, T("chatUndone"));
+                AnnounceNomi(T("chatUndone"));
             });
         }
     }

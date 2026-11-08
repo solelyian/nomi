@@ -342,6 +342,7 @@
                 <ScrollViewer x:Name="RoutinesPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="RoutinesBody" Spacing="14" MaxWidth="760" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
+                <Grid x:Name="NomiPanel" Visibility="Collapsed" />
                 <Grid x:Name="ConversationPanel" Visibility="Collapsed" RowSpacing="12" Padding="4,4,4,8" MaxWidth="820" HorizontalAlignment="Left">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

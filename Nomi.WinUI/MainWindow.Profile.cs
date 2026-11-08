@@ -312,6 +312,8 @@ public sealed partial class MainWindow
         board.Dismissed.Clear();
         history.Clear();
         chat.Clear();
+        threads.Clear();
+        openThread = null;
         chatFailed = null;
         SecureFile.Delete(board.FilePath);
         SecureFile.Delete(HistoryStore.FilePath);
