@@ -37,7 +37,7 @@ foreach ($theme in 1, 0) {
     Set-ItemProperty -Path $personalize -Name AppsUseLightTheme -Value $theme -Type DWord
     $process = Launch $app $logs
     try {
-        foreach ($id in "NavToday", "NavBoard", "NavFocus", "NavAssistant", "NavRoutines") { [void](WaitFor $process $id 30) }
+        foreach ($id in "NavToday", "NavBoard", "NavFocus", "NavNomi", "NavRoutines") { [void](WaitFor $process $id 30) }
         [void](WaitFor $process "DayPlan" 30)
         [void](WaitFor $process "Suggestions" 30)
         Capture $process "artifacts/ui-v3-today-$name.png"

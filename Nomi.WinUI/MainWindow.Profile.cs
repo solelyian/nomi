@@ -278,7 +278,7 @@ public sealed partial class MainWindow
             string json;
             try
             {
-                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history },
+                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history, conversations = threads.Threads },
                     new JsonSerializerOptions { WriteIndented = true });
             }
             finally
@@ -311,6 +311,8 @@ public sealed partial class MainWindow
         board.Tasks.Clear();
         board.Dismissed.Clear();
         history.Clear();
+        threads.Clear();
+        openThread = null;
         SecureFile.Delete(board.FilePath);
         SecureFile.Delete(HistoryStore.FilePath);
         SecureFile.Delete(profileStore.Path);

@@ -322,6 +322,8 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(CommandButton, T("openCommand"));
         ToolTipService.SetToolTip(CommandButton, T("openCommand"));
         CommandText.Text = T("commandBar");
+        AutomationProperties.SetName(ChatButton, T("chatAsk"));
+        ToolTipService.SetToolTip(ChatButton, $"{T("chatAsk")} (Ctrl+4)");
         WorkTitle.Text = T("work").ToUpper(CultureInfo.CurrentCulture);
         RailNoteTitle.Text = T("railNoteTitle");
         RailNoteText.Text = T("railNoteText");
@@ -334,7 +336,8 @@ public sealed partial class MainWindow : Window
             ["workspace"] = Workspace,
             ["spaces"] = SpacesPanel,
             ["settings"] = SettingsPanel,
-            ["routines"] = RoutinesPanel
+            ["routines"] = RoutinesPanel,
+            ["nomi"] = NomiPanel
         };
         foreach (var (key, element) in panels) element.Visibility = key == view ? Visibility.Visible : Visibility.Collapsed;
         if (view == "spaces") BuildSpaces();
@@ -343,6 +346,11 @@ public sealed partial class MainWindow : Window
         else if (view == "board") BuildBoard();
         else if (view == "focus") BuildFocus();
         else if (view == "routines") BuildRoutines();
+        else if (view == "nomi") BuildNomi();
+        AsideColumn.Width = new GridLength(view == "nomi" ? 0 : 300);
+        Aside.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
+        CommandBar.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
+        Views.Margin = new Thickness(0, 6, 0, view == "nomi" ? 0 : 76);
         RefreshWorkspace();
         RefreshAside();
         BuildCompanion();
@@ -368,6 +376,7 @@ public sealed partial class MainWindow : Window
         "focus" => T("focus"),
         "spaces" => T("spaces"),
         "routines" => T("routines"),
+        "conversation" => T("conversation"),
         "settings" => T("preferences"),
         _ => Action.Title
     };
@@ -375,7 +384,7 @@ public sealed partial class MainWindow : Window
     private void Show(string target)
     {
         if (PaletteOverlay.Visibility == Visibility.Visible) PaletteOverlay.Visibility = Visibility.Collapsed;
-        view = target;
+        view = target is "conversation" ? "nomi" : target;
         Refresh();
     }
 
@@ -389,7 +398,7 @@ public sealed partial class MainWindow : Window
             ("today", T("today"), "\uE8BF", "NavToday"),
             ("board", T("board"), "\uF0E2", "NavBoard"),
             ("focus", T("focus"), "\uE7B3", "NavFocus"),
-            ("workspace", T("assistant"), "\uE8BD", "NavAssistant"),
+            ("nomi", "Nomi", "\uE8BD", "NavNomi"),
             ("routines", T("routines"), "\uE823", "NavRoutines")
         };
         for (var index = 0; index < views.Length; index++)
@@ -1365,6 +1374,7 @@ public sealed partial class MainWindow : Window
                 RequestBox.Text = query;
                 RequestBox.SelectionStart = query.Length;
             }));
+            direct.Add(new Command($"{T("chatAsk")} « {query} »", T("chatIntro"), "Nomi", () => OpenNomi(query)));
             direct.Add(new Command($"{T("createTask")} « {query} »", T("createTaskHelp"), T("board"), () =>
             {
                 var task = board.Add(ReadPhrase(query), Columns.Todo, contextId, "palette");
@@ -1377,6 +1387,7 @@ public sealed partial class MainWindow : Window
             {
                 new Command(T("today"), T("todayIntro"), T("navigation"), () => Show("today")),
                 new Command(T("board"), T("boardIntro"), T("navigation"), () => Show("board")),
+                new Command("Nomi", T("chatIntro"), T("navigation"), () => OpenNomi()),
                 new Command(focusState == "idle" ? T("focusStart") : T("focus"), T("focusIntro"), T("focus"), () => Show("focus")),
                 new Command(T("assistant"), T("assistantIntro"), T("navigation"), () => Show("workspace"))
             })
@@ -1464,7 +1475,7 @@ public sealed partial class MainWindow : Window
     {
         if (onboarding is not null) return;
         var index = (int)sender.Key - (int)VirtualKey.Number1;
-        string[] views = ["today", "board", "focus", "workspace", "routines"];
+        string[] views = ["today", "board", "focus", "nomi", "routines"];
         if (index < 0 || index >= views.Length) return;
         args.Handled = true;
         CloseSheet();

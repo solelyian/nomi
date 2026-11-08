@@ -11,6 +11,7 @@
             <KeyboardAccelerator Key="Number3" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number4" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number5" Modifiers="Control" Invoked="ViewShortcut" />
+            <KeyboardAccelerator Key="Number6" Modifiers="Control" Invoked="ViewShortcut" />
             <KeyboardAccelerator Key="Number1" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number2" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number3" Modifiers="Menu" Invoked="ActionShortcut" />
@@ -341,6 +342,7 @@
                 <ScrollViewer x:Name="RoutinesPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="RoutinesBody" Spacing="14" MaxWidth="760" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
+                <Grid x:Name="NomiPanel" Visibility="Collapsed" />
                 <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SettingsBody" Spacing="14" MaxWidth="620" HorizontalAlignment="Left" Padding="4,4,4,8" />
                 </ScrollViewer>
@@ -361,8 +363,13 @@
                 </Grid>
 
                 <!-- Floating command bar -->
-                <Button x:Name="CommandButton" Click="OpenCommandClicked" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                        MaxWidth="640" Height="58" CornerRadius="20" Padding="16,0,12,0" BorderThickness="1"
+                <Grid x:Name="CommandBar" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MaxWidth="708" ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="CommandButton" Click="OpenCommandClicked" HorizontalAlignment="Stretch"
+                        Height="58" CornerRadius="20" Padding="16,0,12,0" BorderThickness="1"
                         Background="{ThemeResource NomiGlassStrong}" BorderBrush="{ThemeResource NomiGlassEdge}"
                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center"
                         Shadow="{StaticResource NomiShadow}" Translation="0,0,24">
@@ -380,6 +387,13 @@
                         </Border>
                     </Grid>
                 </Button>
+                <Button x:Name="ChatButton" Grid.Column="1" Click="OpenChatClicked" Width="58" Height="58" CornerRadius="20" BorderThickness="1"
+                        Background="{ThemeResource NomiGlassStrong}" BorderBrush="{ThemeResource NomiGlassEdge}"
+                        Shadow="{StaticResource NomiShadow}" Translation="0,0,24" AutomationProperties.AutomationId="ChatButton"
+                        AutomationProperties.AcceleratorKey="Ctrl+6">
+                    <FontIcon Glyph="&#xE8F2;" FontSize="18" Foreground="{ThemeResource NomiInk2}" />
+                </Button>
+                </Grid>
             </Grid>
 
             <!-- Companion -->

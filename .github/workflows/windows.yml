@@ -120,6 +120,8 @@ jobs:
         run: ./checks/windows-onboarding.ps1
       - name: Verify a task sentence becomes a dated task
         run: ./checks/windows-phrase.ps1
+      - name: Verify the conversation page from the bottom bar
+        run: ./checks/windows-conversation.ps1
       - name: Verify embedded CPU engine without Ollama
         run: |
           if (!(Get-ChildItem artifacts/Nomi-win-x64 -Recurse -Filter llama.dll)) {
