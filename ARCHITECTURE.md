@@ -55,6 +55,13 @@ l’inférence : la demande reste modifiable avant envoi.
   natif. Copier affiche une confirmation discrète, sans fenêtre à fermer.
 - Les préférences décrivent la manière de travailler : langue, densité, déroulé.
 
+## Architecture LLM v2
+
+- **Routeur en trois étages** (`Router.cs`, `RoutingLog.cs`) : des règles choisissent la primitive (comprendre, vérifier, convertir, planifier, communiquer, apprendre), un score de difficulté peut monter de Rapide à Appliqué, puis une vérification échouée escalade d’un niveau.
+- **Perception puis raisonnement** : Gemma 4 E4B lit les images et produit des valeurs structurées ; Qwen3 8B raisonne sur le texte extrait. Le mode réflexion est celui des modèles.
+- **Calcul déterministe** (`Calc.cs`) : le modèle écrit un plan JSON d’étapes, le moteur les calcule en décimales exactes, les recalcule par une seconde méthode et les compare. Tout chiffre de la réponse absent des résultats vérifiés ou de la demande est masqué.
+- **Journal de routage chiffré** (`routing.json`) : primitive, niveau, raison, score, escalade, vérification, modèle et durée, jamais le texte des messages. Il est inclus dans l’export et effacé par « Tout supprimer ».
+
 ## Inférence locale
 
 ```text
@@ -65,7 +72,8 @@ Aperçu web → /api/chat (Node) → Ollama local → Qwen3 4B Instruct
                 consignes communes
 ```
 
-Le modèle ouvert est `qwen3:4b-instruct` (Apache 2.0), installé via Ollama.
+L’app Windows charge Qwen3 8B et Gemma 4 E4B (Apache 2.0) dans le moteur llama.cpp intégré ;
+l’aperçu web garde `qwen3:4b-instruct` via Ollama.
 Pas de clé API, d’abonnement ou d’inférence cloud. Dans l’aperçu Devin, le modèle
 tourne sur la machine de session ; l’installation Windows l’exécute sur votre PC.
 Le catalogue d’interface reste éditorial ; les réponses utilisent les consignes
@@ -73,7 +81,7 @@ de l’action, du format et de la langue choisie.
 
 Le serveur valide les entrées, borne leur taille et ne relaie que vers une adresse
 locale. Une génération à la fois, avec annulation lors de la fermeture de la
-connexion. Le client WinUI appelle Ollama directement.
+connexion. Le client WinUI n’utilise pas Ollama.
 
 Après génération, la réponse passe par une politique déterministe commune :
 

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft.UI.Xaml;
@@ -57,15 +58,41 @@ public sealed partial class MainWindow
             var earlier = thread.Items.Where(item => item != entry && item != asked).ToArray();
             var chatting = route.Action == "chat";
             var prompt = chatting ? Conversation.Prompt(context, earlier, question) : $"{context.Text}\n\n{question}";
+            var level = Escalation.Level(route, question, asked.Documents.Length, nomiLevel);
+            var engine = await Engine(level);
+            entry.Model = engine == fast ? fast.Model : inference.Model;
+            IReadOnlyList<CalcResult> results = [];
+            if (route.Calculates)
+            {
+                results = await PlanAsync(engine, $"{context.Text}\n\n{question}", route.Action, documents, controller.Token);
+                entry.Verified = results.Count > 0 && results.All(result => result.Verified);
+                var shown = results.Where(result => result.Verified)
+                    .Select(result => $"{result.Id} = {Calc.Format(result.Value, CultureInfo.CurrentCulture)} {result.Unit}".Trim());
+                if (entry.Verified == true) prompt += "\n\n" + string.Format(CultureInfo.CurrentCulture, T("calcResults"), string.Join("; ", shown));
+            }
             liveStep = Math.Max(0, route.Steps.Length - 2);
             BuildNomi();
-            var result = await inference.GenerateNomiAsync(prompt, route.Action, language, "summary", controller.Token,
-                documents: documents.Count > 0 ? documents : null, reasoning: route.Level == Levels.Deep,
+            var result = await engine.GenerateNomiAsync(prompt, route.Action, language, "summary", controller.Token,
+                documents: documents.Count > 0 ? documents : null, reasoning: level == Levels.Deep,
                 instruction: $"{(chatting ? Conversation.Instruction() : "")} {AdaptiveInstruction()}".Trim());
             var (answer, actions) = result.Accepted
                 ? chatting ? Conversation.Read(result.Text, context, board.Tasks) : (result.Text.Trim(), new List<ChatAction>())
                 : ("", []);
             if (answer.Length == 0 && actions.Count == 0) throw new InferenceException("chatError");
+            if (route.Calculates)
+            {
+                var allowed = results.Where(result => result.Verified).Select(result => result.Value)
+                    .Concat(Calc.Numbers(question)).Concat(Calc.Numbers(context.Text)).ToArray();
+                var blocked = Calc.Unverified(answer, allowed);
+                if (blocked.Count > 0)
+                {
+                    entry.Verified = false;
+                    if (Escalation.Next(level) is { } next) { entry.EscalatedFrom = level; level = next; }
+                    foreach (var number in blocked) answer = answer.Replace(number, "…", StringComparison.Ordinal);
+                    answer += "\n\n" + T("calcBlocked");
+                }
+            }
+            entry.Level = level;
             entry.Text = answer;
             entry.Actions = actions;
             AnnounceNomi(string.Format(CultureInfo.CurrentCulture, T("chatReplied"), answer));
@@ -77,6 +104,7 @@ public sealed partial class MainWindow
         }
         catch (Exception error) when (error is InferenceException or HttpRequestException or IOException or System.Text.Json.JsonException)
         {
+            StartupDiagnostics.Write($"Nomi answer failed: {error.GetType().Name} {error.Message}");
             entry.Failed = true;
             entry.Text = T("chatError");
             AnnounceNomi(T("chatError"));
@@ -84,6 +112,8 @@ public sealed partial class MainWindow
         finally
         {
             entry.Seconds = Math.Round(clock.Elapsed.TotalSeconds, 1);
+            routingLog.Add(new RoutingEntry(Now, route.Primitive, entry.Level, entry.Reason, Escalation.Score(question, asked.Documents.Length),
+                entry.EscalatedFrom, entry.Verified, entry.Model, entry.Seconds, asked.Documents.Length));
             thread.Items.Remove(entry);
             liveEntry = null;
             nomiRun = null;
@@ -92,9 +122,44 @@ public sealed partial class MainWindow
         }
     }
 
+    private readonly RoutingLog routingLog = new();
+
     private void AnnounceNomi(string message)
     {
         if (FrameworkElementAutomationPeer.FromElement(NomiPanel) is { } peer || (peer = FrameworkElementAutomationPeer.CreatePeerForElement(NomiPanel)) is not null)
             peer.RaiseNotificationEvent(AutomationNotificationKind.ActionCompleted, AutomationNotificationProcessing.ImportantMostRecent, message, "NomiStatus");
+    }
+
+    // The plan is internal JSON, never shown, so it skips the answer policy; a bad plan only leaves the figures unverified.
+    private async Task<IReadOnlyList<CalcResult>> PlanAsync(NomiInferenceClient engine, string prompt, string action,
+        IReadOnlyList<AttachedDocument> documents, CancellationToken token)
+    {
+        var plan = new StringBuilder();
+        try
+        {
+            var truncated = await engine.GenerateAsync(prompt, action, language, "summary", text =>
+            {
+                plan.Append(text);
+                if (plan.Length > 8000) throw new CalcException("plan");
+            }, token, T("calcPlanInstruction"), documents.Count > 0 ? documents : null);
+            return truncated ? [] : Calc.Run(Calc.ParsePlan(plan.ToString()));
+        }
+        catch (CalcException) { return []; }
+    }
+
+    // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.
+    private async Task<NomiInferenceClient> Engine(string level)
+    {
+        if (level != Levels.Fast || !fast.HasModel) return inference;
+        if (fast.Ready) return fast;
+        try
+        {
+            await fast.PrepareAsync(false, null, CancellationToken.None);
+            return fast;
+        }
+        catch (Exception error) when (error is InferenceException or IOException or InvalidDataException or LLama.Exceptions.RuntimeError)
+        {
+            return inference;
+        }
     }
 }

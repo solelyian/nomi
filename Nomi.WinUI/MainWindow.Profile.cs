@@ -278,7 +278,7 @@ public sealed partial class MainWindow
             string json;
             try
             {
-                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history, conversations = threads.Threads },
+                json = JsonSerializer.Serialize(new { exported = DateTimeOffset.Now, profile, tasks = board.Tasks, routines = routines.Items, history, conversations = threads.Threads, routing = routingLog.Entries },
                     new JsonSerializerOptions { WriteIndented = true });
             }
             finally
@@ -322,6 +322,7 @@ public sealed partial class MainWindow
         rescue = null;
         SecureFile.Delete(routines.Path);
         SecureFile.Delete(agendaCache);
+        routingLog.Clear();
         meetingsDate = default;
         todayMeetings = [];
         agendaFetched = null;

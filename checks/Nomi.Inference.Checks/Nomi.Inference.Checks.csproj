@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../Nomi.WinUI/NomiInferenceClient.cs" Link="NomiInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/ModelStore.cs" Link="ModelStore.cs" />
+    <Compile Include="../../Nomi.WinUI/NativeLibraries.cs" Link="NativeLibraries.cs" />
     <Compile Include="../../Nomi.WinUI/LocalInferenceClient.cs" Link="LocalInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/AdaptiveInferenceClient.cs" Link="AdaptiveInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/ResponsePolicy.cs" Link="ResponsePolicy.cs" />
@@ -30,6 +31,8 @@
     <Compile Include="../../Nomi.WinUI/FirstStep.cs" Link="FirstStep.cs" />
     <Compile Include="../../Nomi.WinUI/Conversation.cs" Link="Conversation.cs" />
     <Compile Include="../../Nomi.WinUI/Router.cs" Link="Router.cs" />
+    <Compile Include="../../Nomi.WinUI/Calc.cs" Link="Calc.cs" />
+    <Compile Include="../../Nomi.WinUI/RoutingLog.cs" Link="RoutingLog.cs" />
     <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../vision/*" Link="vision/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/inference.json" Link="content/inference.json" CopyToOutputDirectory="PreserveNewest" />
@@ -40,8 +43,8 @@
     <Content Include="../response-policy-cases.json" Link="response-policy-cases.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="LLamaSharp" Version="0.26.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.26.0" />
+    <PackageReference Include="LLamaSharp" Version="0.30.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.30.0" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />

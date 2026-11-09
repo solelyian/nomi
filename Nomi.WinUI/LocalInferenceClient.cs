@@ -7,15 +7,18 @@ namespace Nomi;
 
 public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
 {
+    static LocalInferenceClient() => NativeLibraries.Ensure();
+
     private const int ContextTokens = 16384;
     private const int AnswerTokens = 768;
     private const int ReasoningTokens = 3072;
-    private const int QuickThinkTokens = 512;
     private const string ThinkCutoff = "Considering the limited time by the user, I have to give the solution based on the thinking directly now.";
     private const string ThinkOpen = "<think>\n";
     private const string ThinkClose = "</think>";
     private readonly SemaphoreSlim gate = new(1);
+    private const string GemmaEnd = "<turn|>";
     private readonly ModelStore store;
+    private readonly bool gemma;
     private LLamaWeights? weights;
     private bool disposed;
     public string Model => store.Definition.Name;
@@ -24,7 +27,11 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
     public long DownloadBytes => store.Definition.Bytes;
     public bool Ready => weights is not null && !disposed;
 
-    public LocalInferenceClient(ModelStore? modelStore = null) => store = modelStore ?? new ModelStore();
+    public LocalInferenceClient(ModelStore? modelStore = null, bool gemma = false)
+    {
+        store = modelStore ?? new ModelStore();
+        this.gemma = gemma;
+    }
 
     private ModelParams Parameters() => new(store.ModelPath)
     {
@@ -33,7 +40,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         Threads = Math.Clamp(Environment.ProcessorCount - 1, 1, 8),
         BatchThreads = Math.Clamp(Environment.ProcessorCount - 1, 1, 8),
         BatchSize = 512,
-        UseMemorymap = true
+        LoadMode = LLama.Native.LLamaLoadMode.MemoryMap
     };
 
     public async Task PrepareAsync(bool allowDownload, IProgress<ModelProgress>? progress, CancellationToken token)
@@ -65,21 +72,18 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
             if (weights is null) throw new InferenceException("local-model-missing");
             return await Task.Run(async () =>
             {
-                var template = new LLamaTemplate(weights) { AddAssistant = true };
-                template.Add("system", system);
-                template.Add("user", content.Replace("<|", "< |", StringComparison.Ordinal));
-                var formatted = Encoding.UTF8.GetString(template.Apply());
-                if (!formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted += ThinkOpen;
-                var thinkBudget = reasoning ? ReasoningTokens : QuickThinkTokens;
+                reasoning &= !gemma;
+                var formatted = gemma ? VisionClient.GemmaText(system, content) : QwenPrompt(weights, system, content, reasoning);
+                var thinkBudget = reasoning ? ReasoningTokens : 0;
                 if (weights.Tokenize(formatted, true, true, Encoding.UTF8).Length + thinkBudget + AnswerTokens >= ContextTokens)
                     throw new InferenceException("document-context-limit");
                 var executor = new StatelessExecutor(weights, Parameters());
                 var thought = new StringBuilder();
-                var thinking = true;
+                var thinking = reasoning;
                 var thinkTokens = 0;
                 var answerTokens = 0;
                 var truncated = false;
-                await foreach (var chunk in Stream(executor, formatted, thinkBudget + AnswerTokens, cancellationToken))
+                await foreach (var chunk in Stream(executor, formatted, thinkBudget + AnswerTokens, gemma, cancellationToken))
                 {
                     if (thinking)
                     {
@@ -105,7 +109,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
                 if (thinking)
                 {
                     var resumed = $"{formatted}{thought}\n\n{ThinkCutoff}\n{ThinkClose}\n\n";
-                    await foreach (var chunk in Stream(executor, resumed, AnswerTokens, cancellationToken))
+                    await foreach (var chunk in Stream(executor, resumed, AnswerTokens, false, cancellationToken))
                     {
                         answerTokens++;
                         onToken(chunk);
@@ -119,15 +123,28 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         finally { gate.Release(); }
     }
 
-    private static async IAsyncEnumerable<string> Stream(StatelessExecutor executor, string prompt, int maxTokens,
+    private static string QwenPrompt(LLamaWeights weights, string system, string content, bool reasoning)
+    {
+        var template = new LLamaTemplate(weights) { AddAssistant = true };
+        template.Add("system", system);
+        template.Add("user", content.Replace("<|", "< |", StringComparison.Ordinal));
+        var formatted = Encoding.UTF8.GetString(template.Apply());
+        if (!formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted += ThinkOpen;
+        return reasoning ? formatted : formatted + $"\n{ThinkClose}\n\n";
+    }
+
+    private static async IAsyncEnumerable<string> Stream(StatelessExecutor executor, string prompt, int maxTokens, bool gemma,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        using var sampling = new DefaultSamplingPipeline { Temperature = 0.6f, TopP = 0.95f, TopK = 20 };
-        var parameters = new InferenceParams { MaxTokens = maxTokens, SamplingPipeline = sampling };
+        using var sampling = gemma
+            ? new DefaultSamplingPipeline { Temperature = 1.0f, TopP = 0.95f, TopK = 64 }
+            : new DefaultSamplingPipeline { Temperature = 0.6f, TopP = 0.95f, TopK = 20 };
+        var parameters = new InferenceParams { MaxTokens = maxTokens, SamplingPipeline = sampling, AntiPrompts = gemma ? [GemmaEnd] : [] };
         await foreach (var chunk in executor.InferAsync(prompt, parameters, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            yield return chunk;
+            var text = gemma ? chunk.Replace(GemmaEnd, "", StringComparison.Ordinal) : chunk;
+            if (text.Length > 0) yield return text;
         }
     }
 

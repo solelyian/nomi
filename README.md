@@ -7,7 +7,7 @@ vérifier, convertir, planifier, communiquer et apprendre. L’architecture rest
 ## Deux supports
 
 - **`Nomi.WinUI/`** : application Windows native en C# / XAML, WinUI 3, avec
-  moteur llama.cpp intégré via LLamaSharp 0.26.0, sans Ollama ni serveur à installer.
+  moteur llama.cpp intégré via LLamaSharp 0.30.0, sans Ollama ni serveur à installer.
 - **`preview/`** : aperçu navigateur interactif, connecté au modèle local par
   le petit serveur Node de `server/`.
 - **`content/`** : catalogue français–anglais partagé. Le sélecteur change les
@@ -97,7 +97,7 @@ Dans Nomi, choisir **Télécharger le modèle** : environ 2,5 Go sont téléchar
 vérifiés puis chargés. La progression et le bouton **Arrêter** restent disponibles ;
 un téléchargement interrompu reprend au prochain essai.
 
-Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 4B Thinking 2507,
+Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 8B (mode réflexion intégré),
 quantifié Q4_K_M, est téléchargé séparément depuis Hugging Face (Apache-2.0).
 Le fichier, sa version, sa taille et son SHA-256 sont épinglés dans
 `content/local-model.json`. Nomi n’utilise un modèle qu’après vérification complète.
@@ -232,7 +232,7 @@ produits (par exemple CA × taux) ; un écart n’est signalé que s’il ressor
 calcul, et reste une suggestion à vérifier.
 
 Cette fonction utilise un second modèle, téléchargé à part depuis l’espace Focus :
-Qwen3-VL 4B Instruct (Q4_K_M) et son projecteur vision (Q8_0), environ 2,95 Go
+Gemma 4 E4B (Q4_K_M) et son projecteur vision (F16), environ 5,97 Go
 au total, épinglés avec taille et SHA-256 dans `content/vision-model.json` et
 `content/vision-projector.json` (Apache-2.0). Le téléchargement reprend après
 interruption, puis tout fonctionne hors ligne. Sur CPU, une analyse prend de

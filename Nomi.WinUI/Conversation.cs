@@ -25,6 +25,8 @@ public sealed class ChatEntry
 {
     public string Role { get; set; } = "user";
     public string Text { get; set; } = "";
+    public bool? Verified { get; set; }
+    public string? EscalatedFrom { get; set; }
     public DateTimeOffset Time { get; set; } = DateTimeOffset.Now;
     public List<ChatAction> Actions { get; set; } = [];
     public string Level { get; set; } = "";

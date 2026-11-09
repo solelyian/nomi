@@ -12,6 +12,8 @@ public sealed record ScreenInsight(string Task, string Place, string Check, stri
 
 public sealed class VisionClient : IAsyncDisposable
 {
+    static VisionClient() => NativeLibraries.Ensure();
+
     private const int ContextTokens = 6144;
     private const int AnswerTokens = 640;
     private const int ImageSide = 1600;
@@ -39,6 +41,13 @@ public sealed class VisionClient : IAsyncDisposable
 
     private static int Threads => Math.Clamp(Environment.ProcessorCount - 1, 1, 8);
 
+    // llama.cpp cannot apply Gemma 4's Jinja chat template, so the turns are written as it renders them.
+    public static string GemmaText(string system, string user) =>
+        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
+
+    public static string GemmaPrompt(string system, string user) =>
+        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{Marker}\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
+
     private ModelParams Parameters() => new(model.ModelPath)
     {
         ContextSize = ContextTokens,
@@ -47,7 +56,7 @@ public sealed class VisionClient : IAsyncDisposable
         BatchThreads = Threads,
         BatchSize = 1024,
         UBatchSize = 1024,
-        UseMemorymap = true
+        LoadMode = LLama.Native.LLamaLoadMode.MemoryMap
     };
 
     public async Task PrepareAsync(bool allowDownload, IProgress<ModelProgress>? progress, CancellationToken token)
@@ -108,16 +117,13 @@ public sealed class VisionClient : IAsyncDisposable
                 var embed = clip.LoadMedia(image);
                 Array.Clear(image);
                 executor.Embeds.Add(embed);
-                var template = new LLamaTemplate(weights) { AddAssistant = true };
-                template.Add("system", system);
-                template.Add("user", $"{Marker}\n{user}");
-                var prompt = Encoding.UTF8.GetString(template.Apply());
+                var prompt = GemmaPrompt(system, user);
                 using var sampling = new DefaultSamplingPipeline { Temperature = 0.1f, TopP = 0.8f, TopK = 20 };
                 var parameters = new InferenceParams
                 {
                     MaxTokens = tokens,
                     SamplingPipeline = sampling,
-                    AntiPrompts = ["<|im_end|>"]
+                    AntiPrompts = ["<|im_end|>", "<turn|>", "<end_of_turn>"]
                 };
                 var output = new StringBuilder();
                 try

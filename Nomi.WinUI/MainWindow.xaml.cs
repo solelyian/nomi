@@ -45,6 +45,7 @@ public sealed partial class MainWindow : Window
     private bool reasoning;
     private int reasoningWords;
     private readonly AdaptiveInferenceClient inference = new(new LocalInferenceClient(), new NpuInferenceClient());
+    private readonly LocalInferenceClient fast = new(new ModelStore(definition: ModelDefinition.Load("vision-model.json")), gemma: true);
     private CancellationTokenSource? modelPreparation;
     private ModelProgress modelProgress = new("local-model-missing");
     private readonly Dictionary<string, Draft> drafts = new();
@@ -111,6 +112,7 @@ public sealed partial class MainWindow : Window
             routines.Save();
             presence?.Dispose();
             _ = inference.DisposeAsync();
+            _ = fast.DisposeAsync();
             _ = vision.DisposeAsync();
         };
         var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
@@ -984,7 +986,7 @@ public sealed partial class MainWindow : Window
 
     private string EngineLabel() => inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
 
-    private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 4B";
+    private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 8B";
 
     private string DownloadLabel()
     {
@@ -995,9 +997,18 @@ public sealed partial class MainWindow : Window
         return string.Format(T("downloadWithSize"), size);
     }
 
-    private async Task PrepareModel()
+    private Task? modelLoad;
+
+    // A request made while the model is still loading waits for that load instead of failing.
+    private Task PrepareModel()
     {
-        if (modelPreparation is not null || generation is not null) return;
+        if (modelLoad is { IsCompleted: false }) return modelLoad;
+        if (modelPreparation is not null || generation is not null) return Task.CompletedTask;
+        return modelLoad = LoadModel();
+    }
+
+    private async Task LoadModel()
+    {
         using var controller = new CancellationTokenSource();
         modelPreparation = controller;
         modelProgress = new("model-verifying");
