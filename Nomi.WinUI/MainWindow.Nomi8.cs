@@ -58,10 +58,12 @@ public sealed partial class MainWindow
             var chatting = route.Action == "chat";
             var prompt = chatting ? Conversation.Prompt(context, earlier, question) : $"{context.Text}\n\n{question}";
             var level = Escalation.Level(route, question, asked.Documents.Length, nomiLevel);
+            var engine = await Engine(level);
+            entry.Model = engine == fast ? fast.Model : inference.Model;
             IReadOnlyList<CalcResult> results = [];
             if (route.Calculates)
             {
-                var planned = await inference.GenerateNomiAsync($"{context.Text}\n\n{question}", route.Action, language, "summary", controller.Token,
+                var planned = await engine.GenerateNomiAsync($"{context.Text}\n\n{question}", route.Action, language, "summary", controller.Token,
                     documents: documents.Count > 0 ? documents : null, instruction: T("calcPlanInstruction"));
                 results = planned.Accepted ? Calc.Run(Calc.ParsePlan(planned.Text)) : [];
                 entry.Verified = results.Count > 0 && results.All(result => result.Verified);
@@ -71,7 +73,7 @@ public sealed partial class MainWindow
             }
             liveStep = Math.Max(0, route.Steps.Length - 2);
             BuildNomi();
-            var result = await inference.GenerateNomiAsync(prompt, route.Action, language, "summary", controller.Token,
+            var result = await engine.GenerateNomiAsync(prompt, route.Action, language, "summary", controller.Token,
                 documents: documents.Count > 0 ? documents : null, reasoning: level == Levels.Deep,
                 instruction: $"{(chatting ? Conversation.Instruction() : "")} {AdaptiveInstruction()}".Trim());
             var (answer, actions) = result.Accepted
@@ -126,5 +128,21 @@ public sealed partial class MainWindow
     {
         if (FrameworkElementAutomationPeer.FromElement(NomiPanel) is { } peer || (peer = FrameworkElementAutomationPeer.CreatePeerForElement(NomiPanel)) is not null)
             peer.RaiseNotificationEvent(AutomationNotificationKind.ActionCompleted, AutomationNotificationProcessing.ImportantMostRecent, message, "NomiStatus");
+    }
+
+    // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.
+    private async Task<NomiInferenceClient> Engine(string level)
+    {
+        if (level != Levels.Fast || !fast.HasModel) return inference;
+        if (fast.Ready) return fast;
+        try
+        {
+            await fast.PrepareAsync(false, null, CancellationToken.None);
+            return fast;
+        }
+        catch (Exception error) when (error is InferenceException or IOException or InvalidDataException or LLama.Exceptions.RuntimeError)
+        {
+            return inference;
+        }
     }
 }

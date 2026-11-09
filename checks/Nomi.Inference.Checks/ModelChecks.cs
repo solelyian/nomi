@@ -112,7 +112,17 @@ internal static class ModelChecks
             Check(report.Issues.All(issue => !issue.Formula.StartsWith('Σ')), $"Vision totals not misreported {language}");
         }
         Array.Clear(frame.Pixels);
-        Console.WriteLine("Vision live checks passed: model and projector verified, task matched, table read and commission gap found in FR and EN.");
+        await using (var quick = new LocalInferenceClient(new ModelStore(directory, ModelDefinition.Load("vision-model.json")), gemma: true))
+        {
+            await quick.PrepareAsync(false, null, deadline.Token);
+            foreach (var (language, prompt) in new[] { ("fr", "Convertis 2 heures en minutes."), ("en", "Convert 2 hours to minutes.") })
+            {
+                var reply = await quick.GenerateNomiAsync(prompt, "convert", language, "summary", deadline.Token);
+                Console.WriteLine($"gemma {language}/convert: {reply.Text}");
+                Check(reply.Accepted && reply.Text.Contains("120") && !reply.Text.Contains("<turn|>") && !reply.Text.Contains("<|turn>"), $"Gemma quick answer {language}");
+            }
+        }
+        Console.WriteLine("Vision live checks passed: model and projector verified, task matched, table read, commission gap found and Gemma quick answers in FR and EN.");
     }
 
     private static async Task LiveAsync()

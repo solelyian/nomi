@@ -42,6 +42,9 @@ public sealed class VisionClient : IAsyncDisposable
     private static int Threads => Math.Clamp(Environment.ProcessorCount - 1, 1, 8);
 
     // llama.cpp cannot apply Gemma 4's Jinja chat template, so the turns are written as it renders them.
+    public static string GemmaText(string system, string user) =>
+        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
+
     public static string GemmaPrompt(string system, string user) =>
         $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{Marker}\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
 

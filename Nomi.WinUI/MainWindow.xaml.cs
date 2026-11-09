@@ -45,6 +45,7 @@ public sealed partial class MainWindow : Window
     private bool reasoning;
     private int reasoningWords;
     private readonly AdaptiveInferenceClient inference = new(new LocalInferenceClient(), new NpuInferenceClient());
+    private readonly LocalInferenceClient fast = new(new ModelStore(definition: ModelDefinition.Load("vision-model.json")), gemma: true);
     private CancellationTokenSource? modelPreparation;
     private ModelProgress modelProgress = new("local-model-missing");
     private readonly Dictionary<string, Draft> drafts = new();
@@ -111,6 +112,7 @@ public sealed partial class MainWindow : Window
             routines.Save();
             presence?.Dispose();
             _ = inference.DisposeAsync();
+            _ = fast.DisposeAsync();
             _ = vision.DisposeAsync();
         };
         var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
