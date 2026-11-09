@@ -114,6 +114,8 @@ jobs:
             artifacts/ui-*.png
       - name: Verify Today, Board and Focus in the installed application
         run: ./checks/windows-v3.ps1
+      - name: Verify the Today tiles, empty and filled, in words and figures
+        run: ./checks/windows-today.ps1
       - name: Verify the notification area and single instance
         run: ./checks/windows-presence.ps1
       - name: Verify the first-launch welcome
