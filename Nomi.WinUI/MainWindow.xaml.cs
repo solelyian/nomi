@@ -984,7 +984,7 @@ public sealed partial class MainWindow : Window
 
     private string EngineLabel() => inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
 
-    private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 4B";
+    private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 8B";
 
     private string DownloadLabel()
     {

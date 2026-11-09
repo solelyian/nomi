@@ -117,7 +117,7 @@ public sealed class VisionClient : IAsyncDisposable
                 {
                     MaxTokens = tokens,
                     SamplingPipeline = sampling,
-                    AntiPrompts = ["<|im_end|>"]
+                    AntiPrompts = ["<|im_end|>", "<turn|>", "<end_of_turn>"]
                 };
                 var output = new StringBuilder();
                 try

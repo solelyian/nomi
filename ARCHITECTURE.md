@@ -55,6 +55,13 @@ l’inférence : la demande reste modifiable avant envoi.
   natif. Copier affiche une confirmation discrète, sans fenêtre à fermer.
 - Les préférences décrivent la manière de travailler : langue, densité, déroulé.
 
+## Architecture LLM v2
+
+- **Routeur en trois étages** (`Router.cs`, `RoutingLog.cs`) : des règles choisissent la primitive (comprendre, vérifier, convertir, planifier, communiquer, apprendre), un score de difficulté peut monter de Rapide à Appliqué, puis une vérification échouée escalade d’un niveau.
+- **Perception puis raisonnement** : Gemma 4 E4B lit les images et produit des valeurs structurées ; Qwen3 8B raisonne sur le texte extrait. Le mode réflexion est celui des modèles.
+- **Calcul déterministe** (`Calc.cs`) : le modèle écrit un plan JSON d’étapes, le moteur les calcule en décimales exactes, les recalcule par une seconde méthode et les compare. Tout chiffre de la réponse absent des résultats vérifiés ou de la demande est masqué.
+- **Journal de routage chiffré** (`routing.json`) : primitive, niveau, raison, score, escalade, vérification, modèle et durée, jamais le texte des messages. Il est inclus dans l’export et effacé par « Tout supprimer ».
+
 ## Inférence locale
 
 ```text
