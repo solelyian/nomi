@@ -33,7 +33,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         Threads = Math.Clamp(Environment.ProcessorCount - 1, 1, 8),
         BatchThreads = Math.Clamp(Environment.ProcessorCount - 1, 1, 8),
         BatchSize = 512,
-        UseMemorymap = true
+        LoadMode = LLama.Native.LLamaLoadMode.MemoryMap
     };
 
     public async Task PrepareAsync(bool allowDownload, IProgress<ModelProgress>? progress, CancellationToken token)

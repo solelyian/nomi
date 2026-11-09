@@ -47,7 +47,7 @@ public sealed class VisionClient : IAsyncDisposable
         BatchThreads = Threads,
         BatchSize = 1024,
         UBatchSize = 1024,
-        UseMemorymap = true
+        LoadMode = LLama.Native.LLamaLoadMode.MemoryMap
     };
 
     public async Task PrepareAsync(bool allowDownload, IProgress<ModelProgress>? progress, CancellationToken token)

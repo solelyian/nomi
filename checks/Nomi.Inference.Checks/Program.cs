@@ -92,6 +92,7 @@ TaskPhraseChecks.Run();
 ReminderChecks.Run();
 ConversationChecks.Run();
 RouterChecks.Run();
+CalcChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ModelChecks.RunAsync(args);
 
