@@ -672,9 +672,7 @@ public sealed partial class MainWindow
         var planned = plan.Sum(task => TaskBoard.Remaining(task, now));
         var (ratio, samples) = board.Pace();
         var available = profile.Day.Available(now);
-        var doneToday = board.Tasks.Where(task => task.Completed is { } done && done.Date == now.Date).ToArray();
-        var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
-        titles.Children.Add(Heading(T("yourDay"), 28));
+        titles.Children.Add(Heading(T("today"), 28));
         var over = planned * ratio > available;
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
         titles.Children.Add(balance);
@@ -702,54 +700,19 @@ public sealed partial class MainWindow
         TodayBody.Children.Add(header);
         if (rescue is not null) TodayBody.Children.Add(RescueCard(now, ratio));
 
-        var metrics = new Grid { ColumnSpacing = 14 };
-        var tiles = new (string Label, string Value, string Detail, string Id)[]
-        {
-            (T("metricPlanned"), Minutes(planned * ratio), over ? T("metricOver") : string.Format(CultureInfo.CurrentCulture, T("metricPlannedDetail"), plan.Count), "MetricPlanned"),
-            (T("metricDone"), doneToday.Length.ToString(CultureInfo.CurrentCulture), string.Format(CultureInfo.CurrentCulture, T("metricTracked"), Minutes(tracked)), "MetricDone"),
-            (T("metricPace"), samples >= 3 ? Readable.Pace(ratio, language) : "—", samples >= 3 ? (NumberMode == NumberModes.Figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
-        };
-        for (var index = 0; index < tiles.Length; index++)
-        {
-            var (label, value, detail, id) = tiles[index];
-            var stack = new StackPanel { Spacing = 2 };
-            var wordy = value.Length > 8;
-            var number = Text(value, wordy ? 22 : 30);
-            number.TextWrapping = wordy ? TextWrapping.WrapWholeWords : TextWrapping.NoWrap;
-            number.MaxLines = 2;
-            number.TextTrimming = TextTrimming.CharacterEllipsis;
-            number.FontWeight = FontWeights.SemiBold;
-            number.CharacterSpacing = -20;
-            number.FontFamily = (FontFamily)Application.Current.Resources["NomiDisplay"];
-            stack.Children.Add(number);
-            stack.Children.Add(Text(label, 12.5, "NomiInk2"));
-            stack.Children.Add(Text(detail, 11.5, index == 0 && over ? "NomiAccent" : "NomiInk3"));
-            if (index == 0)
-            {
-                var bar = new ProgressBar { Maximum = Math.Max(1, available), Value = Math.Min(available, planned * ratio), Height = 4, MinHeight = 4, Margin = new Thickness(0, 6, 0, 0) };
-                AutomationProperties.SetName(bar, T("metricCapacity"));
-                stack.Children.Add(bar);
-            }
-            var tile = Glass(stack, 18);
-            Mark(tile, id, $"{label} : {value}, {detail}");
-            metrics.Children.Add(tile);
-            Reveal(tile, 10, index * 50);
-        }
-        Tile(metrics, 3);
-        TodayBody.Children.Add(metrics);
-
-        var columns = new Grid { ColumnSpacing = 14 };
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var left = new StackPanel { Spacing = 14 };
-        left.Children.Add(ActiveHero(now, ratio));
-        left.Children.Add(PlanCard(plan, now, ratio));
-        columns.Children.Add(left);
+        TodayBody.Children.Add(TodayTiles(now, plan, planned * ratio, available, ratio, samples, over));
+        var bento = new Grid { ColumnSpacing = 12 };
+        bento.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bento.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bento.Children.Add(ActiveHero(now, ratio));
         var right = SuggestionsCard(now);
         Grid.SetColumn(right, 1);
-        columns.Children.Add(right);
-        TodayBody.Children.Add(columns);
-        Reveal(columns, 12, 160);
+        bento.Children.Add(right);
+        TodayBody.Children.Add(bento);
+        Reveal(bento, 12, 160);
+        var timeline = PlanTimeline(plan, now, ratio);
+        TodayBody.Children.Add(timeline);
+        Reveal(timeline, 12, 220);
     }
 
     private static void Tile(Grid grid, int columns)
@@ -790,11 +753,33 @@ public sealed partial class MainWindow
                 AutomationProperties.SetName(start, string.Format(CultureInfo.CurrentCulture, T("startNamed"), upcoming.Title));
                 start.Click += (_, _) => { board.Start(upcoming, Now); Refresh(); };
                 actions.Children.Add(start);
+                if (draftTaskId == upcoming.Id && draftText.Length > 0)
+                {
+                    stack.Children.Add(DraftPeek(draftText));
+                    var copy = Chip(T("draftCopy"), "NomiGhost", "", "TodayDraftCopy");
+                    copy.Click += (_, _) => ShowToast(CopyResponse(draftText) == T("copied") ? T("draftCopied") : T("copyError"), null, null);
+                    actions.Children.Add(copy);
+                }
+                else
+                {
+                    var write = Chip(drafting is not null && draftTaskId == upcoming.Id ? T("draftWriting") : T("draftWrite"), "NomiGhost", "", "TodayDraftWrite");
+                    write.IsEnabled = drafting is null;
+                    var id = upcoming.Id;
+                    write.Click += async (_, _) => { await WriteFirstStep(id); Refresh(); };
+                    actions.Children.Add(write);
+                }
             }
             else
             {
-                stack.Children.Add(Text(T("noActive"), 16));
-                stack.Children.Add(Text(T("noActiveHelp"), 12.5, "NomiInk3"));
+                var ask = Text(T("todayStartTitle"), 20);
+                ask.FontWeight = FontWeights.SemiBold;
+                stack.Children.Add(ask);
+                var lead = Text(T("todayStartLead"), 13.5, "NomiInk2");
+                lead.TextWrapping = TextWrapping.WrapWholeWords;
+                stack.Children.Add(lead);
+                var add = Primary(T("todayAddTask"), "TodayAddTask");
+                add.Click += (_, _) => RequestBox.Focus(FocusState.Programmatic);
+                actions.Children.Add(add);
                 var boardButton = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
                 boardButton.Click += (_, _) => Show("board");
                 actions.Children.Add(boardButton);
@@ -945,7 +930,9 @@ public sealed partial class MainWindow
         var stack = new StackPanel { Spacing = 10 };
         var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         head.Children.Add(new FontIcon { Glyph = "\uE945", FontSize = 13, Foreground = Palette("NomiAccent") });
-        head.Children.Add(Eyebrow(T("suggestions")));
+        head.Children.Add(Eyebrow(T("todaySuggest")));
+        var local = new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(9), Padding = new Thickness(7, 2, 7, 2), Margin = new Thickness(6, 0, 0, 0), Child = Text(T("todayOnThisPc"), 11, "NomiOk") };
+        head.Children.Add(local);
         stack.Children.Add(head);
         var suggestions = board.Suggestions(now);
         suggestionSignature = string.Join('|', suggestions.Select(item => item.Id));
@@ -966,12 +953,20 @@ public sealed partial class MainWindow
             later.Children.Add(toggle);
             stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = later });
         }
-        foreach (var suggestion in held ? [] : suggestions.Take(5))
+        var first = true;
+        foreach (var suggestion in held ? [] : suggestions.Take(4))
         {
-            var item = new StackPanel { Spacing = 8, Padding = new Thickness(12, 10, 12, 10) };
-            item.Children.Add(Text(SuggestionText(suggestion), 13));
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            var apply = Chip(SuggestionAction(suggestion), "NomiChip", null, $"Suggestion_{suggestion.Kind}");
+            var item = new Grid { ColumnSpacing = 12, Padding = new Thickness(0, 10, 0, 10), BorderBrush = Palette("NomiLine"), BorderThickness = new Thickness(0, first ? 0 : 1, 0, 0) };
+            first = false;
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var said = Text(SuggestionText(suggestion), 13.5);
+            said.TextWrapping = TextWrapping.WrapWholeWords;
+            said.VerticalAlignment = VerticalAlignment.Center;
+            item.Children.Add(said);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+            var apply = Primary(SuggestionAction(suggestion), $"Suggestion_{suggestion.Kind}");
+            AutomationProperties.SetName(apply, $"{SuggestionAction(suggestion)} : {SuggestionText(suggestion)}");
             apply.Click += async (_, _) =>
             {
                 Learn(suggestion, true);
@@ -981,8 +976,17 @@ public sealed partial class MainWindow
                     await SplitTask(suggestion.TaskId);
                     return;
                 }
+                var before = System.Text.Json.JsonSerializer.Serialize(board.Tasks);
                 board.Apply(suggestion, Now);
-                ShowToast(T("suggestionApplied"), null, null);
+                ShowToast(T("suggestionApplied"), T("todayUndo"), () =>
+                {
+                    var saved = System.Text.Json.JsonSerializer.Deserialize<List<WorkTask>>(before) ?? [];
+                    board.Tasks.Clear();
+                    board.Tasks.AddRange(saved);
+                    board.Save();
+                    ShowToast(T("todayUndone"), null, null);
+                    Refresh();
+                });
                 Refresh();
             };
             buttons.Children.Add(apply);
@@ -990,8 +994,9 @@ public sealed partial class MainWindow
             AutomationProperties.SetName(dismiss, $"{T("dismiss")} : {SuggestionText(suggestion)}");
             dismiss.Click += (_, _) => { Learn(suggestion, false); Refresh(); };
             buttons.Children.Add(dismiss);
+            Grid.SetColumn(buttons, 1);
             item.Children.Add(buttons);
-            stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = item });
+            stack.Children.Add(item);
         }
         stack.Children.Add(Text(T("suggestionsNote"), 11.5, "NomiInk3"));
         var card = Glass(stack, 18);
