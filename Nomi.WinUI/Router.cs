@@ -30,7 +30,7 @@ public static class Router
     private static readonly string[] ConvertWords = ["convert", "en heures", "en minutes", "en euros", "in hours", "in minutes"];
     private static readonly string[] PlanWords = ["commence", "journée", "priorit", "planifi", "organis", "start", "my day", "priority", "plan"];
     private static readonly string[] WriteWords = ["mail", "message", "rédige", "réponds", "brouillon", "write", "draft", "reply"];
-    private static readonly string[] LearnWords = ["explique", "c'est quoi", "qu'est-ce", "apprendre", "explain", "what is", "learn"];
+    private static readonly string[] LearnWords = ["explique", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain", "what is", "learn", "teach", "how does"];
 
     public static Route Decide(string text, int documents, string chosen)
     {
