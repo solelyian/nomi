@@ -72,7 +72,8 @@ Aperçu web → /api/chat (Node) → Ollama local → Qwen3 4B Instruct
                 consignes communes
 ```
 
-Le modèle ouvert est `qwen3:4b-instruct` (Apache 2.0), installé via Ollama.
+L’app Windows charge Qwen3 8B et Gemma 4 E4B (Apache 2.0) dans le moteur llama.cpp intégré ;
+l’aperçu web garde `qwen3:4b-instruct` via Ollama.
 Pas de clé API, d’abonnement ou d’inférence cloud. Dans l’aperçu Devin, le modèle
 tourne sur la machine de session ; l’installation Windows l’exécute sur votre PC.
 Le catalogue d’interface reste éditorial ; les réponses utilisent les consignes
@@ -80,7 +81,7 @@ de l’action, du format et de la langue choisie.
 
 Le serveur valide les entrées, borne leur taille et ne relaie que vers une adresse
 locale. Une génération à la fois, avec annulation lors de la fermeture de la
-connexion. Le client WinUI appelle Ollama directement.
+connexion. Le client WinUI n’utilise pas Ollama.
 
 Après génération, la réponse passe par une politique déterministe commune :
 

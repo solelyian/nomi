@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../Nomi.WinUI/NomiInferenceClient.cs" Link="NomiInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/ModelStore.cs" Link="ModelStore.cs" />
+    <Compile Include="../../Nomi.WinUI/NativeLibraries.cs" Link="NativeLibraries.cs" />
     <Compile Include="../../Nomi.WinUI/LocalInferenceClient.cs" Link="LocalInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/AdaptiveInferenceClient.cs" Link="AdaptiveInferenceClient.cs" />
     <Compile Include="../../Nomi.WinUI/ResponsePolicy.cs" Link="ResponsePolicy.cs" />

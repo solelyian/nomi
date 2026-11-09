@@ -7,10 +7,11 @@ namespace Nomi;
 
 public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
 {
+    static LocalInferenceClient() => NativeLibraries.Ensure();
+
     private const int ContextTokens = 16384;
     private const int AnswerTokens = 768;
     private const int ReasoningTokens = 3072;
-    private const int QuickThinkTokens = 512;
     private const string ThinkCutoff = "Considering the limited time by the user, I have to give the solution based on the thinking directly now.";
     private const string ThinkOpen = "<think>\n";
     private const string ThinkClose = "</think>";
@@ -70,12 +71,13 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
                 template.Add("user", content.Replace("<|", "< |", StringComparison.Ordinal));
                 var formatted = Encoding.UTF8.GetString(template.Apply());
                 if (!formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted += ThinkOpen;
-                var thinkBudget = reasoning ? ReasoningTokens : QuickThinkTokens;
+                if (!reasoning) formatted += $"\n{ThinkClose}\n\n";
+                var thinkBudget = reasoning ? ReasoningTokens : 0;
                 if (weights.Tokenize(formatted, true, true, Encoding.UTF8).Length + thinkBudget + AnswerTokens >= ContextTokens)
                     throw new InferenceException("document-context-limit");
                 var executor = new StatelessExecutor(weights, Parameters());
                 var thought = new StringBuilder();
-                var thinking = true;
+                var thinking = reasoning;
                 var thinkTokens = 0;
                 var answerTokens = 0;
                 var truncated = false;

@@ -7,7 +7,7 @@ vérifier, convertir, planifier, communiquer et apprendre. L’architecture rest
 ## Deux supports
 
 - **`Nomi.WinUI/`** : application Windows native en C# / XAML, WinUI 3, avec
-  moteur llama.cpp intégré via LLamaSharp 0.26.0, sans Ollama ni serveur à installer.
+  moteur llama.cpp intégré via LLamaSharp 0.30.0, sans Ollama ni serveur à installer.
 - **`preview/`** : aperçu navigateur interactif, connecté au modèle local par
   le petit serveur Node de `server/`.
 - **`content/`** : catalogue français–anglais partagé. Le sélecteur change les
