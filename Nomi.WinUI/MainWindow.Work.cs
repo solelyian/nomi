@@ -672,8 +672,6 @@ public sealed partial class MainWindow
         var planned = plan.Sum(task => TaskBoard.Remaining(task, now));
         var (ratio, samples) = board.Pace();
         var available = profile.Day.Available(now);
-        var doneToday = board.Tasks.Where(task => task.Completed is { } done && done.Date == now.Date).ToArray();
-        var tracked = board.Tasks.Where(task => task.RunningSince is not null || task.Completed?.Date == now.Date).Sum(task => task.Spent(now)) / 60;
         titles.Children.Add(Heading(T("yourDay"), 28));
         var over = planned * ratio > available;
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
@@ -702,54 +700,19 @@ public sealed partial class MainWindow
         TodayBody.Children.Add(header);
         if (rescue is not null) TodayBody.Children.Add(RescueCard(now, ratio));
 
-        var metrics = new Grid { ColumnSpacing = 14 };
-        var tiles = new (string Label, string Value, string Detail, string Id)[]
-        {
-            (T("metricPlanned"), Minutes(planned * ratio), over ? T("metricOver") : string.Format(CultureInfo.CurrentCulture, T("metricPlannedDetail"), plan.Count), "MetricPlanned"),
-            (T("metricDone"), doneToday.Length.ToString(CultureInfo.CurrentCulture), string.Format(CultureInfo.CurrentCulture, T("metricTracked"), Minutes(tracked)), "MetricDone"),
-            (T("metricPace"), samples >= 3 ? Readable.Pace(ratio, language) : "—", samples >= 3 ? (NumberMode == NumberModes.Figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3), "MetricPace")
-        };
-        for (var index = 0; index < tiles.Length; index++)
-        {
-            var (label, value, detail, id) = tiles[index];
-            var stack = new StackPanel { Spacing = 2 };
-            var wordy = value.Length > 8;
-            var number = Text(value, wordy ? 22 : 30);
-            number.TextWrapping = wordy ? TextWrapping.WrapWholeWords : TextWrapping.NoWrap;
-            number.MaxLines = 2;
-            number.TextTrimming = TextTrimming.CharacterEllipsis;
-            number.FontWeight = FontWeights.SemiBold;
-            number.CharacterSpacing = -20;
-            number.FontFamily = (FontFamily)Application.Current.Resources["NomiDisplay"];
-            stack.Children.Add(number);
-            stack.Children.Add(Text(label, 12.5, "NomiInk2"));
-            stack.Children.Add(Text(detail, 11.5, index == 0 && over ? "NomiAccent" : "NomiInk3"));
-            if (index == 0)
-            {
-                var bar = new ProgressBar { Maximum = Math.Max(1, available), Value = Math.Min(available, planned * ratio), Height = 4, MinHeight = 4, Margin = new Thickness(0, 6, 0, 0) };
-                AutomationProperties.SetName(bar, T("metricCapacity"));
-                stack.Children.Add(bar);
-            }
-            var tile = Glass(stack, 18);
-            Mark(tile, id, $"{label} : {value}, {detail}");
-            metrics.Children.Add(tile);
-            Reveal(tile, 10, index * 50);
-        }
-        Tile(metrics, 3);
-        TodayBody.Children.Add(metrics);
-
-        var columns = new Grid { ColumnSpacing = 14 };
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var left = new StackPanel { Spacing = 14 };
-        left.Children.Add(ActiveHero(now, ratio));
-        left.Children.Add(PlanCard(plan, now, ratio));
-        columns.Children.Add(left);
+        TodayBody.Children.Add(TodayTiles(now, plan, planned * ratio, available, ratio, samples, over));
+        var bento = new Grid { ColumnSpacing = 12 };
+        bento.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bento.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bento.Children.Add(ActiveHero(now, ratio));
         var right = SuggestionsCard(now);
         Grid.SetColumn(right, 1);
-        columns.Children.Add(right);
-        TodayBody.Children.Add(columns);
-        Reveal(columns, 12, 160);
+        bento.Children.Add(right);
+        TodayBody.Children.Add(bento);
+        Reveal(bento, 12, 160);
+        var timeline = PlanTimeline(plan, now, ratio);
+        TodayBody.Children.Add(timeline);
+        Reveal(timeline, 12, 220);
     }
 
     private static void Tile(Grid grid, int columns)
@@ -790,6 +753,21 @@ public sealed partial class MainWindow
                 AutomationProperties.SetName(start, string.Format(CultureInfo.CurrentCulture, T("startNamed"), upcoming.Title));
                 start.Click += (_, _) => { board.Start(upcoming, Now); Refresh(); };
                 actions.Children.Add(start);
+                if (draftTaskId == upcoming.Id && draftText.Length > 0)
+                {
+                    stack.Children.Add(DraftPeek(draftText));
+                    var copy = Chip(T("draftCopy"), "NomiGhost", "", "TodayDraftCopy");
+                    copy.Click += (_, _) => ShowToast(CopyResponse(draftText) == T("copied") ? T("draftCopied") : T("copyError"), null, null);
+                    actions.Children.Add(copy);
+                }
+                else
+                {
+                    var write = Chip(drafting is not null && draftTaskId == upcoming.Id ? T("draftWriting") : T("draftWrite"), "NomiGhost", "", "TodayDraftWrite");
+                    write.IsEnabled = drafting is null;
+                    var id = upcoming.Id;
+                    write.Click += async (_, _) => { await WriteFirstStep(id); Refresh(); };
+                    actions.Children.Add(write);
+                }
             }
             else
             {
