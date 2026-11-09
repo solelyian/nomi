@@ -1,3 +1,4 @@
+using System.Text;
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft.UI.Xaml;
@@ -63,9 +64,7 @@ public sealed partial class MainWindow
             IReadOnlyList<CalcResult> results = [];
             if (route.Calculates)
             {
-                var planned = await engine.GenerateNomiAsync($"{context.Text}\n\n{question}", route.Action, language, "summary", controller.Token,
-                    documents: documents.Count > 0 ? documents : null, instruction: T("calcPlanInstruction"));
-                results = planned.Accepted ? Calc.Run(Calc.ParsePlan(planned.Text)) : [];
+                results = await PlanAsync(engine, $"{context.Text}\n\n{question}", route.Action, documents, controller.Token);
                 entry.Verified = results.Count > 0 && results.All(result => result.Verified);
                 var shown = results.Where(result => result.Verified)
                     .Select(result => $"{result.Id} = {Calc.Format(result.Value, CultureInfo.CurrentCulture)} {result.Unit}".Trim());
@@ -105,6 +104,7 @@ public sealed partial class MainWindow
         }
         catch (Exception error) when (error is InferenceException or HttpRequestException or IOException or System.Text.Json.JsonException)
         {
+            StartupDiagnostics.Write($"Nomi answer failed: {error.GetType().Name} {error.Message}");
             entry.Failed = true;
             entry.Text = T("chatError");
             AnnounceNomi(T("chatError"));
@@ -128,6 +128,23 @@ public sealed partial class MainWindow
     {
         if (FrameworkElementAutomationPeer.FromElement(NomiPanel) is { } peer || (peer = FrameworkElementAutomationPeer.CreatePeerForElement(NomiPanel)) is not null)
             peer.RaiseNotificationEvent(AutomationNotificationKind.ActionCompleted, AutomationNotificationProcessing.ImportantMostRecent, message, "NomiStatus");
+    }
+
+    // The plan is internal JSON, never shown, so it skips the answer policy; a bad plan only leaves the figures unverified.
+    private async Task<IReadOnlyList<CalcResult>> PlanAsync(NomiInferenceClient engine, string prompt, string action,
+        IReadOnlyList<AttachedDocument> documents, CancellationToken token)
+    {
+        var plan = new StringBuilder();
+        try
+        {
+            var truncated = await engine.GenerateAsync(prompt, action, language, "summary", text =>
+            {
+                plan.Append(text);
+                if (plan.Length > 8000) throw new CalcException("plan");
+            }, token, T("calcPlanInstruction"), documents.Count > 0 ? documents : null);
+            return truncated ? [] : Calc.Run(Calc.ParsePlan(plan.ToString()));
+        }
+        catch (CalcException) { return []; }
     }
 
     // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.

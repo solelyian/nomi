@@ -997,9 +997,18 @@ public sealed partial class MainWindow : Window
         return string.Format(T("downloadWithSize"), size);
     }
 
-    private async Task PrepareModel()
+    private Task? modelLoad;
+
+    // A request made while the model is still loading waits for that load instead of failing.
+    private Task PrepareModel()
     {
-        if (modelPreparation is not null || generation is not null) return;
+        if (modelLoad is { IsCompleted: false }) return modelLoad;
+        if (modelPreparation is not null || generation is not null) return Task.CompletedTask;
+        return modelLoad = LoadModel();
+    }
+
+    private async Task LoadModel()
+    {
         using var controller = new CancellationTokenSource();
         modelPreparation = controller;
         modelProgress = new("model-verifying");
