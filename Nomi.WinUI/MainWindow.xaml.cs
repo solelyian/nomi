@@ -347,7 +347,7 @@ public sealed partial class MainWindow : Window
         else if (view == "focus") BuildFocus();
         else if (view == "routines") BuildRoutines();
         else if (view == "nomi") BuildNomi();
-        AsideColumn.Width = new GridLength(view == "nomi" ? 0 : 300);
+        AsideColumn.Width = new GridLength(view is "nomi" or "today" ? 0 : 300);
         Aside.Visibility = view is "nomi" or "today" ? Visibility.Collapsed : Visibility.Visible;
         CommandBar.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
         Views.Margin = new Thickness(0, 6, 0, view == "nomi" ? 0 : 76);

@@ -35,7 +35,7 @@ public sealed partial class MainWindow
 
     private UIElement Meter(double value, double maximum)
     {
-        var bar = new ProgressBar { Maximum = Math.Max(1, maximum), Value = Math.Min(maximum, value), Height = 6, MinHeight = 6, Margin = new Thickness(0, 8, 0, 0), CornerRadius = new CornerRadius(3) };
+        var bar = new ProgressBar { Maximum = Math.Max(1, maximum), Value = Math.Min(maximum, value), Height = 6, MinHeight = 6, Margin = new Thickness(0, 8, 0, 0), CornerRadius = new CornerRadius(3), Foreground = Palette("NomiAccent"), Background = Palette("NomiLine") };
         AutomationProperties.SetName(bar, T("metricCapacity"));
         return bar;
     }
@@ -67,7 +67,7 @@ public sealed partial class MainWindow
                 doneToday.Length > 0 ? string.Format(CultureInfo.CurrentCulture, T("todayLastDone"), doneToday[0].Title) : T("todayDoneEmpty"),
                 "MetricDone", total > 0 ? Dots(Math.Min(total, 8), Math.Min(doneToday.Length, 8)) : null),
             Tile(T("todayDue"), "\uE787", due?.Title ?? T("todayDueNone"), false,
-                due is { Due: { } at } ? string.Format(CultureInfo.CurrentCulture, T("todayDueDetail"), At(at), At(at.AddMinutes(-TaskBoard.Remaining(due, now) * ratio))) : T("todayDueNoneDetail"),
+                due is { Due: { } at } ? string.Format(CultureInfo.CurrentCulture, T(figures ? "todayDueDetail" : "todayDueDetailWords"), At(at), At(at.AddMinutes(-TaskBoard.Remaining(due, now) * ratio))) : T("todayDueNoneDetail"),
                 "MetricDue"),
             Tile(T("metricPace"), "\uE945", samples >= 3 ? Readable.Pace(ratio, language) : T("todayLearning"), false,
                 samples >= 3 ? (figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3),
@@ -146,6 +146,7 @@ public sealed partial class MainWindow
                 var size = Math.Max(6, X(item.To) - left - 3);
                 var label = Text(item.Title, 11.5, item.Kind == "done" ? "NomiInk3" : "NomiInk");
                 label.TextTrimming = TextTrimming.CharacterEllipsis;
+                label.TextWrapping = TextWrapping.NoWrap;
                 label.VerticalAlignment = VerticalAlignment.Center;
                 if (item.Kind == "done") label.TextDecorations = Windows.UI.Text.TextDecorations.Strikethrough;
                 var block = new Border

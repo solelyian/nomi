@@ -672,7 +672,7 @@ public sealed partial class MainWindow
         var planned = plan.Sum(task => TaskBoard.Remaining(task, now));
         var (ratio, samples) = board.Pace();
         var available = profile.Day.Available(now);
-        titles.Children.Add(Heading(T("yourDay"), 28));
+        titles.Children.Add(Heading(T("today"), 28));
         var over = planned * ratio > available;
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
         titles.Children.Add(balance);
@@ -771,8 +771,15 @@ public sealed partial class MainWindow
             }
             else
             {
-                stack.Children.Add(Text(T("noActive"), 16));
-                stack.Children.Add(Text(T("noActiveHelp"), 12.5, "NomiInk3"));
+                var ask = Text(T("todayStartTitle"), 20);
+                ask.FontWeight = FontWeights.SemiBold;
+                stack.Children.Add(ask);
+                var lead = Text(T("todayStartLead"), 13.5, "NomiInk2");
+                lead.TextWrapping = TextWrapping.WrapWholeWords;
+                stack.Children.Add(lead);
+                var add = Primary(T("todayAddTask"), "TodayAddTask");
+                add.Click += (_, _) => RequestBox.Focus(FocusState.Programmatic);
+                actions.Children.Add(add);
                 var boardButton = Chip(T("openBoard"), "NomiChip", null, "TodayOpenBoard");
                 boardButton.Click += (_, _) => Show("board");
                 actions.Children.Add(boardButton);
@@ -923,7 +930,9 @@ public sealed partial class MainWindow
         var stack = new StackPanel { Spacing = 10 };
         var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         head.Children.Add(new FontIcon { Glyph = "\uE945", FontSize = 13, Foreground = Palette("NomiAccent") });
-        head.Children.Add(Eyebrow(T("suggestions")));
+        head.Children.Add(Eyebrow(T("todaySuggest")));
+        var local = new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(9), Padding = new Thickness(7, 2, 7, 2), Margin = new Thickness(6, 0, 0, 0), Child = Text(T("todayOnThisPc"), 11, "NomiOk") };
+        head.Children.Add(local);
         stack.Children.Add(head);
         var suggestions = board.Suggestions(now);
         suggestionSignature = string.Join('|', suggestions.Select(item => item.Id));
@@ -944,12 +953,20 @@ public sealed partial class MainWindow
             later.Children.Add(toggle);
             stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = later });
         }
-        foreach (var suggestion in held ? [] : suggestions.Take(5))
+        var first = true;
+        foreach (var suggestion in held ? [] : suggestions.Take(4))
         {
-            var item = new StackPanel { Spacing = 8, Padding = new Thickness(12, 10, 12, 10) };
-            item.Children.Add(Text(SuggestionText(suggestion), 13));
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            var apply = Chip(SuggestionAction(suggestion), "NomiChip", null, $"Suggestion_{suggestion.Kind}");
+            var item = new Grid { ColumnSpacing = 12, Padding = new Thickness(0, 10, 0, 10), BorderBrush = Palette("NomiLine"), BorderThickness = new Thickness(0, first ? 0 : 1, 0, 0) };
+            first = false;
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var said = Text(SuggestionText(suggestion), 13.5);
+            said.TextWrapping = TextWrapping.WrapWholeWords;
+            said.VerticalAlignment = VerticalAlignment.Center;
+            item.Children.Add(said);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+            var apply = Primary(SuggestionAction(suggestion), $"Suggestion_{suggestion.Kind}");
+            AutomationProperties.SetName(apply, $"{SuggestionAction(suggestion)} : {SuggestionText(suggestion)}");
             apply.Click += async (_, _) =>
             {
                 Learn(suggestion, true);
@@ -959,8 +976,17 @@ public sealed partial class MainWindow
                     await SplitTask(suggestion.TaskId);
                     return;
                 }
+                var before = System.Text.Json.JsonSerializer.Serialize(board.Tasks);
                 board.Apply(suggestion, Now);
-                ShowToast(T("suggestionApplied"), null, null);
+                ShowToast(T("suggestionApplied"), T("todayUndo"), () =>
+                {
+                    var saved = System.Text.Json.JsonSerializer.Deserialize<List<WorkTask>>(before) ?? [];
+                    board.Tasks.Clear();
+                    board.Tasks.AddRange(saved);
+                    board.Save();
+                    ShowToast(T("todayUndone"), null, null);
+                    Refresh();
+                });
                 Refresh();
             };
             buttons.Children.Add(apply);
@@ -968,8 +994,9 @@ public sealed partial class MainWindow
             AutomationProperties.SetName(dismiss, $"{T("dismiss")} : {SuggestionText(suggestion)}");
             dismiss.Click += (_, _) => { Learn(suggestion, false); Refresh(); };
             buttons.Children.Add(dismiss);
+            Grid.SetColumn(buttons, 1);
             item.Children.Add(buttons);
-            stack.Children.Add(new Border { Background = Palette("NomiGlassSoft"), CornerRadius = new CornerRadius(12), Child = item });
+            stack.Children.Add(item);
         }
         stack.Children.Add(Text(T("suggestionsNote"), 11.5, "NomiInk3"));
         var card = Glass(stack, 18);
