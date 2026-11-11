@@ -1,19 +1,162 @@
 [
-  { "text": "Résume ce document", "documents": 1, "primitive": "understand", "level": "applied", "reads": true },
-  { "text": "Que dit ce contrat sur le préavis ?", "documents": 1, "primitive": "understand", "level": "applied", "reads": true },
-  { "text": "Combien de temps me reste-t-il ?", "documents": 0, "primitive": "verify", "level": "fast", "calculates": true },
-  { "text": "Calcule le total de ce devis", "documents": 1, "primitive": "verify", "level": "applied", "reads": true, "calculates": true },
-  { "text": "Combien fait 1 240 € avec 15 % de remise ?", "documents": 0, "primitive": "verify", "level": "applied", "calculates": true },
-  { "text": "Convertis 3 heures en minutes", "documents": 0, "primitive": "convert", "level": "fast", "calculates": true },
-  { "text": "Par quoi je commence ce matin ?", "documents": 0, "primitive": "plan", "level": "fast" },
-  { "text": "Organise mon après-midi", "documents": 0, "primitive": "plan", "level": "fast" },
-  { "text": "Rédige un mail à Marc pour décaler la réunion", "documents": 0, "primitive": "communicate", "level": "fast" },
-  { "text": "Explique-moi la méthode Pomodoro", "documents": 0, "primitive": "learn", "level": "fast" },
-  { "text": "Pourquoi cet ordre est-il le meilleur ?", "documents": 0, "primitive": "talk", "level": "deep" },
-  { "text": "Bonjour", "documents": 0, "primitive": "talk", "level": "fast" },
-  { "text": "Bonjour", "documents": 0, "chosen": "deep", "primitive": "talk", "level": "deep" },
-  { "text": "Summarise this document", "documents": 1, "primitive": "understand", "level": "applied", "reads": true },
-  { "text": "How much is 20% off 350?", "documents": 0, "primitive": "verify", "level": "applied", "calculates": true },
-  { "text": "Write a short message to Anna", "documents": 0, "primitive": "communicate", "level": "fast" },
-  { "text": "Teach me how to estimate a task", "documents": 0, "primitive": "learn", "level": "fast" }
+  {
+    "text": "Résume ce document",
+    "documents": 1,
+    "primitive": "understand",
+    "level": "applied",
+    "reads": true
+  },
+  {
+    "text": "Que dit ce contrat sur le préavis ?",
+    "documents": 1,
+    "primitive": "understand",
+    "level": "applied",
+    "reads": true
+  },
+  {
+    "text": "Combien de temps me reste-t-il ?",
+    "documents": 0,
+    "primitive": "verify",
+    "level": "fast",
+    "calculates": true
+  },
+  {
+    "text": "Calcule le total de ce devis",
+    "documents": 1,
+    "primitive": "verify",
+    "level": "applied",
+    "reads": true,
+    "calculates": true
+  },
+  {
+    "text": "Combien fait 1 240 € avec 15 % de remise ?",
+    "documents": 0,
+    "primitive": "verify",
+    "level": "applied",
+    "calculates": true
+  },
+  {
+    "text": "Convertis 3 heures en minutes",
+    "documents": 0,
+    "primitive": "convert",
+    "level": "fast",
+    "calculates": true
+  },
+  {
+    "text": "Par quoi je commence ce matin ?",
+    "documents": 0,
+    "primitive": "plan",
+    "level": "fast"
+  },
+  {
+    "text": "Organise mon après-midi",
+    "documents": 0,
+    "primitive": "plan",
+    "level": "fast"
+  },
+  {
+    "text": "Rédige un mail à Marc pour décaler la réunion",
+    "documents": 0,
+    "primitive": "communicate",
+    "level": "fast"
+  },
+  {
+    "text": "Explique-moi la méthode Pomodoro",
+    "documents": 0,
+    "primitive": "learn",
+    "level": "fast"
+  },
+  {
+    "text": "Pourquoi cet ordre est-il le meilleur ?",
+    "documents": 0,
+    "primitive": "talk",
+    "level": "deep"
+  },
+  {
+    "text": "Bonjour",
+    "documents": 0,
+    "primitive": "talk",
+    "level": "fast"
+  },
+  {
+    "text": "Bonjour",
+    "documents": 0,
+    "chosen": "deep",
+    "primitive": "talk",
+    "level": "deep"
+  },
+  {
+    "text": "Summarise this document",
+    "documents": 1,
+    "primitive": "understand",
+    "level": "applied",
+    "reads": true
+  },
+  {
+    "text": "How much is 20% off 350?",
+    "documents": 0,
+    "primitive": "verify",
+    "level": "applied",
+    "calculates": true
+  },
+  {
+    "text": "Write a short message to Anna",
+    "documents": 0,
+    "primitive": "communicate",
+    "level": "fast"
+  },
+  {
+    "text": "Teach me how to estimate a task",
+    "documents": 0,
+    "primitive": "learn",
+    "level": "fast"
+  },
+  {
+    "text": "Je veux rester concentré, comment faire ?",
+    "documents": 0,
+    "primitive": "talk",
+    "level": "fast",
+    "reads": false,
+    "calculates": false
+  },
+  {
+    "text": "I felt left out today",
+    "documents": 0,
+    "primitive": "talk",
+    "level": "fast",
+    "reads": false,
+    "calculates": false
+  },
+  {
+    "text": "Écris un mail à Paul pour le budget",
+    "documents": 0,
+    "primitive": "communicate",
+    "level": "fast",
+    "reads": false,
+    "calculates": false
+  },
+  {
+    "text": "Rédige un mail pour annoncer 15 % de remise",
+    "documents": 0,
+    "primitive": "communicate",
+    "level": "fast",
+    "reads": false,
+    "calculates": false
+  },
+  {
+    "text": "Restart my laptop checklist",
+    "documents": 0,
+    "primitive": "talk",
+    "level": "fast",
+    "reads": false,
+    "calculates": false
+  },
+  {
+    "text": "Quel est 15 % de 80 ?",
+    "documents": 0,
+    "primitive": "verify",
+    "level": "applied",
+    "reads": false,
+    "calculates": true
+  }
 ]

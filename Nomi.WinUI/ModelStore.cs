@@ -32,7 +32,7 @@ public sealed class ModelStore : IDisposable
             || Definition.Url.Scheme != "https" || Definition.Bytes <= 0
             || Definition.Sha256.Length != 64)
             throw new InvalidDataException("Invalid local model configuration.");
-        directory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Nyne", "Nomi", "models");
+        directory ??= Folder;
         ModelPath = Path.Combine(directory, Definition.FileName);
         http = handler is null ? new HttpClient() : new HttpClient(handler);
         http.Timeout = Timeout.InfiniteTimeSpan;
@@ -44,9 +44,10 @@ public sealed class ModelStore : IDisposable
         try
         {
             if (verified && Exists) return;
-            if (Exists && await VerifyAsync(ModelPath, progress, token))
+            if (Exists && (Trusted() || await VerifyAsync(ModelPath, progress, token)))
             {
                 verified = true;
+                Trust();
                 return;
             }
             if (!allowDownload) throw new InferenceException(Exists ? "model-corrupt" : "local-model-missing");
@@ -66,6 +67,7 @@ public sealed class ModelStore : IDisposable
             }
             File.Move(partial, ModelPath, true);
             verified = true;
+            Trust();
         }
         finally { gate.Release(); }
     }
@@ -111,6 +113,52 @@ public sealed class ModelStore : IDisposable
         }
         if (total != Definition.Bytes) throw new InferenceException("model-download-error");
     }
+
+    private string Stamp => ModelPath + ".verified";
+
+    private string Signature()
+    {
+        var file = new FileInfo(ModelPath);
+        return $"{Definition.Sha256.ToUpperInvariant()}|{file.Length}|{file.LastWriteTimeUtc.Ticks}";
+    }
+
+    // The 5 GB hash is computed once; later launches trust a file whose size and date have not changed since.
+    private bool Trusted()
+    {
+        try { return File.Exists(Stamp) && File.ReadAllText(Stamp) == Signature(); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    private void Trust()
+    {
+        try { File.WriteAllText(Stamp, Signature()); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
+
+    // Removes model files left by earlier versions, so an update does not keep gigabytes that nothing reads.
+    public static int Clean(string? directory, IEnumerable<string> kept)
+    {
+        directory ??= Folder;
+        var names = kept.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var removed = 0;
+        try
+        {
+            if (!Directory.Exists(directory)) return 0;
+            foreach (var path in Directory.EnumerateFiles(directory))
+            {
+                var name = Path.GetFileName(path);
+                var model = name.EndsWith(".partial", StringComparison.OrdinalIgnoreCase) ? name[..^8]
+                    : name.EndsWith(".verified", StringComparison.OrdinalIgnoreCase) ? name[..^9] : name;
+                if (!model.EndsWith(".gguf", StringComparison.OrdinalIgnoreCase) || names.Contains(model)) continue;
+                File.Delete(path);
+                removed++;
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        return removed;
+    }
+
+    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Nyne", "Nomi", "models");
 
     private async Task<bool> VerifyAsync(string path, IProgress<ModelProgress>? progress, CancellationToken token)
     {

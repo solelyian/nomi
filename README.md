@@ -65,8 +65,9 @@ Les chiffres ne sont ni arrondis ni convertis automatiquement.
 La génération reste progressive en interne, mais **aucun fragment brut n’est
 envoyé au navigateur ni affiché par WinUI**. Une interruption, une réponse
 tronquée ou invalide, un dépassement de 24 000 caractères ou une règle bloquante
-donne un message localisé, sans réponse partielle. Aucun deuxième modèle ni
-service payant n’intervient.
+donne un message localisé, sans réponse partielle. Seule exception : sur la page
+Nomi, une réponse qui atteint la longueur maximale est affichée avec la mention
+qu’elle s’arrête là. Aucun deuxième modèle ni service payant n’intervient.
 La nouvelle tentative éventuelle utilise le même délai global (cinq minutes
 dans WinUI, trois minutes dans l’aperçu web)
 et peut aussi être annulée. Elle peut allonger l’attente.
@@ -106,9 +107,16 @@ Internet n’est nécessaire. Ni Ollama, ni PowerShell, ni clé API ne sont requ
 
 Prévoir au moins 8 Go de RAM (16 Go conseillés) et 4 Go d’espace libre.
 L’inférence fonctionne sur CPU x64 ; la vitesse dépend de l’ordinateur.
-Le modèle reste dans `%LOCALAPPDATA%\Nyne\Nomi\models` après une mise à jour
-ou une désinstallation, pour éviter un nouveau téléchargement. Ce dossier peut
-être supprimé manuellement si Nomi n’est plus utilisé.
+Les modèles restent dans `%LOCALAPPDATA%\Nyne\Nomi\models` après une mise à jour.
+Leur empreinte SHA-256 est calculée une fois, puis seulement quand la taille ou la
+date du fichier change. Les fichiers de modèles d’une version précédente sont
+supprimés au lancement, et la désinstallation retire ce dossier.
+
+Un fichier de données illisible ou invalide n’est jamais écrasé : Nomi le garde à
+côté sous le nom `*.unreadable` et repart d’une liste vide.
+
+Chaque release publie `SHA256SUMS.txt`. Pour vérifier l’installateur :
+`Get-FileHash Nomi-Setup-x.y.z.exe -Algorithm SHA256`.
 
 ### Espaces de travail
 

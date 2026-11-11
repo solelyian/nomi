@@ -39,6 +39,12 @@ internal static class ModelChecks
             Check((await File.ReadAllBytesAsync(path)).SequenceEqual(bytes), "Complete verified payload");
             await store.EnsureAsync(false, null, default);
             Check(requests == 1, "Offline reuse");
+            Check(File.Exists(path + ".verified"), "Verified once, then trusted while size and date are unchanged");
+            var old = Path.Combine(directory, "Old-Model.gguf");
+            await File.WriteAllBytesAsync(old, bytes);
+            await File.WriteAllBytesAsync(old + ".partial", bytes);
+            await File.WriteAllTextAsync(Path.Combine(directory, "notes.txt"), "kept");
+            Check(ModelStore.Clean(directory, [definition.FileName]) == 2 && !File.Exists(old) && File.Exists(path) && File.Exists(path + ".verified") && File.Exists(Path.Combine(directory, "notes.txt")), "Model files of earlier versions are removed, current ones kept");
 
             await File.WriteAllBytesAsync(path, new byte[bytes.Length]);
             using var corruptStore = new ModelStore(directory, definition, new Handler((_, _) =>
