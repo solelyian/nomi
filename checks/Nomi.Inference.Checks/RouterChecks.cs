@@ -25,6 +25,10 @@ static class RouterChecks
         Check(Router.Decide("Bonjour", 0, "bogus").Level == Levels.Fast, "unknown levels fall back to auto");
         Check(Router.Decide("Rédige un mail à Claire", 0, Levels.Auto).Action == "communicate", "writing uses Communicate");
         Check(Router.Decide("Convert 90 minutes in hours", 0, Levels.Auto).Action == "convert", "English conversion");
+        foreach (var plain in new[] { "Je veux rester concentré, comment faire ?", "I felt left out today", "Écris un mail à Paul pour le budget", "Can you describe the panel on the left?" })
+            Check(!Router.Decide(plain, 0, Levels.Auto).Calculates, $"« {plain} » is not a calculation");
+        Check(Router.Decide("Quel est 15 % de 80 ?", 0, Levels.Auto).Calculates && Router.Decide("80 €, remise de 15 %", 0, Levels.Auto).Calculates, "amounts with figures are calculated");
+        Check(Router.Decide("Restart my laptop", 0, Levels.Auto).Primitive == "talk", "keywords match whole words");
 
         var nl = ((char)10).ToString();
         Check(ChatThread.TitleFrom("  Devis Acme" + nl + "détails") == "Devis Acme", "title is the first line");

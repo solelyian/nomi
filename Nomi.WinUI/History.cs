@@ -27,6 +27,7 @@ public static class HistoryStore
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
+            if (error is JsonException) SecureFile.SetAside(FilePath);
             return [];
         }
     }

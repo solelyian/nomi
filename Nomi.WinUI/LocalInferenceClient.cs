@@ -120,6 +120,10 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
                 return truncated;
             }, cancellationToken).ConfigureAwait(false);
         }
+        catch (Exception error) when (error is not (OperationCanceledException or InferenceException or CalcException or ObjectDisposedException))
+        {
+            throw new InferenceException("local-engine-error", error);
+        }
         finally { gate.Release(); }
     }
 
@@ -127,7 +131,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
     {
         var template = new LLamaTemplate(weights) { AddAssistant = true };
         template.Add("system", system);
-        template.Add("user", content.Replace("<|", "< |", StringComparison.Ordinal));
+        template.Add("user", VisionClient.Plain(content));
         var formatted = Encoding.UTF8.GetString(template.Apply());
         if (!formatted.EndsWith(ThinkOpen, StringComparison.Ordinal)) formatted += ThinkOpen;
         return reasoning ? formatted : formatted + $"\n{ThinkClose}\n\n";

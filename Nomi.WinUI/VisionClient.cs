@@ -41,12 +41,16 @@ public sealed class VisionClient : IAsyncDisposable
 
     private static int Threads => Math.Clamp(Environment.ProcessorCount - 1, 1, 8);
 
+    // Neutralises the turn markers of both models in text that comes from the user or a document.
+    public static string Plain(string text) =>
+        text.Replace("<|", "< |", StringComparison.Ordinal).Replace("|>", "| >", StringComparison.Ordinal);
+
     // llama.cpp cannot apply Gemma 4's Jinja chat template, so the turns are written as it renders them.
     public static string GemmaText(string system, string user) =>
-        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
+        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{Plain(user).Trim()}<turn|>\n<|turn>model\n";
 
     public static string GemmaPrompt(string system, string user) =>
-        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{Marker}\n{user.Replace("<|", "< |", StringComparison.Ordinal).Trim()}<turn|>\n<|turn>model\n";
+        $"<|turn>system\n{system.Trim()}<turn|>\n<|turn>user\n{Marker}\n{Plain(user).Trim()}<turn|>\n<|turn>model\n";
 
     private ModelParams Parameters() => new(model.ModelPath)
     {

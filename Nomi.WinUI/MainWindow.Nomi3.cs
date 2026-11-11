@@ -15,7 +15,6 @@ public sealed partial class MainWindow
     {
         if (nomiRun is not null) return;
         openThread = null;
-        detailsEntry = null;
         nomiDocuments.Clear();
         BuildNomi();
         DispatcherQueue.TryEnqueue(() => nomiBox?.Focus(FocusState.Programmatic));
@@ -25,7 +24,6 @@ public sealed partial class MainWindow
     {
         if (nomiRun is not null) return;
         openThread = thread;
-        detailsEntry = null;
         BuildNomi();
     }
 

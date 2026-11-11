@@ -57,40 +57,51 @@ public sealed partial class MainWindow
             var context = ChatContextNow();
             var earlier = thread.Items.Where(item => item != entry && item != asked).ToArray();
             var chatting = route.Action == "chat";
-            var prompt = chatting ? Conversation.Prompt(context, earlier, question) : $"{context.Text}\n\n{question}";
+            var prompt = chatting ? Conversation.Prompt(context, earlier, question) : Conversation.Single(context, question);
             var level = Escalation.Level(route, question, asked.Documents.Length, nomiLevel);
-            var engine = await Engine(level);
-            entry.Model = engine == fast ? fast.Model : inference.Model;
-            IReadOnlyList<CalcResult> results = [];
-            if (route.Calculates)
+            string answer;
+            List<ChatAction> actions;
+            while (true)
             {
-                results = await PlanAsync(engine, $"{context.Text}\n\n{question}", route.Action, documents, controller.Token);
-                entry.Verified = results.Count > 0 && results.All(result => result.Verified);
-                var shown = results.Where(result => result.Verified)
-                    .Select(result => $"{result.Id} = {Calc.Format(result.Value, CultureInfo.CurrentCulture)} {result.Unit}".Trim());
-                if (entry.Verified == true) prompt += "\n\n" + string.Format(CultureInfo.CurrentCulture, T("calcResults"), string.Join("; ", shown));
-            }
-            liveStep = Math.Max(0, route.Steps.Length - 2);
-            BuildNomi();
-            var result = await engine.GenerateNomiAsync(prompt, route.Action, language, "summary", controller.Token,
-                documents: documents.Count > 0 ? documents : null, reasoning: level == Levels.Deep,
-                instruction: $"{(chatting ? Conversation.Instruction() : "")} {AdaptiveInstruction()}".Trim());
-            var (answer, actions) = result.Accepted
-                ? chatting ? Conversation.Read(result.Text, context, board.Tasks) : (result.Text.Trim(), new List<ChatAction>())
-                : ("", []);
-            if (answer.Length == 0 && actions.Count == 0) throw new InferenceException("chatError");
-            if (route.Calculates)
-            {
+                var engine = await Engine(level, controller.Token);
+                entry.Model = engine == fast ? fast.Model : inference.Model;
+                entry.Level = level;
+                var asking = prompt;
+                IReadOnlyList<CalcResult> results = [];
+                if (route.Calculates)
+                {
+                    liveStep = 1;
+                    BuildNomi();
+                    results = await PlanAsync(engine, Conversation.Single(context, question), route.Action, documents, controller.Token);
+                    entry.Verified = results.Count > 0 && results.All(result => result.Verified);
+                    var shown = results.Where(result => result.Verified)
+                        .Select(result => $"{result.Id} = {Calc.Format(result.Value, CultureInfo.CurrentCulture)} {result.Unit}".Trim());
+                    if (entry.Verified == true) asking += "\n\n" + string.Format(CultureInfo.CurrentCulture, T("calcResults"), string.Join("; ", shown));
+                }
+                liveStep = Math.Max(0, route.Steps.Length - 2);
+                BuildNomi();
+                var result = await engine.GenerateNomiAsync(asking, route.Action, language, "summary", controller.Token,
+                    documents: documents.Count > 0 ? documents : null, reasoning: level == Levels.Deep,
+                    instruction: $"{(chatting ? Conversation.Instruction() : "")} {AdaptiveInstruction()}".Trim(), allowPartial: true);
+                (answer, actions) = result.Accepted
+                    ? chatting ? Conversation.Read(result.Text, context, board.Tasks) : (result.Text.Trim(), new List<ChatAction>())
+                    : ("", []);
+                if (answer.Length == 0 && actions.Count == 0) throw new InferenceException("chatError");
+                if (result.Changes.Contains(ResponsePolicy.Truncated)) answer += "\n\n" + T("nomiCut");
+                if (!route.Calculates) break;
                 var allowed = results.Where(result => result.Verified).Select(result => result.Value)
                     .Concat(Calc.Numbers(question)).Concat(Calc.Numbers(context.Text)).ToArray();
-                var blocked = Calc.Unverified(answer, allowed);
-                if (blocked.Count > 0)
+                var masked = Calc.Mask(answer, allowed, out var hidden);
+                if (hidden == 0) break;
+                entry.Verified = false;
+                if (nomiLevel == Levels.Auto && entry.EscalatedFrom is null && Escalation.Next(level) is { } next)
                 {
-                    entry.Verified = false;
-                    if (Escalation.Next(level) is { } next) { entry.EscalatedFrom = level; level = next; }
-                    foreach (var number in blocked) answer = answer.Replace(number, "…", StringComparison.Ordinal);
-                    answer += "\n\n" + T("calcBlocked");
+                    entry.EscalatedFrom = level;
+                    level = next;
+                    continue;
                 }
+                answer = masked + "\n\n" + T("calcBlocked");
+                break;
             }
             entry.Level = level;
             entry.Text = answer;
@@ -102,7 +113,7 @@ public sealed partial class MainWindow
             entry.Stopped = true;
             entry.Text = entry.Text.Length > 0 ? entry.Text : T("nomiStoppedShort");
         }
-        catch (Exception error) when (error is InferenceException or HttpRequestException or IOException or System.Text.Json.JsonException)
+        catch (Exception error)
         {
             StartupDiagnostics.Write($"Nomi answer failed: {error.GetType().Name} {error.Message}");
             entry.Failed = true;
@@ -144,17 +155,17 @@ public sealed partial class MainWindow
             }, token, T("calcPlanInstruction"), documents.Count > 0 ? documents : null);
             return truncated ? [] : Calc.Run(Calc.ParsePlan(plan.ToString()));
         }
-        catch (CalcException) { return []; }
+        catch (Exception error) when (error is CalcException || error is InferenceException { Message: not "busy" }) { return []; }
     }
 
     // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.
-    private async Task<NomiInferenceClient> Engine(string level)
+    private async Task<NomiInferenceClient> Engine(string level, CancellationToken token)
     {
         if (level != Levels.Fast || !fast.HasModel) return inference;
         if (fast.Ready) return fast;
         try
         {
-            await fast.PrepareAsync(false, null, CancellationToken.None);
+            await fast.PrepareAsync(false, null, token);
             return fast;
         }
         catch (Exception error) when (error is InferenceException or IOException or InvalidDataException or LLama.Exceptions.RuntimeError)

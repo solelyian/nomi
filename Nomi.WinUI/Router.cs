@@ -25,19 +25,22 @@ public sealed record Route(string Action, string Primitive, string Level, string
 
 public static class Router
 {
-    private static readonly string[] DeepWords = ["pourquoi", "optimis", "compare", "démontre", "analyse", "why", "optimi", "prove", "trade-off"];
-    private static readonly string[] CalcWords = ["combien", "total", "reste", "remise", "budget", "moyenne", "pourcent", "how much", "how many", "how long", "left", "discount", "average", "percent", "%", "€", "$"];
-    private static readonly string[] ConvertWords = ["convert", "en heures", "en minutes", "en euros", "in hours", "in minutes"];
-    private static readonly string[] PlanWords = ["commence", "journée", "priorit", "planifi", "organis", "start", "my day", "priority", "plan"];
-    private static readonly string[] WriteWords = ["mail", "message", "rédige", "réponds", "brouillon", "write", "draft", "reply"];
-    private static readonly string[] LearnWords = ["explique", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain", "what is", "learn", "teach", "how does"];
+    private static readonly string[] DeepWords = ["pourquoi", "optimis*", "compar*", "démontr*", "analys*", "why", "optimi*", "prove", "trade-off"];
+    private static readonly string[] CalcWords = ["combien", "calcul*", "additionn*", "multipli*", "moyenne", "pourcent*", "how much", "how many", "how long", "average", "percent*"];
+    private static readonly string[] AmountWords = ["total", "totaux", "reste", "restant", "remise", "budget", "tva", "left", "remaining", "discount", "vat", "%", "€", "$"];
+    private static readonly string[] ConvertWords = ["convert*", "en heures", "en minutes", "en euros", "in hours", "in minutes"];
+    private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
+    private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
+    private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
 
     public static Route Decide(string text, int documents, string chosen)
     {
         var t = Normalize(text);
         var reads = documents > 0;
-        var digits = t.Count(char.IsDigit) >= 2;
-        var calculates = reads && (Has(t, CalcWords) || digits) || Has(t, CalcWords) || Has(t, ConvertWords);
+        var count = t.Count(char.IsDigit);
+        var digits = count >= 2;
+        var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
+        var calculates = Has(t, CalcWords) || amount || Has(t, ConvertWords) || reads && digits;
         var primitive = Has(t, ConvertWords) ? "convert"
             : calculates ? "verify"
             : Has(t, PlanWords) ? "plan"
@@ -61,7 +64,20 @@ public static class Router
         return new Route(action, primitive, level, [.. steps], reason, reads, calculates);
     }
 
-    private static bool Has(string text, string[] words) => words.Any(text.Contains);
+    private static bool Has(string text, string[] words) => words.Any(word => Found(text, word));
+
+    private static bool Found(string text, string word)
+    {
+        var stem = word.EndsWith('*');
+        var key = stem ? word[..^1] : word;
+        if (!char.IsLetter(key[0])) return text.Contains(key, StringComparison.Ordinal);
+        for (var i = text.IndexOf(key, StringComparison.Ordinal); i >= 0; i = text.IndexOf(key, i + 1, StringComparison.Ordinal))
+        {
+            var end = i + key.Length;
+            if ((i == 0 || !char.IsLetter(text[i - 1])) && (stem || end == text.Length || !char.IsLetter(text[end]))) return true;
+        }
+        return false;
+    }
 
     private static string Normalize(string text) =>
         text.ToLower(CultureInfo.InvariantCulture).Replace('’', '\'').Normalize(NormalizationForm.FormC);

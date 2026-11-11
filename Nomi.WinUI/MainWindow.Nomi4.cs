@@ -31,7 +31,7 @@ public sealed partial class MainWindow
         }
         var box = new TextBox
         {
-            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxLength = 6000, MinHeight = 44, MaxHeight = 200, FontSize = 15,
+            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxLength = Conversation.QuestionLimit, MinHeight = 44, MaxHeight = 200, FontSize = 15,
             BorderThickness = new Thickness(0), Background = null, Padding = new Thickness(2, 6, 2, 4), PlaceholderText = T("nomiPlaceholder"),
             IsEnabled = nomiRun is null, Text = nomiBox?.Text ?? ""
         };

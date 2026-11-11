@@ -805,6 +805,7 @@
     "nomiStep_answer": "Answer",
     "nomiThought": "Thought · {0} s",
     "nomiStopped": "Answer stopped.",
+    "nomiCut": "The answer was too long and stops here. Ask for the rest if you need it.",
     "nomiStoppedShort": "Answer stopped before the end.",
     "nomiPropose": "Nomi suggests · nothing happens without your click",
     "nomiApply": "Apply",

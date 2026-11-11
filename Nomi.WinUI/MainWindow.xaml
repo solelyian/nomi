@@ -184,7 +184,7 @@
                                 <StackPanel x:Name="ActionChips" Orientation="Horizontal" Spacing="6" AutomationProperties.Name="Action" />
                             </ScrollViewer>
                             <TextBox x:Name="RequestBox" AcceptsReturn="True" TextWrapping="Wrap"
-                                     MaxLength="6000" MinHeight="74" MaxHeight="220" FontSize="16"
+                                     MaxLength="4000" MinHeight="74" MaxHeight="220" FontSize="16"
                                      BorderThickness="0" Background="Transparent" Padding="4,8,4,6"
                                      Foreground="{ThemeResource NomiInk}" TextChanged="RequestChanged"
                                      GotFocus="ComposerFocused" LostFocus="ComposerUnfocused">

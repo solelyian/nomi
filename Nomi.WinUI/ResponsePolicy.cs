@@ -16,6 +16,7 @@ public static class ResponsePolicy
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant;
     public static int MaxCharacters => Config.MaxCharacters;
     public static string RegenerationInstruction => Config.RegenerationInstruction;
+    public const string Truncated = "truncated";
     public static readonly string[] RetriedReasons = ["conflicting-result", "wrong-arithmetic"];
 
     private static Regex Pattern(string pattern) => new(pattern, Options, TimeSpan.FromSeconds(1));

@@ -19,7 +19,8 @@ public sealed class RoutingLog
             var text = SecureFile.Read(FilePath);
             if (text is not null) Entries.AddRange(JsonSerializer.Deserialize<List<RoutingEntry>>(text) ?? []);
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or System.Security.Cryptography.CryptographicException) { }
+        catch (JsonException) { SecureFile.SetAside(FilePath); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Security.Cryptography.CryptographicException) { }
     }
 
     public void Add(RoutingEntry entry)
