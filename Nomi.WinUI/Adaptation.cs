@@ -147,6 +147,7 @@ public sealed class ProfileStore(string? file = null)
         }
         catch (JsonException)
         {
+            SecureFile.SetAside(Path);
             return new Profile();
         }
     }
@@ -179,27 +180,42 @@ public static class SecureFile
         catch (IOException) { return false; }
     }
 
+    private static readonly HashSet<string> Held = new(StringComparer.OrdinalIgnoreCase);
+
     public static string? Read(string path)
     {
-        try
+        for (var attempt = 0; ; attempt++)
         {
-            if (!File.Exists(path)) return null;
-            var bytes = File.ReadAllBytes(path);
-            if (!bytes.AsSpan().StartsWith(Magic)) return Encoding.UTF8.GetString(bytes);
-            if (!OperatingSystem.IsWindows()) return null;
-            var plain = ProtectedData.Unprotect(bytes[Magic.Length..], Entropy, DataProtectionScope.CurrentUser);
-            return Encoding.UTF8.GetString(plain);
+            try
+            {
+                if (!File.Exists(path)) return null;
+                var bytes = File.ReadAllBytes(path);
+                if (!bytes.AsSpan().StartsWith(Magic)) return Encoding.UTF8.GetString(bytes);
+                if (!OperatingSystem.IsWindows()) return null;
+                var plain = ProtectedData.Unprotect(bytes[Magic.Length..], Entropy, DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(plain);
+            }
+            catch (CryptographicException)
+            {
+                SetAside(path);
+                return null;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                if (attempt < 3) { Thread.Sleep(80); continue; }
+                StartupDiagnostics.Write($"Local file could not be read and is kept: {Path.GetFileName(path)}");
+                lock (Held) Held.Add(path);
+                return null;
+            }
         }
-        catch (CryptographicException)
-        {
-            StartupDiagnostics.Write($"Unreadable local file set aside: {Path.GetFileName(path)}");
-            try { File.Move(path, path + ".unreadable", true); } catch (IOException) { }
-            return null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
+    }
+
+    // A file that cannot be understood is kept beside the new one instead of being overwritten by an empty list.
+    public static void SetAside(string path)
+    {
+        StartupDiagnostics.Write($"Unreadable local file set aside: {Path.GetFileName(path)}");
+        try { if (File.Exists(path)) File.Move(path, path + ".unreadable", true); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { lock (Held) Held.Add(path); }
     }
 
     public static void Write(string path, string text)
@@ -207,6 +223,13 @@ public static class SecureFile
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            bool held;
+            lock (Held) held = Held.Contains(path);
+            if (held)
+            {
+                if (File.Exists(path)) File.Copy(path, path + ".unreadable", true);
+                lock (Held) Held.Remove(path);
+            }
             var plain = Encoding.UTF8.GetBytes(text);
             var data = OperatingSystem.IsWindows()
                 ? [.. Magic, .. ProtectedData.Protect(plain, Entropy, DataProtectionScope.CurrentUser)]

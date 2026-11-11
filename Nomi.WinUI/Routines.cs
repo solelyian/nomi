@@ -62,6 +62,7 @@ public sealed class RoutineStore
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
+            if (error is JsonException) SecureFile.SetAside(file);
             return [];
         }
     }

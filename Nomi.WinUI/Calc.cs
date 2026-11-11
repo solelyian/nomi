@@ -70,33 +70,89 @@ public static partial class Calc
         return rounded.ToString(rounded == Math.Truncate(rounded) ? "#,0" : "#,0.##", culture);
     }
 
-    public static IReadOnlyList<string> Unverified(string answer, IEnumerable<decimal> allowed)
+    public static IReadOnlyList<string> Unverified(string answer, IEnumerable<decimal> allowed) =>
+        Blocked(answer, allowed).Select(match => match.Value.Trim()).ToList();
+
+    public static string Mask(string answer, IEnumerable<decimal> allowed, out int hidden)
     {
-        var known = allowed.Select(value => Math.Round(value, 2)).ToHashSet();
-        var blocked = new List<string>();
+        var blocked = Blocked(answer, allowed);
+        hidden = blocked.Count;
+        var text = new System.Text.StringBuilder(answer);
+        foreach (var match in blocked.OrderByDescending(match => match.Index))
+            text.Remove(match.Index, match.Length).Insert(match.Index, '…');
+        return text.ToString();
+    }
+
+    private static List<Match> Blocked(string answer, IEnumerable<decimal> allowed)
+    {
+        var known = allowed.Select(Math.Abs).Distinct().ToArray();
+        var blocked = new List<Match>();
         foreach (Match match in NumberPattern().Matches(answer))
         {
-            if (!TryRead(match.Value, out var number)) continue;
-            if (number == Math.Truncate(number) && number is >= 0 and <= 10) continue;
-            if (!known.Contains(Math.Round(number, 2)) && !known.Contains(Math.Round(number / 100, 2))) blocked.Add(match.Value.Trim());
+            if (Dated(answer, match)) continue;
+            var readings = Readings(match.Value, false);
+            if (readings.Count == 0) continue;
+            if (match.Value.All(char.IsDigit) && readings[0] <= 10) continue;
+            if (!readings.Any(number => known.Any(value => Same(value, number)))) blocked.Add(match);
         }
         return blocked;
+    }
+
+    private static bool Dated(string text, Match match)
+    {
+        foreach (Match date in DatePattern().Matches(text))
+            if (match.Index >= date.Index && match.Index < date.Index + date.Length) return true;
+        return false;
+    }
+
+    private static bool Same(decimal value, decimal number)
+    {
+        if (Math.Abs(value) > 1e20m) return value == number;
+        var places = Math.Min(6, (int)number.Scale);
+        return Math.Round(value, places, MidpointRounding.AwayFromZero) == number
+            || Math.Round(value * 100, places, MidpointRounding.AwayFromZero) == number;
     }
 
     public static IEnumerable<decimal> Numbers(string text)
     {
         foreach (Match match in NumberPattern().Matches(text))
-            if (TryRead(match.Value, out var number)) yield return number;
+            foreach (var number in Readings(match.Value, false)) yield return number;
     }
 
-    private static bool TryRead(string text, out decimal number)
+    private static IReadOnlyList<decimal> Readings(string text, bool expression)
     {
         var clean = text.Replace("\u202F", "").Replace("\u00A0", "").Replace(" ", "");
-        if (clean.Contains(',') && clean.Contains('.')) clean = clean.Replace(",", "");
-        else if (clean.Count(c => c == ',') == 1 && clean.Length - clean.IndexOf(',') - 1 != 3) clean = clean.Replace(',', '.');
-        else clean = clean.Replace(",", "");
-        return decimal.TryParse(clean, NumberStyles.Number, CultureInfo.InvariantCulture, out number);
+        var commas = clean.Count(c => c == ',');
+        var dots = clean.Count(c => c == '.');
+        string[] forms;
+        if (commas + dots == 0) forms = [clean];
+        else if (commas > 0 && dots > 0)
+        {
+            var decimalComma = clean.LastIndexOf(',') > clean.LastIndexOf('.');
+            var (group, mark) = decimalComma ? ('.', ',') : (',', '.');
+            var whole = clean[..clean.LastIndexOf(mark)];
+            forms = clean.Count(c => c == mark) == 1 && Grouped().IsMatch(whole)
+                ? [whole.Replace(group.ToString(), "") + "." + clean[(clean.LastIndexOf(mark) + 1)..]] : [];
+        }
+        else
+        {
+            var mark = commas > 0 ? ',' : '.';
+            var whole = clean.Replace(mark.ToString(), "");
+            var fraction = clean.Replace(mark, '.');
+            var tail = clean.Length - clean.LastIndexOf(mark) - 1;
+            forms = commas + dots > 1 ? Grouped().IsMatch(clean) ? [whole] : []
+                : tail != 3 || clean.StartsWith('0') || expression && mark == '.' ? [fraction]
+                : expression ? []
+                : mark == ',' ? [whole, fraction] : [fraction, whole];
+        }
+        var numbers = new List<decimal>();
+        foreach (var form in forms)
+            if (decimal.TryParse(form, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number)) numbers.Add(number);
+        return numbers;
     }
+
+    private static string Literal(string token) =>
+        Readings(token, true) is [var number] ? number.ToString(CultureInfo.InvariantCulture) : throw new CalcException($"number {token}");
 
     private static double Recheck(string expression, IReadOnlyDictionary<string, double> names)
     {
@@ -173,11 +229,11 @@ public static partial class Calc
             if (char.IsDigit(c) || c == '.')
             {
                 var start = i;
-                while (i < text.Length && (char.IsDigit(text[i]) || text[i] == '.')) i++;
-                yield return text[start..i];
+                while (i < text.Length && (char.IsDigit(text[i]) || text[i] is '.' or ',')) i++;
+                yield return Literal(text[start..i]);
                 continue;
             }
-            if (char.IsLetter(c) || c == '_')
+            if (char.IsLetter(c))
             {
                 var start = i;
                 while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
@@ -193,7 +249,7 @@ public static partial class Calc
     {
         if (expression.Length > MaxLength) throw new CalcException("length");
         var text = expression.Replace('×', '*').Replace('÷', '/').Replace('−', '-').Replace("\u202F", "").Replace("\u00A0", "");
-        return DecimalComma().Replace(ThousandsSpace().Replace(text, "$1"), "$1.$2");
+        return ThousandsSpace().Replace(text, "$1");
     }
 
     private sealed class Exact(string expression, IReadOnlyDictionary<string, decimal> names)
@@ -212,10 +268,22 @@ public static partial class Calc
 
         private decimal Sum()
         {
+            var start = at;
             var value = Product();
-            while (Peek is "+" or "-") value = tokens[at++] == "+" ? value + Product() : value - Product();
+            var ratio = Rate(start) || value == 1;
+            while (Peek is "+" or "-")
+            {
+                var add = tokens[at++] == "+";
+                start = at;
+                var right = Product();
+                if (!Rate(start)) ratio = false;
+                else if (!ratio) throw new CalcException("percent");
+                value = add ? value + right : value - right;
+            }
             return value;
         }
+
+        private bool Rate(int start) => at == start + 2 && tokens[start + 1] == "%";
 
         private decimal Product()
         {
@@ -272,15 +340,18 @@ public static partial class Calc
         }
     }
 
-    [GeneratedRegex("^[A-Za-z_][A-Za-z0-9_]{0,15}$")]
+    [GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{0,15}$")]
     private static partial Regex IdPattern();
 
-    [GeneratedRegex(@"(?<![\w.,])\d{1,3}(?:[\u202F\u00A0 ]\d{3})+(?:[.,]\d+)?|(?<![\w.,])\d+(?:[.,]\d+)?")]
+    [GeneratedRegex(@"(?<![\w.,])\d{1,3}(?:[\u202F\u00A0 ]\d{3})+(?:[.,]\d+)?|(?<![\w.,])\d+(?:[.,]\d+)*")]
     private static partial Regex NumberPattern();
 
     [GeneratedRegex(@"(\d) (?=\d{3}(?!\d))")]
     private static partial Regex ThousandsSpace();
 
-    [GeneratedRegex(@"(\d),(\d)")]
-    private static partial Regex DecimalComma();
+    [GeneratedRegex(@"\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2} ?[:hH] ?\d{2}\b")]
+    private static partial Regex DatePattern();
+
+    [GeneratedRegex(@"^\d{1,3}(?:[.,]\d{3})+$")]
+    private static partial Regex Grouped();
 }

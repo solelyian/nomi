@@ -24,6 +24,10 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 8.0.x
+      - name: Lint, type-check and test the shared policy and preview (JavaScript)
+        run: |
+          npm ci
+          npm run check
       - name: Publish self-contained x64
         run: >
           dotnet publish Nomi.WinUI/Nomi.WinUI.csproj -c Release -r win-x64
@@ -142,12 +146,19 @@ jobs:
           path: artifacts/ui-*.png
       - name: Zip portable build
         run: Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
+      - name: Write SHA-256 checksums
+        run: |
+          Get-ChildItem artifacts/Nomi-Setup-*.exe, artifacts/Nomi-win-x64.zip | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content -Encoding ascii artifacts/SHA256SUMS.txt
+          Get-Content artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Nomi-windows
           path: |
             artifacts/Nomi-Setup-*.exe
             artifacts/Nomi-win-x64.zip
+            artifacts/SHA256SUMS.txt
 
   release:
     needs: publish
@@ -165,3 +176,4 @@ jobs:
           files: |
             artifacts/Nomi-Setup-*.exe
             artifacts/Nomi-win-x64.zip
+            artifacts/SHA256SUMS.txt

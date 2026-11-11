@@ -805,6 +805,7 @@
     "nomiStep_answer": "Réponse",
     "nomiThought": "Réfléchi · {0} s",
     "nomiStopped": "Réponse arrêtée.",
+    "nomiCut": "La réponse était trop longue et s’arrête ici. Demandez la suite si vous en avez besoin.",
     "nomiStoppedShort": "Réponse arrêtée avant la fin.",
     "nomiPropose": "Nomi propose · rien n’est appliqué sans votre clic",
     "nomiApply": "Appliquer",

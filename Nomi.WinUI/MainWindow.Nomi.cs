@@ -15,7 +15,6 @@ public sealed partial class MainWindow
     private string nomiLevel = Levels.Auto;
     private bool historyShown = true;
     private string historyQuery = "";
-    private ChatEntry? detailsEntry;
     private readonly List<AttachedDocument> nomiDocuments = [];
     private CancellationTokenSource? nomiRun;
     private ChatEntry? liveEntry;

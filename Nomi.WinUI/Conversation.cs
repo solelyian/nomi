@@ -68,6 +68,8 @@ public sealed class ThreadStore(string? file = null, string? legacy = null)
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
+            if (error is JsonException) SecureFile.SetAside(Path);
+            if (error is JsonException) SecureFile.SetAside(Path);
             Threads = [];
         }
         if (Threads.Count == 0 && File.Exists(Legacy))
@@ -162,7 +164,7 @@ public static class Conversation
 {
     public const int Budget = 5600;
     public const int MaxTasks = 12;
-    public const int QuestionLimit = 1500;
+    public const int QuestionLimit = 4000;
     public const int MaxActions = 3;
     private static readonly string Line = ((char)10).ToString();
 
@@ -198,10 +200,17 @@ public static class Conversation
         return new(text.ToString().Trim(), refs, open.Length);
     }
 
+    public static string Single(ChatContext context, string question)
+    {
+        question = Short(question.Trim(), QuestionLimit);
+        return $"{Short(context.Text, Math.Max(200, Budget - question.Length))}{Line}{Line}{question}";
+    }
+
     public static string Prompt(ChatContext context, IReadOnlyList<ChatEntry> earlier, string question)
     {
         question = Short(question.Trim(), QuestionLimit);
-        var room = Budget - context.Text.Length - question.Length - 420;
+        var known = Short(context.Text, Math.Max(200, Budget - question.Length - 420));
+        var room = Budget - known.Length - question.Length - 420;
         var kept = new List<string>();
         var index = earlier.Count - 1;
         for (; index >= 0; index--)
@@ -212,7 +221,7 @@ public static class Conversation
             room -= entry.Length + 1;
             kept.Insert(0, entry);
         }
-        var text = new StringBuilder(context.Text).Append(Line).Append(Line);
+        var text = new StringBuilder(known).Append(Line).Append(Line);
         var dropped = earlier.Take(index + 1).Where(item => item.Role == "user").Select(item => FirstWords(item.Text, 8)).ToArray();
         if (dropped.Length > 0)
             text.Append("Earlier topics, summarised: ").Append(Short(string.Join("; ", dropped), 300)).Append(Line);

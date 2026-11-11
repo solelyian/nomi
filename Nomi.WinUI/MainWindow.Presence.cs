@@ -68,6 +68,7 @@ public sealed partial class MainWindow
     {
         if (ticker is null) StartTicker();
         _ = CheckForUpdates(false);
+        _ = Task.Run(() => ModelStore.Clean(null, new[] { "local-model.json", "vision-model.json", "vision-projector.json" }.Select(file => ModelDefinition.Load(file).FileName)));
         _ = RefreshAgenda(false);
     }
 

@@ -63,7 +63,7 @@ public sealed partial class MainWindow : Window
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? elapsedTimer;
     private Storyboard? pulse;
     private string shownPanel = "";
-    private Catalog Current => catalogs[language];
+    private new Catalog Current => catalogs[language];
     private NomiAction Action => Current.Actions.Single(item => item.Id == actionId);
     private WorkContext? Context => Current.Contexts.SingleOrDefault(item => item.Id == contextId);
     private Draft CurrentDraft
@@ -1457,7 +1457,7 @@ public sealed partial class MainWindow : Window
             Choose(PaletteResults.SelectedItem);
             key.Handled = true;
         }
-        else if (sender == PaletteSearch && (key.Key is VirtualKey.Down or VirtualKey.Up) && PaletteResults.Items.Count > 0)
+        else if (ReferenceEquals(sender, PaletteSearch) && (key.Key is VirtualKey.Down or VirtualKey.Up) && PaletteResults.Items.Count > 0)
         {
             var delta = key.Key == VirtualKey.Down ? 1 : -1;
             PaletteResults.SelectedIndex = Math.Clamp(PaletteResults.SelectedIndex + delta, 0, PaletteResults.Items.Count - 1);
@@ -1530,7 +1530,7 @@ public sealed partial class MainWindow : Window
     private void FormatToggled(object sender, RoutedEventArgs args)
     {
         if (updating) return;
-        summary = sender == SummaryToggle;
+        summary = ReferenceEquals(sender, SummaryToggle);
         SaveProfile();
         StepsToggle.IsChecked = !summary;
         SummaryToggle.IsChecked = summary;
