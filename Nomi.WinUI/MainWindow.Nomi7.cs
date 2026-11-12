@@ -23,27 +23,10 @@ public sealed partial class MainWindow
         var intro = Text(T("nomiNeedsModelText"), 14.5, "NomiInk2");
         intro.TextAlignment = TextAlignment.Center;
         stack.Children.Add(intro);
+        var host = new Border { Child = Glass(ResourcesCard(nomiResources, null), 22, true) };
+        nomiResources.Host = host;
+        stack.Children.Add(host);
         stack.Children.Add(HardwareCard());
-        if (modelPreparation is not null)
-        {
-            var bar = new ProgressBar { Value = modelProgress.Fraction * 100, IsIndeterminate = modelProgress.Fraction <= 0, Maximum = 100 };
-            AutomationProperties.SetName(bar, T("nomiDownloading"));
-            stack.Children.Add(bar);
-            stack.Children.Add(Text(T("nomiDownloading"), 12.5, "NomiInk3"));
-        }
-        else
-        {
-            var download = Chip(T("nomiDownload"), "NomiPrimary", "\uE896", "NomiDownload");
-            download.HorizontalAlignment = HorizontalAlignment.Center;
-            download.Click += async (_, _) =>
-            {
-                var task = PrepareModel();
-                BuildNomi();
-                await task;
-                if (view == "nomi") BuildNomi();
-            };
-            stack.Children.Add(download);
-        }
         stack.HorizontalAlignment = HorizontalAlignment.Center;
         return new ScrollViewer { Content = stack, HorizontalScrollMode = ScrollMode.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalContentAlignment = VerticalAlignment.Center };
     }

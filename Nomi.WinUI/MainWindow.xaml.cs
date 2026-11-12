@@ -1020,6 +1020,7 @@ public sealed partial class MainWindow : Window
                 if (modelPreparation != controller) return;
                 modelProgress = value;
                 UpdateEngine();
+                ResourcesChanged();
             });
             await inference.PrepareAsync(true, progress, controller.Token);
             modelProgress = new("local-model-ready", 1);
@@ -1043,6 +1044,7 @@ public sealed partial class MainWindow : Window
         {
             modelPreparation = null;
             UpdateEngine();
+            ResourcesChanged();
             if (inference.Ready && onboarding is null) RequestBox.Focus(FocusState.Programmatic);
         }
     }

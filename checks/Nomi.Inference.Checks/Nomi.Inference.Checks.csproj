@@ -19,6 +19,7 @@
     <Compile Include="../../Nomi.WinUI/Adaptation.cs" Link="Adaptation.cs" />
     <Compile Include="../../Nomi.WinUI/ScreenFrame.cs" Link="ScreenFrame.cs" />
     <Compile Include="../../Nomi.WinUI/VisionClient.cs" Link="VisionClient.cs" />
+    <Compile Include="../../Nomi.WinUI/LocalResources.cs" Link="LocalResources.cs" />
     <Compile Include="../../Nomi.WinUI/StartupDiagnostics.cs" Link="StartupDiagnostics.cs" />
     <Compile Include="../../Nomi.WinUI/Routines.cs" Link="Routines.cs" />
     <Compile Include="../../Nomi.WinUI/Agenda.cs" Link="Agenda.cs" />

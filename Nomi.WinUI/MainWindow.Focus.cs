@@ -491,7 +491,7 @@ public sealed partial class MainWindow
             TableCheck.Format(issue.Expected, culture), TableCheck.Format(issue.Shown, culture));
     }
 
-    private async Task PrepareVision(bool download)
+    private async Task PrepareVision(bool download, bool load = true)
     {
         if (visionPreparation is not null) return;
         using var controller = new CancellationTokenSource();
@@ -506,8 +506,10 @@ public sealed partial class MainWindow
                 var redraw = value.Stage != visionProgress.Stage || Math.Abs(value.Fraction - visionProgress.Fraction) >= 0.01;
                 visionProgress = value;
                 if (redraw && view == "focus") BuildFocus();
+                if (redraw) ResourcesChanged();
             });
-            await vision.PrepareAsync(download, progress, controller.Token);
+            if (load) await vision.PrepareAsync(download, progress, controller.Token);
+            else await vision.DownloadAsync(progress, controller.Token);
             visionProgress = new("local-model-ready", 1);
         }
         catch (OperationCanceledException)
@@ -531,6 +533,7 @@ public sealed partial class MainWindow
         }
         if (focusState == "idle" && vision.Ready) await vision.UnloadAsync();
         if (view == "focus") BuildFocus();
+        ResourcesChanged();
     }
 
     private async Task StartFocus()

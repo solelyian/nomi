@@ -94,9 +94,13 @@ en JavaScript et en C#. Relancer les contrôles puis redémarrer Nomi.
 
 Télécharger l’installateur depuis les [Releases](https://github.com/solelyian/nomi/releases),
 puis l’ouvrir par double-clic. Lancer Nomi depuis le Bureau ou le Menu Démarrer.
-Dans Nomi, choisir **Télécharger le modèle** : environ 2,5 Go sont téléchargés,
-vérifiés puis chargés. La progression et le bouton **Arrêter** restent disponibles ;
-un téléchargement interrompu reprend au prochain essai.
+Dans l’accueil ou dans la page Nomi, choisir **Télécharger maintenant** (« Téléchargement
+des ressources nécessaires ») : Qwen3 8B (environ 5 Go) puis Gemma 4 E4B et son projecteur
+(environ 6 Go) sont téléchargés en une fois, vérifiés, puis Qwen3 8B est chargé. Chaque modèle
+a sa ligne (rôle, taille, présent ou à télécharger) et la progression globale suit les octets.
+**Mettre en pause** arrête le téléchargement ; il reprend là où il s’était arrêté.
+Rien n’est téléchargé sans ce clic. Si seul Gemma 4 manque, la page Nomi le propose dans
+un bandeau que l’on peut masquer.
 
 Le moteur est intégré dans l’installation. Le modèle gratuit Qwen3 8B (mode réflexion intégré),
 quantifié Q4_K_M, est téléchargé séparément depuis Hugging Face (Apache-2.0).
@@ -134,8 +138,8 @@ sans clic. **Assistant** regroupe les six actions. `Ctrl+K` ouvre la palette
 
 Au premier lancement, un accueil en page entière règle Nomi en dix étapes nommées :
 bienvenue et langue, lecture (thème, espacement, contraste, animations), nombres,
-repères et jours travaillés, façon d’avancer, IA locale (analyse du processeur, de la mémoire,
-de l’espace libre et du NPU, puis « Télécharger maintenant » ; le téléchargement continue
+repères et jours travaillés, façon d’avancer, ressources (téléchargement groupé de Qwen3 8B et Gemma 4,
+analyse du processeur, de la mémoire, de l’espace libre et du NPU ; le téléchargement continue
 en arrière-plan), présence, agenda, données et première
 tâche (une par ligne). Tout se fait au clavier ; chaque étape sauf la langue peut
 être passée et garde alors les réglages par défaut. « Terminer plus tard » enregistre
@@ -239,7 +243,8 @@ le fait recopier ligne par ligne puis recalcule lui-même totaux, pourcentages e
 produits (par exemple CA × taux) ; un écart n’est signalé que s’il ressort de ce
 calcul, et reste une suggestion à vérifier.
 
-Cette fonction utilise un second modèle, téléchargé à part depuis l’espace Focus :
+Cette fonction utilise un second modèle, téléchargé avec les ressources nécessaires
+(accueil ou page Nomi) ou depuis l’espace Focus :
 Gemma 4 E4B (Q4_K_M) et son projecteur vision (F16), environ 5,97 Go
 au total, épinglés avec taille et SHA-256 dans `content/vision-model.json` et
 `content/vision-projector.json` (Apache-2.0). Le téléchargement reprend après

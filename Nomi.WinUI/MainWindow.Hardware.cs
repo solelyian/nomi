@@ -43,13 +43,7 @@ public sealed partial class MainWindow
         FillHardware();
     }
 
-    private long HardwareModelBytes()
-    {
-        if (inference.HasModel) return 0;
-        if (inference.DownloadBytes > 0) return inference.DownloadBytes;
-        try { return ModelDefinition.Load().Bytes; }
-        catch (Exception error) when (error is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { return 0; }
-    }
+    private long HardwareModelBytes() => LocalResources.MissingBytes(ResourceItems());
 
     private void FillHardware()
     {
