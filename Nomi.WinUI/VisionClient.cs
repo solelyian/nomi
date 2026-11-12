@@ -18,6 +18,9 @@ public sealed class VisionClient : IAsyncDisposable
     private const int AnswerTokens = 640;
     private const int ImageSide = 1600;
     private const int ImagePixels = 1100 * 32 * 32;
+    private const int CallTokens = 180;
+    private const int CallSide = 1024;
+    private static readonly string[] Markers = ["<turn|>", "<|turn>", "<end_of_turn>", "<start_of_turn>", "<|im_end|>"];
     private const string Marker = "<__media__>";
     private static readonly Regex Field = new(@"^\s*(TASK|WHERE|CHECK|NEXT|MATCH)\s*[:：]\s*(.*)$",
         RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -121,14 +124,45 @@ public sealed class VisionClient : IAsyncDisposable
         return Parse(text, tasks.Count, (DateTime.UtcNow - started).TotalSeconds);
     }
 
-    private async Task<string> RunAsync(ScreenFrame frame, string system, string user, int tokens, CancellationToken token)
+    // A question during a call: a short spoken answer about the image, streamed as it is written.
+    public async Task<string> AskAsync(ScreenFrame frame, string question, string language, IReadOnlyList<string> recent,
+        Action<string> onText, CancellationToken token)
     {
-        if (!await gate.WaitAsync(0, token)) throw new InferenceException("busy");
+        var output = new StringBuilder();
+        var text = await RunAsync(frame, CallSystem(language), CallPrompt(language, question, recent), CallTokens, token,
+            chunk => { output.Append(chunk); onText(Spoken(output.ToString())); }, CallSide, 0).ConfigureAwait(false);
+        return Spoken(text);
+    }
+
+    // Removes turn markers and Markdown so the answer reads and sounds like speech.
+    public static string Spoken(string text)
+    {
+        foreach (var marker in Markers) text = text.Replace(marker, " ", StringComparison.Ordinal);
+        var lines = text.Replace("**", "").Replace("__", "").Split('\n')
+            .Select(line => line.Trim().TrimStart('#', '-', '*', '•').Trim())
+            .Where(line => line.Length > 0);
+        return string.Join(" ", lines).Trim();
+    }
+
+    private static string CallSystem(string language) => language == "fr"
+        ? "Tu es Nomi, en appel avec l'utilisateur qui partage une fenêtre de son écran. L'image jointe est ce que tu vois en ce moment. Réponds comme à l'oral : deux phrases courtes au maximum, sans liste, sans titre ni mise en forme. Ne parle que de ce qui est visible ; si l'information n'est pas visible, dis-le simplement. Cite les valeurs exactement comme elles apparaissent. Ne commente jamais la personne. Réponds en français."
+        : "You are Nomi, on a call with the user who is sharing a window of their screen. The attached image is what you see right now. Answer as if speaking: two short sentences at most, no lists, headings or formatting. Only talk about what is visible; if the information is not visible, simply say so. Quote values exactly as they appear. Never comment on the person. Answer in English.";
+
+    private static string CallPrompt(string language, string question, IReadOnlyList<string> recent)
+    {
+        var context = recent.Count == 0 ? "" : string.Join("\n", recent.TakeLast(6).Select(Plain)) + "\n\n";
+        return language == "fr" ? $"{context}Question : {Plain(question)}" : $"{context}Question: {Plain(question)}";
+    }
+
+    private async Task<string> RunAsync(ScreenFrame frame, string system, string user, int tokens, CancellationToken token,
+        Action<string>? onToken = null, int side = ImageSide, int pixels = ImagePixels)
+    {
+        await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (weights is null || clip is null) throw new InferenceException("vision-missing");
-            var image = frame.Fit(ImageSide, ImagePixels).ToBitmap();
+            var image = frame.Fit(side, pixels).ToBitmap();
             return await Task.Run(async () =>
             {
                 using var context = weights.CreateContext(Parameters());
@@ -151,6 +185,7 @@ public sealed class VisionClient : IAsyncDisposable
                     {
                         token.ThrowIfCancellationRequested();
                         output.Append(chunk);
+                        onToken?.Invoke(chunk);
                     }
                 }
                 finally { clip.ClearMedia(); }

@@ -96,6 +96,7 @@ CalcChecks.Run();
 EvalChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ResourceChecks.RunAsync();
+FocusCallChecks.Run();
 await ModelChecks.RunAsync(args);
 
 var bench = Array.IndexOf(args, "--bench");

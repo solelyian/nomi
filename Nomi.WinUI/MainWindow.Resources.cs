@@ -44,7 +44,8 @@ public sealed partial class MainWindow
     [
         new("reasoning", ReasoningDefinition()?.Name ?? inference.Model, ReasoningDefinition()?.Bytes ?? inference.DownloadBytes, inference.HasModel,
             modelPreparation is not null && (resourcesActive || !inference.HasModel), modelProgress.Stage, modelProgress.Fraction),
-        new("vision", vision.Model, vision.Bytes, vision.HasModel, visionPreparation is not null, visionProgress.Stage, visionProgress.Fraction)
+        new("vision", vision.Model, vision.Bytes, vision.HasModel, visionPreparation is not null, visionProgress.Stage, visionProgress.Fraction),
+        new("speech", speech.Model, speech.Bytes, speech.HasModel, speechPreparation is not null, speechProgress.Stage, speechProgress.Fraction)
     ];
 
     private string ResourcesState(LocalResource[] items) => resourcesActive ? LocalResources.Busy : LocalResources.State(items);
@@ -89,6 +90,8 @@ public sealed partial class MainWindow
             if (!inference.Ready) await PrepareModel();
             if (!resourcesStopped && inference.HasModel && !vision.HasModel && visionPreparation is null)
                 await PrepareVision(true, load: false);
+            if (!resourcesStopped && inference.HasModel && vision.HasModel && !speech.HasModel && speechPreparation is null)
+                await PrepareSpeech(true, load: false);
         }
         finally
         {
@@ -102,6 +105,7 @@ public sealed partial class MainWindow
         resourcesStopped = true;
         modelPreparation?.Cancel();
         visionPreparation?.Cancel();
+        speechPreparation?.Cancel();
     }
 
     private void ResourcesChanged()
@@ -199,7 +203,7 @@ public sealed partial class MainWindow
             var name = Text(item.Name, 14.5);
             name.FontWeight = FontWeights.SemiBold;
             names.Children.Add(name);
-            names.Children.Add(Text(T(item.Id == "vision" ? "resVisionRole" : "resReasoningRole"), 12.5, "NomiInk3"));
+            names.Children.Add(Text(T(item.Id switch { "vision" => "resVisionRole", "speech" => "resSpeechRole", _ => "resReasoningRole" }), 12.5, "NomiInk3"));
             Grid.SetColumn(names, 1);
             row.Children.Add(names);
             var where = item.Present ? T("resOnComputer")

@@ -27,6 +27,9 @@
     <Compile Include="../../Nomi.WinUI/Updates.cs" Link="Updates.cs" />
     <Compile Include="../../Nomi.WinUI/Onboarding.cs" Link="Onboarding.cs" />
     <Compile Include="../../Nomi.WinUI/Hardware.cs" Link="Hardware.cs" />
+    <Compile Include="../../Nomi.WinUI/FocusCall.cs" Link="FocusCall.cs" />
+    <Compile Include="../../Nomi.WinUI/SpeechText.cs" Link="SpeechText.cs" />
+    <Compile Include="../../Nomi.WinUI/SpeechModel.cs" Link="SpeechModel.cs" />
     <Compile Include="../../Nomi.WinUI/TaskPhrase.cs" Link="TaskPhrase.cs" />
     <Compile Include="../../Nomi.WinUI/Reminders.cs" Link="Reminders.cs" />
     <Compile Include="../../Nomi.WinUI/FirstStep.cs" Link="FirstStep.cs" />
@@ -50,5 +53,7 @@
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
   </ItemGroup>
 </Project>

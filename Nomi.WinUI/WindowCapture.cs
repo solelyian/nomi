@@ -100,6 +100,31 @@ public static class WindowCapture
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool DeleteDC(IntPtr context);
 
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool BitBlt(IntPtr target, int x, int y, int width, int height, IntPtr source, int sourceX, int sourceY, uint operation);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowDisplayAffinity(IntPtr handle, uint affinity);
+
+    private const uint SourceCopy = 0x00CC0020;
+    private const uint ExcludeFromCapture = 0x11;
+
+    // Keeps Nomi's own windows out of a whole-screen share, so it does not read its own captions.
+    public static void Exclude(IntPtr handle, bool exclude) => SetWindowDisplayAffinity(handle, exclude ? ExcludeFromCapture : 0);
+
+    public static ScreenFrame CaptureScreen()
+    {
+        var width = GetSystemMetrics(0);
+        var height = GetSystemMetrics(1);
+        if (width < 40 || height < 40 || width > 16000 || height > 16000) throw new InferenceException("focusCaptureError");
+        return Grab(width, height, (context, screen) => BitBlt(context, 0, 0, width, height, screen, 0, 0, SourceCopy));
+    }
+
     public static IReadOnlyList<WindowChoice> List(IntPtr own)
     {
         var current = Environment.ProcessId;
@@ -135,6 +160,11 @@ public static class WindowCapture
         var width = rect.Right - rect.Left;
         var height = rect.Bottom - rect.Top;
         if (width < 40 || height < 40 || width > 10000 || height > 10000) throw new InferenceException("focusCaptureError");
+        return Grab(width, height, (context, _) => PrintWindow(handle, context, RenderFullContent));
+    }
+
+    private static ScreenFrame Grab(int width, int height, Func<IntPtr, IntPtr, bool> draw)
+    {
         var screen = GetDC(IntPtr.Zero);
         var context = CreateCompatibleDC(screen);
         var header = new BitmapHeader
@@ -149,7 +179,7 @@ public static class WindowCapture
         var previous = bitmap == IntPtr.Zero ? IntPtr.Zero : SelectObject(context, bitmap);
         try
         {
-            if (bitmap == IntPtr.Zero || !PrintWindow(handle, context, RenderFullContent))
+            if (bitmap == IntPtr.Zero || !draw(context, screen))
                 throw new InferenceException("focusCaptureError");
             var pixels = new byte[width * height * 4];
             Marshal.Copy(bits, pixels, 0, pixels.Length);
