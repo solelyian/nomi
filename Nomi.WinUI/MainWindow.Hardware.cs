@@ -43,13 +43,7 @@ public sealed partial class MainWindow
         FillHardware();
     }
 
-    private long HardwareModelBytes()
-    {
-        if (inference.HasModel) return 0;
-        if (inference.DownloadBytes > 0) return inference.DownloadBytes;
-        try { return ModelDefinition.Load().Bytes; }
-        catch (Exception error) when (error is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { return 0; }
-    }
+    private long HardwareModelBytes() => LocalResources.MissingBytes(ResourceItems());
 
     private void FillHardware()
     {
@@ -108,16 +102,21 @@ public sealed partial class MainWindow
             "cpu-memory" => T("oobeHwVerdictMemory"),
             _ => T("oobeHwVerdictCpu")
         };
-        var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        var line = new Grid { ColumnSpacing = 10 };
+        line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         line.Children.Add(new FontIcon
         {
             Glyph = verdict is "npu" or "cpu" ? "\uE73E" : "\uE7BA",
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 3, 0, 0),
             FontSize = 14,
             Foreground = Palette(verdict is "npu" or "cpu" ? "NomiOk" : "NomiAccent")
         });
         var text = Text(message, 13.5);
         text.TextWrapping = TextWrapping.Wrap;
         text.MaxWidth = 460;
+        Grid.SetColumn(text, 1);
         AutomationProperties.SetAutomationId(text, "OnboardingHardwareVerdict");
         AutomationProperties.SetLiveSetting(text, AutomationLiveSetting.Polite);
         line.Children.Add(text);

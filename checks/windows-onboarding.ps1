@@ -92,6 +92,14 @@ try {
     Write-Host "Hardware verdict: $($verdict.Current.Name)"
     Capture $process (Join-Path $env:RUNNER_TEMP "onboarding-hardware.png")
     [void](WaitFor $process "OnboardingDownload" 10)
+    foreach ($resource in "reasoning", "vision") {
+        $row = WaitFor $process "OnboardingResource_$resource" 5
+        if ($row.Current.Name -notmatch " : .+") { throw "The $resource resource row has no state." }
+        Write-Host $row.Current.Name
+    }
+    $status = WaitFor $process "OnboardingModelStatus" 5
+    if ($status.Current.Name.Length -lt 10) { throw "The resources step gives no status." }
+    Write-Host "Resources status: $($status.Current.Name)"
     Invoke (WaitFor $process "OnboardingModelLater" 10)
     Step $process "presence"
     [void](WaitFor $process "OnboardingCapture" 10)

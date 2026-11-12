@@ -95,6 +95,7 @@ RouterChecks.Run();
 CalcChecks.Run();
 EvalChecks.Run();
 await AcceleratorChecks.RunAsync();
+await ResourceChecks.RunAsync();
 await ModelChecks.RunAsync(args);
 
 if (args.Contains("--live"))

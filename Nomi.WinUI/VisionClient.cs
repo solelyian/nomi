@@ -37,6 +37,7 @@ public sealed class VisionClient : IAsyncDisposable
     public string Model => model.Definition.Name;
     public long Bytes => model.Definition.Bytes + projector.Definition.Bytes;
     public bool HasModel => model.Exists && projector.Exists;
+    public long MissingBytes => (model.Exists ? 0 : model.Definition.Bytes) + (projector.Exists ? 0 : projector.Definition.Bytes);
     public bool Ready => weights is not null && clip is not null && !disposed;
 
     private static int Threads => Math.Clamp(Environment.ProcessorCount - 1, 1, 8);
@@ -62,6 +63,20 @@ public sealed class VisionClient : IAsyncDisposable
         UBatchSize = 1024,
         LoadMode = LLama.Native.LLamaLoadMode.MemoryMap
     };
+
+    // Downloads and verifies the files without loading them in memory.
+    public async Task DownloadAsync(IProgress<ModelProgress>? progress, CancellationToken token)
+    {
+        if (!await gate.WaitAsync(0, token)) throw new InferenceException("busy");
+        try
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            var first = model.Definition.Bytes / (double)Bytes;
+            await model.EnsureAsync(true, Scaled(progress, 0, first), token).ConfigureAwait(false);
+            await projector.EnsureAsync(true, Scaled(progress, first, 1 - first), token).ConfigureAwait(false);
+        }
+        finally { gate.Release(); }
+    }
 
     public async Task PrepareAsync(bool allowDownload, IProgress<ModelProgress>? progress, CancellationToken token)
     {
