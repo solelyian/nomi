@@ -97,6 +97,8 @@ EvalChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ResourceChecks.RunAsync();
 FocusCallChecks.Run();
+var speechLive = Array.IndexOf(args, "--speech-live");
+if (speechLive >= 0) await SpeechLiveChecks.RunAsync(args[speechLive + 1]);
 await ModelChecks.RunAsync(args);
 
 var bench = Array.IndexOf(args, "--bench");

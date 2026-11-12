@@ -43,6 +43,7 @@
     <Content Include="../../content/local-model.json" Link="content/local-model.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/vision-model.json" Link="content/vision-model.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/vision-projector.json" Link="content/vision-projector.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../content/speech-model.json" Link="content/speech-model.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../content/response-policy.json" Link="content/response-policy.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../response-policy-cases.json" Link="response-policy-cases.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
