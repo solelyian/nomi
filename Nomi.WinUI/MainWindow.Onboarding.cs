@@ -20,8 +20,6 @@ public sealed partial class MainWindow
     private Grid? onboardingFooter;
     private string onboardingStep = Onboarding.Welcome;
     private string onboardingTasks = "";
-    private ProgressBar? onboardingProgress;
-    private TextBlock? onboardingModelStatus;
 
     private string StepTitle(string step) => T($"oobe-{step}");
 
@@ -113,8 +111,6 @@ public sealed partial class MainWindow
         if (onboarding is not null) Root.Children.Remove(onboarding);
         onboarding = null;
         onboardingBody = null;
-        onboardingProgress = null;
-        onboardingModelStatus = null;
         Refresh();
     }
 
@@ -142,8 +138,8 @@ public sealed partial class MainWindow
     {
         if (onboarding is null || onboardingBody is null || onboardingRail is null || onboardingFooter is null) return;
         onboarding.Background = Palette("NomiCanvas");
-        onboardingProgress = null;
-        onboardingModelStatus = null;
+        welcomeResources.Bar = null;
+        welcomeResources.Status = null;
         var index = Onboarding.Index(onboardingStep);
 
         onboardingRail.Children.Clear();
@@ -189,6 +185,7 @@ public sealed partial class MainWindow
         }
 
         onboardingBody.Children.Clear();
+        onboardingBody.MaxWidth = onboardingStep == "model" ? 1000 : 640;
         var eyebrow = Eyebrow(StepTitle(onboardingStep));
         onboardingBody.Children.Add(eyebrow);
         var heading = Heading(T($"oobe-{onboardingStep}Title"), 28);
@@ -491,13 +488,8 @@ public sealed partial class MainWindow
         onboardingBody!.Children.Add(Glass(list, 22));
     }
 
-    private string onboardingModelState = "";
-
-    private string OnboardingModelState() => inference.Ready ? "ready" : modelPreparation is not null ? "busy" : modelProgress.Stage;
-
     private void BuildModelStep()
     {
-        onboardingModelState = OnboardingModelState();
         var points = new StackPanel { Spacing = 10 };
         foreach (var key in new[] { "oobeModelOffline", "oobeModelPrivate" })
         {
@@ -507,72 +499,45 @@ public sealed partial class MainWindow
             points.Children.Add(row);
         }
         onboardingBody!.Children.Add(points);
-        onboardingBody.Children.Add(HardwareCard());
-
-        var card = new StackPanel { Spacing = 12 };
-        var name = Text(EngineLabel(), 15);
-        name.FontWeight = FontWeights.SemiBold;
-        card.Children.Add(name);
-        onboardingModelStatus = Text("", 13.5, "NomiInk2");
-        AutomationProperties.SetAutomationId(onboardingModelStatus, "OnboardingModelStatus");
-        AutomationProperties.SetLiveSetting(onboardingModelStatus, AutomationLiveSetting.Polite);
-        card.Children.Add(onboardingModelStatus);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        if (inference.Ready || inference.HasModel && modelPreparation is null && modelProgress.Stage == "local-model-ready")
+        // Side by side when there is room, so the download and the hardware check are both in view.
+        var cards = new Grid { ColumnSpacing = 16, RowSpacing = 16 };
+        var resources = Glass(ResourcesCard(welcomeResources, NextOnboarding), 22, true);
+        var machine = HardwareCard();
+        resources.VerticalAlignment = VerticalAlignment.Top;
+        machine.VerticalAlignment = VerticalAlignment.Top;
+        cards.Children.Add(resources);
+        cards.Children.Add(machine);
+        void Arrange(double width)
         {
-            onboardingModelStatus.Text = T("oobeModelReady");
+            var wide = width >= 760;
+            cards.ColumnDefinitions.Clear();
+            cards.RowDefinitions.Clear();
+            cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(wide ? 1.15 : 1, GridUnitType.Star) });
+            if (wide) cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            if (!wide) cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetColumn(machine, wide ? 1 : 0);
+            Grid.SetRow(machine, wide ? 0 : 1);
         }
-        else if (modelPreparation is not null)
+        Arrange(0);
+        cards.SizeChanged += (_, e) =>
         {
-            onboardingProgress = new ProgressBar { Minimum = 0, Maximum = 100, Height = 6, CornerRadius = new CornerRadius(3) };
-            AutomationProperties.SetName(onboardingProgress, T("engineDownloading"));
-            card.Children.Insert(2, onboardingProgress);
-            var pause = Chip(T("oobeModelPause"), "NomiChip", "\uE769", "OnboardingModelPause");
-            pause.Click += (_, _) => modelPreparation?.Cancel();
-            actions.Children.Add(pause);
-            card.Children.Add(Text(T("oobeModelBackground"), 12.5, "NomiInk3"));
-        }
-        else
-        {
-            var resume = modelProgress.Stage is "model-paused" or "model-download-error";
-            if (modelProgress.Stage is not ("local-model-missing" or "model-paused")) onboardingModelStatus.Text = T(modelProgress.Stage);
-            else if (resume) onboardingModelStatus.Text = T("model-paused");
-            else onboardingModelStatus.Text = inference.HasModel ? T("oobeModelPresent") : T("oobeModelSize");
-            var download = Primary(inference.HasModel ? T("loadLocalModel") : resume ? T("oobeModelResume") : T("oobeDownloadNow"), "OnboardingDownload");
-            download.Padding = new Thickness(22, 12, 22, 12);
-            download.FontSize = 15;
-            download.Click += (_, _) => _ = PrepareModel();
-            actions.Children.Add(download);
-            var later = Chip(T("routineLater"), "NomiGhost", null, "OnboardingModelLater");
-            later.Click += (_, _) => NextOnboarding();
-            actions.Children.Add(later);
-            card.Children.Add(actions);
-            if (!inference.HasModel && inference.DownloadBytes > 0) card.Children.Add(Text(DownloadLabel(), 12.5, "NomiInk3"));
-            onboardingBody.Children.Add(Glass(card, 22, true));
-            UpdateOnboardingModel();
-            return;
-        }
-        if (actions.Children.Count > 0) card.Children.Add(actions);
-        onboardingBody.Children.Add(Glass(card, 22, true));
-        UpdateOnboardingModel();
+            if (e.PreviousSize.Width >= 760 != e.NewSize.Width >= 760 || e.PreviousSize.Width == 0) Arrange(e.NewSize.Width);
+        };
+        onboardingBody.Children.Add(cards);
     }
 
     private void UpdateOnboardingModel()
     {
         if (onboarding is null || onboardingStep != "model") return;
-        if (OnboardingModelState() != onboardingModelState)
+        var items = ResourceItems();
+        if (ResourcesKey(items) != welcomeResources.Key)
         {
             var focused = FocusManager.GetFocusedElement(Root.XamlRoot) is FrameworkElement element ? AutomationProperties.GetAutomationId(element) : null;
             BuildOnboarding(focused is "OnboardingDownload" or "OnboardingModelPause" ? null : focused);
             return;
         }
-        if (onboardingProgress is null || onboardingModelStatus is null) return;
-        var downloading = modelProgress.Stage == "model-downloading";
-        onboardingProgress.IsIndeterminate = !downloading;
-        onboardingProgress.Value = modelProgress.Fraction * 100;
-        onboardingModelStatus.Text = downloading
-            ? $"{T("engineDownloading")} · {Readable.Fraction(modelProgress.Fraction, language)}"
-            : T(modelProgress.Stage);
+        RefreshResources(welcomeResources, items);
     }
 
     private void BuildTasksStep()

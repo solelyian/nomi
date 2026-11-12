@@ -38,10 +38,21 @@ public sealed partial class MainWindow
         if (historyShown) NomiPanel.Children.Add(HistoryColumn());
         var main = new Grid { RowSpacing = 0 };
         main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         main.Children.Add(NomiHeader());
-        var body = (FrameworkElement)(!inference.HasModel && !inference.Ready ? NoModelState() : openThread is null ? NomiWelcome() : NomiThread(openThread));
-        Grid.SetRow(body, 1);
+        nomiNoModel = !inference.HasModel && !inference.Ready;
+        nomiResources.Host = null;
+        if (!nomiNoModel)
+        {
+            var banner = new Border { Child = ResourcesBanner() };
+            banner.Visibility = banner.Child is null ? Visibility.Collapsed : Visibility.Visible;
+            nomiResources.Host = banner;
+            Grid.SetRow(banner, 1);
+            main.Children.Add(banner);
+        }
+        var body = (FrameworkElement)(nomiNoModel ? NoModelState() : openThread is null ? NomiWelcome() : NomiThread(openThread));
+        Grid.SetRow(body, 2);
         main.Children.Add(body);
         var card = new Border { Child = main, Style = (Style)Application.Current.Resources["NomiCard"], CornerRadius = new CornerRadius(22), Padding = new Thickness(10, 8, 10, 10) };
         Grid.SetColumn(card, 1);
