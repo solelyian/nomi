@@ -1,5 +1,6 @@
 using System.Text;
 using LLama;
+using LLama.Native;
 using LLama.Common;
 using LLama.Sampling;
 
@@ -26,6 +27,12 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
     public string Accelerator => "CPU · llama.cpp";
     public long DownloadBytes => store.Definition.Bytes;
     public bool Ready => weights is not null && !disposed;
+
+    private static readonly TimeSpan IdleRelease = TimeSpan.FromMinutes(5);
+    private LLamaContext? context;
+    private readonly List<LLamaToken> cached = [];
+    private readonly LLamaBatch batch = new();
+    private Timer? idle;
 
     public LocalInferenceClient(ModelStore? modelStore = null, bool gemma = false)
     {
@@ -65,7 +72,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         Action<string>? onReasoning = null)
     {
         var (system, content) = BuildRequest(prompt, action, language, format, instruction, documents);
-        if (!await gate.WaitAsync(0, cancellationToken)) throw new InferenceException("busy");
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(disposed, this);
@@ -77,13 +84,13 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
                 var thinkBudget = reasoning ? ReasoningTokens : 0;
                 if (weights.Tokenize(formatted, true, true, Encoding.UTF8).Length + thinkBudget + AnswerTokens >= ContextTokens)
                     throw new InferenceException("document-context-limit");
-                var executor = new StatelessExecutor(weights, Parameters());
                 var thought = new StringBuilder();
                 var thinking = reasoning;
                 var thinkTokens = 0;
                 var answerTokens = 0;
                 var truncated = false;
-                await foreach (var chunk in Stream(executor, formatted, thinkBudget + AnswerTokens, gemma, cancellationToken))
+                var precise = action is "verify" or "convert";
+                await foreach (var chunk in Stream(formatted, thinkBudget + AnswerTokens, gemma, precise, cancellationToken))
                 {
                     if (thinking)
                     {
@@ -109,7 +116,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
                 if (thinking)
                 {
                     var resumed = $"{formatted}{thought}\n\n{ThinkCutoff}\n{ThinkClose}\n\n";
-                    await foreach (var chunk in Stream(executor, resumed, AnswerTokens, false, cancellationToken))
+                    await foreach (var chunk in Stream(resumed, AnswerTokens, false, precise, cancellationToken))
                     {
                         answerTokens++;
                         onToken(chunk);
@@ -124,7 +131,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         {
             throw new InferenceException("local-engine-error", error);
         }
-        finally { gate.Release(); }
+        finally { Idle(); gate.Release(); }
     }
 
     private static string QwenPrompt(LLamaWeights weights, string system, string content, bool reasoning)
@@ -137,19 +144,67 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         return reasoning ? formatted : formatted + $"\n{ThinkClose}\n\n";
     }
 
-    private static async IAsyncEnumerable<string> Stream(StatelessExecutor executor, string prompt, int maxTokens, bool gemma,
+    // One context is kept between answers, so the part of a prompt already read (instructions, tasks,
+    // earlier turns, the thought before a cut-off) is not read again. It is released after a few idle minutes.
+    private async IAsyncEnumerable<string> Stream(string prompt, int maxTokens, bool gemma, bool precise,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        context ??= weights!.CreateContext(Parameters());
+        var tokens = context.Tokenize(prompt, special: true);
+        var common = 0;
+        while (common < cached.Count && common < tokens.Length - 1 && cached[common] == tokens[common]) common++;
+        context.NativeHandle.MemorySequenceRemove(LLamaSeqId.Zero, common, -1);
+        cached.RemoveRange(common, cached.Count - common);
+        var fresh = tokens[common..].ToList();
+        var (result, _, past) = await context.DecodeAsync(fresh, LLamaSeqId.Zero, batch, common).ConfigureAwait(false);
+        if (result != DecodeResult.Ok) { Reset(); throw new InferenceException("local-engine-error"); }
+        cached.AddRange(fresh);
+        PrefixTokens = common;
         using var sampling = gemma
-            ? new DefaultSamplingPipeline { Temperature = 1.0f, TopP = 0.95f, TopK = 64 }
-            : new DefaultSamplingPipeline { Temperature = 0.6f, TopP = 0.95f, TopK = 20 };
-        var parameters = new InferenceParams { MaxTokens = maxTokens, SamplingPipeline = sampling, AntiPrompts = gemma ? [GemmaEnd] : [] };
-        await foreach (var chunk in executor.InferAsync(prompt, parameters, cancellationToken))
+            ? new DefaultSamplingPipeline { Temperature = precise ? 0.2f : 1.0f, TopP = 0.95f, TopK = 64 }
+            : new DefaultSamplingPipeline { Temperature = precise ? 0.2f : 0.6f, TopP = 0.95f, TopK = 20 };
+        var decoder = new StreamingTokenDecoder(context);
+        for (var i = 0; i < maxTokens; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var text = gemma ? chunk.Replace(GemmaEnd, "", StringComparison.Ordinal) : chunk;
+            var id = sampling.Sample(context.NativeHandle, batch.TokenCount - 1);
+            if (id.IsEndOfGeneration(weights!.Vocab)) break;
+            decoder.Add(id);
+            var text = decoder.Read();
+            var stop = gemma ? text.IndexOf(GemmaEnd, StringComparison.Ordinal) : -1;
+            if (stop >= 0)
+            {
+                if (stop > 0) yield return text[..stop];
+                break;
+            }
             if (text.Length > 0) yield return text;
+            batch.Clear();
+            batch.Add(id, past++, LLamaSeqId.Zero, true);
+            if (await context.DecodeAsync(batch, cancellationToken).ConfigureAwait(false) != DecodeResult.Ok) { Reset(); throw new InferenceException("local-engine-error"); }
+            cached.Add(id);
         }
+    }
+
+    // Tokens of the last prompt that were already in the context, for the routing log and checks.
+    public int PrefixTokens { get; private set; }
+
+    private void Reset()
+    {
+        cached.Clear();
+        context?.Dispose();
+        context = null;
+    }
+
+    private void Idle()
+    {
+        if (disposed) return;
+        idle ??= new Timer(_ =>
+        {
+            if (!gate.Wait(0)) return;
+            try { if (!disposed) Reset(); }
+            finally { gate.Release(); }
+        });
+        idle.Change(IdleRelease, Timeout.InfiniteTimeSpan);
     }
 
     public async ValueTask DisposeAsync()
@@ -159,6 +214,8 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         {
             if (disposed) return;
             disposed = true;
+            idle?.Dispose();
+            Reset();
             weights?.Dispose();
             weights = null;
             store.Dispose();

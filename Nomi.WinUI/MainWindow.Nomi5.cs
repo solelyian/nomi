@@ -74,6 +74,7 @@ public sealed partial class MainWindow
             text.TextWrapping = TextWrapping.Wrap;
             body.Children.Add(text);
         }
+        if (!live && entry.Calculation.Length > 0) body.Children.Add(PosedView(entry));
         if (live && entry.Text.Length == 0) body.Children.Add(new ProgressBar { IsIndeterminate = true, MaxWidth = 160, HorizontalAlignment = HorizontalAlignment.Left });
         if (entry.Stopped) body.Children.Add(Text(T("nomiStopped"), 13, "NomiInk3"));
         if (!live && !entry.Failed && entry.Actions.Count > 0) body.Children.Add(ActionCards(entry));
@@ -87,6 +88,21 @@ public sealed partial class MainWindow
         AutomationProperties.SetName(control, name);
         AutomationProperties.SetAutomationId(control, id);
         return control;
+    }
+
+    // The calculation as the engine ran it, so every figure in the answer can be checked.
+    private UIElement PosedView(ChatEntry entry)
+    {
+        var panel = new StackPanel { Spacing = 4, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12), Background = Palette("NomiSurface2"), HorizontalAlignment = HorizontalAlignment.Left };
+        panel.Children.Add(Text(T("nomiPosed"), 12.5, "NomiInk3"));
+        foreach (var line in entry.Calculation)
+        {
+            var row = Text(line, 14, "NomiInk2");
+            row.IsTextSelectionEnabled = true;
+            row.TextWrapping = TextWrapping.Wrap;
+            panel.Children.Add(row);
+        }
+        return Labeled(panel, $"{T("nomiPosed")} : {string.Join(" ; ", entry.Calculation)}", "NomiPosed");
     }
 
     private UIElement StepsView(ChatEntry entry, bool live)
