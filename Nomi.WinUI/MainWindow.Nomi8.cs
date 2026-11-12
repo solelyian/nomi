@@ -72,8 +72,31 @@ public sealed partial class MainWindow
                 {
                     liveStep = 1;
                     BuildNomi();
-                    results = await PlanAsync(engine, Conversation.Single(context, question), route.Action, documents, controller.Token);
+                    var comma = language == "fr";
+                    var (planned, template) = await PlanAsync(engine, Conversation.Single(context, question), route.Action, documents, comma, controller.Token);
+                    var known = Calc.Numbers(question).Concat(Calc.Numbers(context.Text)).Concat(documents.SelectMany(document => Calc.Numbers(document.Text)));
+                    results = Calc.Ground(planned, known, comma);
                     entry.Verified = results.Count > 0 && results.All(result => result.Verified);
+                    entry.Calculation = entry.Verified == true ? [.. Calc.Posed(results, CultureInfo.CurrentCulture)] : [];
+                    // One generation: the model's sentence with the engine's figures, when it holds no other figure.
+                    if (entry.Verified == true && Calc.Compose(template, results, CultureInfo.CurrentCulture) is { } composed
+                        && ResponsePolicy.Apply(composed, "summary") is { Accepted: true } checkedText)
+                    {
+                        var figures = results.Select(result => result.Value).Concat(Calc.Numbers(question)).Concat(Calc.Numbers(context.Text)).ToArray();
+                        Calc.Mask(checkedText.Text, figures, out var invented);
+                        if (invented == 0)
+                        {
+                            answer = checkedText.Text;
+                            actions = [];
+                            break;
+                        }
+                    }
+                    if (entry.Verified != true && nomiLevel == Levels.Auto && entry.EscalatedFrom is null && Escalation.Next(level) is { } higher)
+                    {
+                        entry.EscalatedFrom = level;
+                        level = higher;
+                        continue;
+                    }
                     var shown = results.Where(result => result.Verified)
                         .Select(result => $"{result.Id} = {Calc.Format(result.Value, CultureInfo.CurrentCulture)} {result.Unit}".Trim());
                     if (entry.Verified == true) asking += "\n\n" + string.Format(CultureInfo.CurrentCulture, T("calcResults"), string.Join("; ", shown));
@@ -142,8 +165,8 @@ public sealed partial class MainWindow
     }
 
     // The plan is internal JSON, never shown, so it skips the answer policy; a bad plan only leaves the figures unverified.
-    private async Task<IReadOnlyList<CalcResult>> PlanAsync(NomiInferenceClient engine, string prompt, string action,
-        IReadOnlyList<AttachedDocument> documents, CancellationToken token)
+    private async Task<(IReadOnlyList<CalcResult> Results, string Answer)> PlanAsync(NomiInferenceClient engine, string prompt, string action,
+        IReadOnlyList<AttachedDocument> documents, bool decimalComma, CancellationToken token)
     {
         var plan = new StringBuilder();
         try
@@ -153,9 +176,10 @@ public sealed partial class MainWindow
                 plan.Append(text);
                 if (plan.Length > 8000) throw new CalcException("plan");
             }, token, T("calcPlanInstruction"), documents.Count > 0 ? documents : null);
-            return truncated ? [] : Calc.Run(Calc.ParsePlan(plan.ToString()));
+            var text = plan.ToString();
+            return truncated ? ([], "") : (Calc.Run(Calc.ParsePlan(text), decimalComma), Calc.PlanAnswer(text));
         }
-        catch (Exception error) when (error is CalcException || error is InferenceException { Message: not "busy" }) { return []; }
+        catch (Exception error) when (error is CalcException || error is InferenceException { Message: not "busy" }) { return ([], ""); }
     }
 
     // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.

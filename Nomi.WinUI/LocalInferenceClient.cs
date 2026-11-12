@@ -65,7 +65,7 @@ public sealed class LocalInferenceClient : NomiInferenceClient, ILocalEngine
         Action<string>? onReasoning = null)
     {
         var (system, content) = BuildRequest(prompt, action, language, format, instruction, documents);
-        if (!await gate.WaitAsync(0, cancellationToken)) throw new InferenceException("busy");
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(disposed, this);
