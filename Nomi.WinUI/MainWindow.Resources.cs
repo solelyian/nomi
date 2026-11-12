@@ -29,17 +29,20 @@ public sealed partial class MainWindow
     private bool resourcesLater;
     private bool nomiNoModel;
 
-    private long ReasoningBytes()
+    private ModelDefinition? reasoningDefinition;
+
+    // The reasoning model offered for download is always the one pinned in local-model.json (Qwen3 8B).
+    private ModelDefinition? ReasoningDefinition()
     {
-        if (inference.DownloadBytes > 0) return inference.DownloadBytes;
-        try { return ModelDefinition.Load().Bytes; }
-        catch (Exception error) when (error is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { return 0; }
+        if (reasoningDefinition is not null) return reasoningDefinition;
+        try { return reasoningDefinition = ModelDefinition.Load(); }
+        catch (Exception error) when (error is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { return null; }
     }
 
     // A model that is already on the computer and only loads in memory is not shown as a download in progress.
     private LocalResource[] ResourceItems() =>
     [
-        new("reasoning", inference.Model, ReasoningBytes(), inference.HasModel,
+        new("reasoning", ReasoningDefinition()?.Name ?? inference.Model, ReasoningDefinition()?.Bytes ?? inference.DownloadBytes, inference.HasModel,
             modelPreparation is not null && (resourcesActive || !inference.HasModel), modelProgress.Stage, modelProgress.Fraction),
         new("vision", vision.Model, vision.Bytes, vision.HasModel, visionPreparation is not null, visionProgress.Stage, visionProgress.Fraction)
     ];

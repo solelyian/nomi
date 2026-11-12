@@ -185,6 +185,7 @@ public sealed partial class MainWindow
         }
 
         onboardingBody.Children.Clear();
+        onboardingBody.MaxWidth = onboardingStep == "model" ? 1000 : 640;
         var eyebrow = Eyebrow(StepTitle(onboardingStep));
         onboardingBody.Children.Add(eyebrow);
         var heading = Heading(T($"oobe-{onboardingStep}Title"), 28);
@@ -498,8 +499,32 @@ public sealed partial class MainWindow
             points.Children.Add(row);
         }
         onboardingBody!.Children.Add(points);
-        onboardingBody.Children.Add(Glass(ResourcesCard(welcomeResources, NextOnboarding), 22, true));
-        onboardingBody.Children.Add(HardwareCard());
+        // Side by side when there is room, so the download and the hardware check are both in view.
+        var cards = new Grid { ColumnSpacing = 16, RowSpacing = 16 };
+        var resources = Glass(ResourcesCard(welcomeResources, NextOnboarding), 22, true);
+        var machine = HardwareCard();
+        resources.VerticalAlignment = VerticalAlignment.Top;
+        machine.VerticalAlignment = VerticalAlignment.Top;
+        cards.Children.Add(resources);
+        cards.Children.Add(machine);
+        void Arrange(double width)
+        {
+            var wide = width >= 760;
+            cards.ColumnDefinitions.Clear();
+            cards.RowDefinitions.Clear();
+            cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(wide ? 1.15 : 1, GridUnitType.Star) });
+            if (wide) cards.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            if (!wide) cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetColumn(machine, wide ? 1 : 0);
+            Grid.SetRow(machine, wide ? 0 : 1);
+        }
+        Arrange(0);
+        cards.SizeChanged += (_, e) =>
+        {
+            if (e.PreviousSize.Width >= 760 != e.NewSize.Width >= 760 || e.PreviousSize.Width == 0) Arrange(e.NewSize.Width);
+        };
+        onboardingBody.Children.Add(cards);
     }
 
     private void UpdateOnboardingModel()
