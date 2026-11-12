@@ -46,6 +46,8 @@ static class CalcChecks
         Check(grounded[0].Verified && grounded[1].Verified, "numbers from the request, rates and earlier steps are grounded");
         Check(!grounded[2].Verified, "a number that is not in the request is not verified");
         var reply = "{\"steps\":[],\"answer\":\"Le total TTC est de {ttc} €.\"}";
+        Check(Calc.Run(Calc.ParsePlan("""{"steps":[{"id":"a","expr":"80 * 0.15"},{"id":"b","expr":"80 - {a}"}]}"""))[1].Value == 68m, "ids written in braces still refer to earlier steps");
+        Check(Calc.Run(Calc.ParsePlan("""{"steps":[{"id":"tâches","expr":"3 * 20"},{"id":"reste","expr":"90 - tâches"}]}"""))[1].Value == 30m, "step ids may have accents");
         Check(Calc.PlanAnswer(reply) == "Le total TTC est de {ttc} €." && Calc.PlanAnswer("rien") == "", "the answer sentence is read from the plan");
         Check(Calc.Compose(Calc.PlanAnswer(reply), grounded, fr) == $"Le total TTC est de {Calc.Format(1512m, fr)} €.", "the engine's figure fills the sentence");
         Check(Calc.Compose("Soit {odd} €.", grounded, fr) is null && Calc.Compose("Soit {nope}.", grounded, fr) is null, "an unverified or unknown step leaves no sentence");

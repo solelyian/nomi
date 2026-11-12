@@ -97,6 +97,13 @@ EvalChecks.Run();
 await AcceleratorChecks.RunAsync();
 await ModelChecks.RunAsync(args);
 
+var bench = Array.IndexOf(args, "--bench");
+if (bench >= 0 && bench + 1 < args.Length)
+{
+    await Bench.RunAsync(args[bench + 1]);
+    return;
+}
+
 if (args.Contains("--live"))
 {
     using var client = new OllamaClient();

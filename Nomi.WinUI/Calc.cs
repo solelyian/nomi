@@ -28,7 +28,7 @@ public static partial class Calc
             foreach (var step in steps.EnumerateArray().Take(MaxSteps))
             {
                 var id = step.TryGetProperty("id", out var i) ? i.GetString() ?? "" : "";
-                var expression = step.TryGetProperty("expr", out var e) ? e.GetString() ?? "" : "";
+                var expression = step.TryGetProperty("expr", out var e) ? (e.GetString() ?? "").Replace("{", "").Replace("}", "") : "";
                 var unit = step.TryGetProperty("unit", out var u) ? u.GetString() ?? "" : "";
                 if (!IdPattern().IsMatch(id) || expression.Length is 0 or > MaxLength) continue;
                 plan.Add(new CalcStep(id, expression, unit.Length > 12 ? unit[..12] : unit));
@@ -401,10 +401,10 @@ public static partial class Calc
         }
     }
 
-    [GeneratedRegex("[{]([A-Za-z][A-Za-z0-9_]{0,15})[}]")]
+    [GeneratedRegex(@"[{]([\p{L}][\p{L}\p{N}_]{0,31})[}]")]
     private static partial Regex PlaceholderPattern();
 
-    [GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{0,15}$")]
+    [GeneratedRegex(@"^[\p{L}][\p{L}\p{N}_]{0,31}$")]
     private static partial Regex IdPattern();
 
     [GeneratedRegex(@"(?<![\w.,])\d{1,3}(?:[\u202F\u00A0 ]\d{3})+(?:[.,]\d+)?|(?<![\w.,])\d+(?:[.,]\d+)*")]
