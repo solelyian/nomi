@@ -38,6 +38,18 @@ static class CalcChecks
         Check(Calc.Mask("Soit 81,60 € ou 0,004.", [81.600m, 0.004m], out hidden) == "Soit 81,60 € ou 0,004." && hidden == 0, "verified figures keep their decimals");
         Check(Calc.Format(1512m, CultureInfo.GetCultureInfo("fr-FR")) == "1\u202F512" || Calc.Format(1512m, CultureInfo.GetCultureInfo("fr-FR")) == "1\u00A0512", "French grouping");
         Check(Calc.Numbers("3 postes à 420 € et 12,5 h").SequenceEqual([3m, 420m, 12.5m]), "numbers are read from text");
+        Check(Calc.Run([new CalcStep("x", "1,200 * 3")], decimalComma: false).Single().Value == 3600m
+            && Calc.Run([new CalcStep("x", "1,200 * 3")], decimalComma: true).Single().Value == 3.6m, "the app language decides what 1,200 means");
+        var fr = CultureInfo.GetCultureInfo("fr-FR");
+        var asked = Calc.Numbers("3 postes à 420 €, puis TVA de 20 %").ToArray();
+        var grounded = Calc.Ground(Calc.Run(Calc.ParsePlan("{\"steps\":[{\"id\":\"ht\",\"expr\":\"3 * 420\",\"unit\":\"€\"},{\"id\":\"ttc\",\"expr\":\"ht * 1.2\",\"unit\":\"€\"},{\"id\":\"odd\",\"expr\":\"3 * 450\"}]}")), asked);
+        Check(grounded[0].Verified && grounded[1].Verified, "numbers from the request, rates and earlier steps are grounded");
+        Check(!grounded[2].Verified, "a number that is not in the request is not verified");
+        var reply = "{\"steps\":[],\"answer\":\"Le total TTC est de {ttc} €.\"}";
+        Check(Calc.PlanAnswer(reply) == "Le total TTC est de {ttc} €." && Calc.PlanAnswer("rien") == "", "the answer sentence is read from the plan");
+        Check(Calc.Compose(Calc.PlanAnswer(reply), grounded, fr) == $"Le total TTC est de {Calc.Format(1512m, fr)} €.", "the engine's figure fills the sentence");
+        Check(Calc.Compose("Soit {odd} €.", grounded, fr) is null && Calc.Compose("Soit {nope}.", grounded, fr) is null, "an unverified or unknown step leaves no sentence");
+        Check(Calc.Posed(grounded, fr).SequenceEqual([$"ht = 3 × 420 = {Calc.Format(1260m, fr)} €", $"ttc = ht × 1.2 = {Calc.Format(1512m, fr)} €"]), "the posed calculation lists the verified steps");
         Check(Escalation.Next(Levels.Fast) == Levels.Applied && Escalation.Next(Levels.Applied) == Levels.Deep && Escalation.Next(Levels.Deep) is null, "escalation climbs one level");
         var route = Router.Decide("Bonjour", 0, Levels.Auto);
         Check(Escalation.Level(route, "Bonjour", 0, Levels.Auto) == Levels.Fast, "short messages stay fast");

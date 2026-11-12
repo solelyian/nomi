@@ -38,7 +38,7 @@ public static partial class Calc
         catch (JsonException) { return []; }
     }
 
-    public static IReadOnlyList<CalcResult> Run(IEnumerable<CalcStep> plan)
+    public static IReadOnlyList<CalcResult> Run(IEnumerable<CalcStep> plan, bool? decimalComma = null)
     {
         var exact = new Dictionary<string, decimal>(StringComparer.Ordinal);
         var check = new Dictionary<string, double>(StringComparer.Ordinal);
@@ -47,8 +47,8 @@ public static partial class Calc
         {
             try
             {
-                var value = new Exact(step.Expression, exact).Parse();
-                var again = Recheck(step.Expression, check);
+                var value = new Exact(step.Expression, exact, decimalComma).Parse();
+                var again = Recheck(step.Expression, check, decimalComma);
                 var verified = Math.Abs((double)value - again) <= 1e-9 * Math.Max(1, Math.Abs(again));
                 exact[step.Id] = value;
                 check[step.Id] = again;
@@ -61,6 +61,67 @@ public static partial class Calc
         }
         return results;
     }
+
+    // Numbers a plan may use without finding them in the request: counts and the usual units of time and percent.
+    private static readonly decimal[] Constants = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 24, 30, 31, 52, 60, 100, 365, 1000];
+
+    // A step whose numbers do not all come from the request, its documents or an earlier step is not verified.
+    public static IReadOnlyList<CalcResult> Ground(IReadOnlyList<CalcResult> results, IEnumerable<decimal> known, bool? decimalComma = null)
+    {
+        var given = known.Select(Math.Abs).Concat(Constants).ToArray();
+        // A rate read as 20 may be written 0.2, 1.2 or 0.8 in a step.
+        var values = given.Concat(given.SelectMany(value => new[] { value / 100, 1 + value / 100, 1 - value / 100 })).ToHashSet();
+        return results.Select(result =>
+        {
+            if (!result.Verified) return result;
+            try
+            {
+                var grounded = Tokens(result.Expression, decimalComma)
+                    .Where(token => char.IsDigit(token[0]) || token[0] == '.')
+                    .All(token => values.Contains(decimal.Parse(token, NumberStyles.Number, CultureInfo.InvariantCulture)));
+                return grounded ? result : result with { Verified = false };
+            }
+            catch (Exception error) when (error is CalcException or FormatException or OverflowException) { return result with { Verified = false }; }
+        }).ToList();
+    }
+
+    // The sentence the model writes around the figures, with {id} where each verified result goes.
+    public static string PlanAnswer(string text)
+    {
+        var start = text.IndexOf('{');
+        var end = text.LastIndexOf('}');
+        if (start < 0 || end <= start) return "";
+        try
+        {
+            using var json = JsonDocument.Parse(text[start..(end + 1)]);
+            return json.RootElement.TryGetProperty("answer", out var answer) && answer.ValueKind == JsonValueKind.String
+                ? (answer.GetString() ?? "").Trim() : "";
+        }
+        catch (JsonException) { return ""; }
+    }
+
+    // Puts the engine's figures in the model's sentence; null when it names a step that is missing or unverified.
+    public static string? Compose(string template, IReadOnlyList<CalcResult> results, CultureInfo culture)
+    {
+        var byId = results.Where(result => result.Verified).GroupBy(result => result.Id).ToDictionary(group => group.Key, group => group.Last().Value);
+        var missing = false;
+        var text = PlaceholderPattern().Replace(template, match =>
+        {
+            if (byId.TryGetValue(match.Groups[1].Value, out var value)) return Format(value, culture);
+            missing = true;
+            return match.Value;
+        });
+        return missing || text.Length == 0 ? null : text;
+    }
+
+    // The posed calculation shown under the answer: one line per step, with the engine's result.
+    public static IReadOnlyList<string> Posed(IReadOnlyList<CalcResult> results, CultureInfo culture) =>
+        results.Where(result => result.Verified)
+            .Select(result => $"{result.Id} = {Pretty(result.Expression)} = {Format(result.Value, culture)} {result.Unit}".TrimEnd())
+            .ToList();
+
+    private static string Pretty(string expression) =>
+        expression.Replace("*", " × ").Replace("/", " ÷ ").Replace("  ", " ").Trim();
 
     public static decimal Evaluate(string expression) => new Exact(expression, new Dictionary<string, decimal>()).Parse();
 
@@ -119,7 +180,7 @@ public static partial class Calc
             foreach (var number in Readings(match.Value, false)) yield return number;
     }
 
-    private static IReadOnlyList<decimal> Readings(string text, bool expression)
+    private static IReadOnlyList<decimal> Readings(string text, bool expression, bool? comma = null)
     {
         var clean = text.Replace("\u202F", "").Replace("\u00A0", "").Replace(" ", "");
         var commas = clean.Count(c => c == ',');
@@ -142,7 +203,7 @@ public static partial class Calc
             var tail = clean.Length - clean.LastIndexOf(mark) - 1;
             forms = commas + dots > 1 ? Grouped().IsMatch(clean) ? [whole] : []
                 : tail != 3 || clean.StartsWith('0') || expression && mark == '.' ? [fraction]
-                : expression ? []
+                : expression ? comma is null ? [] : comma.Value ? [fraction] : [whole]
                 : mark == ',' ? [whole, fraction] : [fraction, whole];
         }
         var numbers = new List<decimal>();
@@ -151,14 +212,14 @@ public static partial class Calc
         return numbers;
     }
 
-    private static string Literal(string token) =>
-        Readings(token, true) is [var number] ? number.ToString(CultureInfo.InvariantCulture) : throw new CalcException($"number {token}");
+    private static string Literal(string token, bool? comma) =>
+        Readings(token, true, comma) is [var number] ? number.ToString(CultureInfo.InvariantCulture) : throw new CalcException($"number {token}");
 
-    private static double Recheck(string expression, IReadOnlyDictionary<string, double> names)
+    private static double Recheck(string expression, IReadOnlyDictionary<string, double> names, bool? comma)
     {
         var output = new Stack<double>();
         var operators = new Stack<char>();
-        var tokens = Tokens(expression).ToList();
+        var tokens = Tokens(expression, comma).ToList();
         var expectValue = true;
         void Apply()
         {
@@ -219,7 +280,7 @@ public static partial class Calc
         return output.Pop();
     }
 
-    private static IEnumerable<string> Tokens(string expression)
+    private static IEnumerable<string> Tokens(string expression, bool? comma = null)
     {
         var text = Normalize(expression);
         for (var i = 0; i < text.Length;)
@@ -230,7 +291,7 @@ public static partial class Calc
             {
                 var start = i;
                 while (i < text.Length && (char.IsDigit(text[i]) || text[i] is '.' or ',')) i++;
-                yield return Literal(text[start..i]);
+                yield return Literal(text[start..i], comma);
                 continue;
             }
             if (char.IsLetter(c))
@@ -252,9 +313,9 @@ public static partial class Calc
         return ThousandsSpace().Replace(text, "$1");
     }
 
-    private sealed class Exact(string expression, IReadOnlyDictionary<string, decimal> names)
+    private sealed class Exact(string expression, IReadOnlyDictionary<string, decimal> names, bool? comma = null)
     {
-        private readonly List<string> tokens = [.. Tokens(expression)];
+        private readonly List<string> tokens = [.. Tokens(expression, comma)];
         private int at;
 
         public decimal Parse()
@@ -339,6 +400,9 @@ public static partial class Calc
             throw new CalcException($"token {token}");
         }
     }
+
+    [GeneratedRegex("[{]([A-Za-z][A-Za-z0-9_]{0,15})[}]")]
+    private static partial Regex PlaceholderPattern();
 
     [GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{0,15}$")]
     private static partial Regex IdPattern();
