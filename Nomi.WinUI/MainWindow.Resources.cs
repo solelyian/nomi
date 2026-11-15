@@ -253,7 +253,7 @@ public sealed partial class MainWindow
         nomiResources.Bar = null;
         nomiResources.Status = null;
         nomiResources.First = null;
-        if (resourcesLater || vision.HasModel && !resourcesActive) return null;
+        if (resourcesLater || vision.HasModel && speech.HasModel && !resourcesActive) return null;
         var row = new Grid { ColumnSpacing = 12 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -269,8 +269,9 @@ public sealed partial class MainWindow
         }
         else
         {
-            var missing = items.First(item => item.Id == "vision");
-            var line = Text(string.Format(T("resBanner"), missing.Name, Gigabytes(vision.MissingBytes)), 13, "NomiInk2");
+            var line = vision.HasModel
+                ? Text(string.Format(T("resBannerSpeech"), speech.Model, Gigabytes(speech.Bytes)), 13, "NomiInk2")
+                : Text(string.Format(T("resBanner"), vision.Model, Gigabytes(vision.MissingBytes)), 13, "NomiInk2");
             AutomationProperties.SetAutomationId(line, "NomiModelStatus");
             text.Children.Add(line);
             if (LocalResources.Error(items) is { } error) text.Children.Add(Text(Label(error), 12.5, "NomiAccent"));

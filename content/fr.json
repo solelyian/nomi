@@ -532,6 +532,7 @@
     "resPresent": "Les ressources sont sur cet ordinateur.",
     "resReady": "Les ressources sont prêtes. Nomi peut vous répondre.",
     "resBanner": "Il manque {0} ({1} Go) : sans lui, Nomi ne lit pas les images et le mode Rapide est plus lent.",
+    "resBannerSpeech": "Il manque {0} ({1} Go) : sans lui, Nomi ne comprend pas ce que vous dites au micro pendant le Focus.",
     "oobeDataLocal": "Tout reste sur cet ordinateur",
     "oobeDataLocalHelp": "Aucun compte, aucun serveur. Nomi ne se connecte que pour télécharger le modèle, votre agenda et vérifier les mises à jour.",
     "oobeDataEncrypted": "Chiffré avec votre session Windows",

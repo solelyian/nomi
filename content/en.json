@@ -532,6 +532,7 @@
     "resPresent": "The resources are on this computer.",
     "resReady": "The resources are ready. Nomi can answer you.",
     "resBanner": "{0} is missing ({1} GB): without it, Nomi cannot read images and Fast mode is slower.",
+    "resBannerSpeech": "{0} is missing ({1} GB): without it, Nomi cannot understand what you say into the microphone during Focus.",
     "oobeDataLocal": "Everything stays on this computer",
     "oobeDataLocalHelp": "No account, no server. Nomi only connects to download the model, read your calendar and check for updates.",
     "oobeDataEncrypted": "Encrypted with your Windows session",
