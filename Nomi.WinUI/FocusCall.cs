@@ -82,7 +82,7 @@ public sealed class FocusCall(string window, DateTimeOffset started, string mode
         foreach (var issue in issues)
         {
             var key = Key(issue);
-            if (Points.Any(point => point.Key == key && !point.Fixed)) continue;
+            if (Points.Any(point => point.Key == key && point.Window == Window && !point.Fixed)) continue;
             var point = new CallPoint(key, issue, seen, Window);
             Points.Add(point);
             found.Add(point);
