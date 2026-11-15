@@ -28,6 +28,11 @@ public sealed partial class MainWindow
         Grid.SetColumn(ready, 1);
         header.Children.Add(ready);
         stack.Children.Add(header);
+        var privacy = Text(T("callPrivacy"), 12.5, "NomiInk3");
+        privacy.MaxWidth = 720;
+        privacy.HorizontalAlignment = HorizontalAlignment.Left;
+        AutomationProperties.SetAutomationId(privacy, "FocusPrivacy");
+        stack.Children.Add(privacy);
         if (!vision.HasModel || visionPreparation is not null) stack.Children.Add(VisionCard());
         stack.Children.Add(WindowTiles());
         stack.Children.Add(CallOptions());
@@ -52,12 +57,8 @@ public sealed partial class MainWindow
         var bottom = new Grid { ColumnSpacing = 16 };
         bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var privacy = Text(T("callPrivacy"), 12.5, "NomiInk3");
-        privacy.MaxWidth = 580;
-        privacy.HorizontalAlignment = HorizontalAlignment.Left;
-        AutomationProperties.SetAutomationId(privacy, "FocusPrivacy");
-        bottom.Children.Add(privacy);
         var start = Primary(T("callStart"), "FocusStart");
+        start.HorizontalAlignment = HorizontalAlignment.Right;
         start.Padding = new Thickness(22, 12, 22, 12);
         start.FontSize = 15;
         start.IsEnabled = focusWindow is not null && vision.HasModel && visionPreparation is null;
