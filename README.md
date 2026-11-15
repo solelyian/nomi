@@ -228,13 +228,25 @@ Préférences › Présence.
 
 ### Focus écran et modèle vision
 
-**Focus écran** suit une fenêtre que vous choisissez explicitement dans la liste ;
-rien n’est capturé avant ce choix. Un indicateur reste visible, avec **Pause** et
-**Arrêter**. Nomi capture uniquement cette fenêtre, ignore les images inchangées,
-et analyse localement le texte, les graphiques et la mise en page pour reconnaître
-la tâche en cours et repérer un total ou un pourcentage incohérent. Les images
-restent en mémoire, sont effacées après chaque analyse et ne sont jamais écrites
-sur disque ni envoyées hors de la machine.
+**Focus écran** fonctionne comme un appel : vous partagez une fenêtre (ou tout
+l’écran, sans les fenêtres de Nomi) choisie explicitement ; rien n’est capturé
+avant ce choix. Pendant l’appel, Nomi voit une image par seconde, montre l’aperçu
+en direct et l’heure de la dernière image vue, et vous répond en sous-titres et à
+voix haute (voix Windows, hors ligne) sur ce qu’il voit. Vous lui parlez au micro
+(Whisper small, local) ou lui écrivez ; lui parler coupe sa voix. Il analyse de
+lui-même l’écran quand il se stabilise sur un contenu nouveau, au plus toutes les
+8 s, et ne prend la parole que selon votre choix : seulement si vous demandez,
+quand il repère un problème (écart recalculé), ou quand ce qui est affiché change.
+Le mode calme le rend silencieux, sauf pour répondre. Commandes : Micro (Ctrl+M),
+Voix (Ctrl+Maj+V), Pause (Ctrl+Maj+P), Changer de fenêtre, Mini-fenêtre toujours
+visible (Ctrl+Maj+F) et Raccrocher (Ctrl+Maj+H). En fin d’appel, un résumé liste
+les écarts relevés et propose des actions, appliquées seulement après un clic ; il
+n’est conservé que si vous l’enregistrez. Les images restent en mémoire, sont
+effacées au fur et à mesure et ne sont jamais écrites sur disque ni envoyées.
+
+Mesuré sur processeur : une question obtient ses premiers mots en environ 6 s
+(image réduite à 1 024 px), une analyse complète prend 25 à 30 s, et Whisper
+transcrit 3 s de parole en environ 4 s.
 
 Chaque capture est ramenée à 1 600 px au plus sur son grand côté, et les petites
 fenêtres sont agrandies pour atteindre environ 1 100 jetons d’image : en dessous,
@@ -247,7 +259,8 @@ Cette fonction utilise un second modèle, téléchargé avec les ressources néc
 (accueil ou page Nomi) ou depuis l’espace Focus :
 Gemma 4 E4B (Q4_K_M) et son projecteur vision (F16), environ 5,97 Go
 au total, épinglés avec taille et SHA-256 dans `content/vision-model.json` et
-`content/vision-projector.json` (Apache-2.0). Le téléchargement reprend après
+`content/vision-projector.json` (Apache-2.0), plus Whisper small (488 Mo, MIT)
+pour le micro, épinglé dans `content/speech-model.json`. Le téléchargement reprend après
 interruption, puis tout fonctionne hors ligne. Sur CPU, une analyse prend de
 l’ordre d’une à deux minutes selon la machine. Prévoir alors 16 Go de RAM et
 environ 7 Go d’espace libre pour les deux modèles.

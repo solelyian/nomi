@@ -44,7 +44,8 @@ public sealed partial class MainWindow
     [
         new("reasoning", ReasoningDefinition()?.Name ?? inference.Model, ReasoningDefinition()?.Bytes ?? inference.DownloadBytes, inference.HasModel,
             modelPreparation is not null && (resourcesActive || !inference.HasModel), modelProgress.Stage, modelProgress.Fraction),
-        new("vision", vision.Model, vision.Bytes, vision.HasModel, visionPreparation is not null, visionProgress.Stage, visionProgress.Fraction)
+        new("vision", vision.Model, vision.Bytes, vision.HasModel, visionPreparation is not null, visionProgress.Stage, visionProgress.Fraction),
+        new("speech", speech.Model, speech.Bytes, speech.HasModel, speechPreparation is not null, speechProgress.Stage, speechProgress.Fraction)
     ];
 
     private string ResourcesState(LocalResource[] items) => resourcesActive ? LocalResources.Busy : LocalResources.State(items);
@@ -89,6 +90,8 @@ public sealed partial class MainWindow
             if (!inference.Ready) await PrepareModel();
             if (!resourcesStopped && inference.HasModel && !vision.HasModel && visionPreparation is null)
                 await PrepareVision(true, load: false);
+            if (!resourcesStopped && inference.HasModel && vision.HasModel && !speech.HasModel && speechPreparation is null)
+                await PrepareSpeech(true, load: false);
         }
         finally
         {
@@ -102,6 +105,7 @@ public sealed partial class MainWindow
         resourcesStopped = true;
         modelPreparation?.Cancel();
         visionPreparation?.Cancel();
+        speechPreparation?.Cancel();
     }
 
     private void ResourcesChanged()
@@ -199,7 +203,7 @@ public sealed partial class MainWindow
             var name = Text(item.Name, 14.5);
             name.FontWeight = FontWeights.SemiBold;
             names.Children.Add(name);
-            names.Children.Add(Text(T(item.Id == "vision" ? "resVisionRole" : "resReasoningRole"), 12.5, "NomiInk3"));
+            names.Children.Add(Text(T(item.Id switch { "vision" => "resVisionRole", "speech" => "resSpeechRole", _ => "resReasoningRole" }), 12.5, "NomiInk3"));
             Grid.SetColumn(names, 1);
             row.Children.Add(names);
             var where = item.Present ? T("resOnComputer")
@@ -249,7 +253,7 @@ public sealed partial class MainWindow
         nomiResources.Bar = null;
         nomiResources.Status = null;
         nomiResources.First = null;
-        if (resourcesLater || vision.HasModel && !resourcesActive) return null;
+        if (resourcesLater || vision.HasModel && speech.HasModel && !resourcesActive) return null;
         var row = new Grid { ColumnSpacing = 12 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -265,8 +269,9 @@ public sealed partial class MainWindow
         }
         else
         {
-            var missing = items.First(item => item.Id == "vision");
-            var line = Text(string.Format(T("resBanner"), missing.Name, Gigabytes(vision.MissingBytes)), 13, "NomiInk2");
+            var line = vision.HasModel
+                ? Text(string.Format(T("resBannerSpeech"), speech.Model, Gigabytes(speech.Bytes)), 13, "NomiInk2")
+                : Text(string.Format(T("resBanner"), vision.Model, Gigabytes(vision.MissingBytes)), 13, "NomiInk2");
             AutomationProperties.SetAutomationId(line, "NomiModelStatus");
             text.Children.Add(line);
             if (LocalResources.Error(items) is { } error) text.Children.Add(Text(Label(error), 12.5, "NomiAccent"));

@@ -117,6 +117,11 @@ internal static class ModelChecks
                 $"Vision commission gap found {language}");
             Check(report.Issues.All(issue => !issue.Formula.StartsWith('Σ')), $"Vision totals not misreported {language}");
         }
+        var asked = System.Diagnostics.Stopwatch.StartNew();
+        var first = 0.0;
+        var spoken = await vision.AskAsync(frame, "Quel est le total des commissions ?", "fr", [], text => { if (first == 0 && text.Length > 0) first = asked.Elapsed.TotalSeconds; }, deadline.Token);
+        Console.WriteLine($"call answer (first words {first:0.0}s, total {asked.Elapsed.TotalSeconds:0.0}s): {spoken}");
+        Check(spoken.Length > 0 && !spoken.Contains("<turn|>") && spoken.Replace(" ", " ").Replace(" ", " ").Contains("11 022"), "Call answer reads the total");
         Array.Clear(frame.Pixels);
         await using (var quick = new LocalInferenceClient(new ModelStore(directory, ModelDefinition.Load("vision-model.json")), gemma: true))
         {

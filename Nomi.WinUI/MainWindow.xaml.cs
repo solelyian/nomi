@@ -114,6 +114,7 @@ public sealed partial class MainWindow : Window
             _ = inference.DisposeAsync();
             _ = fast.DisposeAsync();
             _ = vision.DisposeAsync();
+            _ = speech.DisposeAsync();
         };
         var submit = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
         submit.Invoked += async (_, args) => { args.Handled = true; await Launch(); };

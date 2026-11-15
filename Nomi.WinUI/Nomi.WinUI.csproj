@@ -32,9 +32,12 @@
     <Content Include="Assets\Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\content\*.json" Link="content\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\licenses\*.txt" Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
   </ItemGroup>
   <Target Name="PublishNomiXamlResources" BeforeTargets="ComputeResolvedFilesToPublishList"
           DependsOnTargets="$(GenerateProjectPriFile)">

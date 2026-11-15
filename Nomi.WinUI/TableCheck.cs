@@ -5,7 +5,8 @@ namespace Nomi;
 
 public sealed record TableIssue(string Row, string Column, string Formula, decimal Expected, decimal Shown);
 
-public sealed record TableReport(int Rows, IReadOnlyList<TableIssue> Issues);
+// Checked holds the formulas the table had enough rows to verify, so an unchecked gap is not taken as fixed.
+public sealed record TableReport(int Rows, IReadOnlyList<TableIssue> Issues, IReadOnlyCollection<string>? Checked = null);
 
 public static class TableCheck
 {
@@ -91,6 +92,7 @@ public static class TableCheck
         string Label(int row) => rows[row].FirstOrDefault(cell => !TryNumber(cell, language, out _, out _)) ?? $"#{row + 1}";
         bool IsTotal(int row) => TotalLabel.IsMatch(Label(row));
         var issues = new List<TableIssue>();
+        var verified = new HashSet<string>(StringComparer.Ordinal);
 
         var data = Enumerable.Range(start, rows.Count - start).Where(row => !IsTotal(row)).ToArray();
         for (var total = start; total < rows.Count; total++)
@@ -105,6 +107,7 @@ public static class TableCheck
                     .Select(cell => cell.Item1!.Value).ToArray();
                 if (values.Length < 2 || values.Length < above.Length - 1) continue;
                 var sum = values.Sum();
+                verified.Add($"Σ {names[column]}");
                 if (Math.Abs(sum - shown.Value) > Tolerance(shown.Value))
                     issues.Add(new(Label(total), names[column], $"Σ {names[column]}", Math.Round(sum, 2), shown.Value));
             }
@@ -124,6 +127,7 @@ public static class TableCheck
         }
         if (best.Matches > 0)
         {
+            verified.Add($"{names[best.Base]} × {names[best.Rate]}");
             foreach (var row in data)
             {
                 var source = parsed[row][best.Base].Item1;
@@ -135,7 +139,7 @@ public static class TableCheck
                     Math.Round(source.Value * rate.Value, 2), shown.Value));
             }
         }
-        return new(rows.Count - start, issues.Take(4).ToArray());
+        return new(rows.Count - start, issues.Take(4).ToArray(), verified);
     }
 
     private static bool Product(decimal source, decimal rate, decimal shown) =>
