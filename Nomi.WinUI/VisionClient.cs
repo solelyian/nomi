@@ -22,6 +22,7 @@ public sealed class VisionClient : IAsyncDisposable
     private const int CallSide = 1024;
     private static readonly string[] Markers = ["<turn|>", "<|turn>", "<end_of_turn>", "<start_of_turn>", "<|im_end|>"];
     private const string Marker = "<__media__>";
+    private static readonly Regex Bullet = new(@"^(#+\s*|[-*•]\s+)", RegexOptions.CultureInvariant);
     private static readonly Regex Field = new(@"^\s*(TASK|WHERE|CHECK|NEXT|MATCH)\s*[:：]\s*(.*)$",
         RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private readonly SemaphoreSlim gate = new(1);
@@ -139,7 +140,7 @@ public sealed class VisionClient : IAsyncDisposable
     {
         foreach (var marker in Markers) text = text.Replace(marker, " ", StringComparison.Ordinal);
         var lines = text.Replace("**", "").Replace("__", "").Split('\n')
-            .Select(line => line.Trim().TrimStart('#', '-', '*', '•').Trim())
+            .Select(line => Bullet.Replace(line.Trim(), "").Trim())
             .Where(line => line.Length > 0);
         return string.Join(" ", lines).Trim();
     }
