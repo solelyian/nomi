@@ -28,10 +28,19 @@ internal static class FocusCallChecks
         var again = call.Watched(Print(200), start.AddSeconds(32), insight, new TableReport(2, [gap]));
         Check(again.Found.Count == 0 && again.Fixed.Count == 0 && !call.Speaks(again), "The same gap is never announced twice");
         var fixedRows = new List<string[]> { table[0], new[] { "Roux", "19 937,50", "8 %", "1 595,00" } };
-        var corrected = call.Watched(Print(90), start.AddSeconds(50), insight with { Rows = fixedRows }, new TableReport(2, []));
+        var corrected = call.Watched(Print(90), start.AddSeconds(50), insight with { Rows = fixedRows }, new TableReport(2, [], [gap.Formula]));
         Check(corrected.Fixed.Count == 1 && call.Points[0].Fixed && call.Speaks(corrected), "A corrected gap is announced as fixed");
-        var scrolled = call.Watched(Print(60), start.AddSeconds(70), insight with { Rows = [table[0]] }, new TableReport(2, []));
+        var scrolled = call.Watched(Print(60), start.AddSeconds(70), insight with { Rows = [table[0]] }, new TableReport(2, [], [gap.Formula]));
         Check(scrolled.Fixed.Count == 0, "A row scrolled out of view is not taken as fixed");
+        var unchecked_ = new FocusCall("Excel", start, CallModes.Problem);
+        unchecked_.Watched(Print(4), start, insight, new TableReport(2, [gap], [gap.Formula]));
+        var unverified = unchecked_.Watched(Print(5), start.AddSeconds(20), insight, new TableReport(2, []));
+        Check(unverified.Fixed.Count == 0 && !unchecked_.Points[0].Fixed, "A gap the table could not check again is not taken as fixed");
+        unchecked_.Window = "Excel — Autre.xlsx";
+        var otherWindow = unchecked_.Watched(Print(6), start.AddSeconds(40), insight, new TableReport(2, [gap], [gap.Formula]));
+        Check(otherWindow.Found.Count == 1, "The same gap in another window is announced again");
+        var products = TableCheck.Check(new List<string[]> { table[0], new[] { "Roux", "1 000", "10 %", "100" }, new[] { "Dupont", "2 000", "10 %", "300" } }, "fr");
+        Check(products.Checked?.Contains("CA × Taux") != true, "One matching product is not enough to check the formula");
 
         call.Mode = CallModes.Ask;
         Check(!call.ShouldWatch(Print(1), start.AddSeconds(90)) && !call.ShouldWatch(Print(1), start.AddSeconds(91)), "Ask mode never looks on its own");
@@ -72,6 +81,7 @@ internal static class FocusCallChecks
         Check(SpeechText.Clean("  Le total est   bon ? (bruit) ") == "Le total est bon ?", "Speech text kept and tidied");
         Check(SpeechText.Samples([0x00, 0x40, 0x00, 0xC0]).SequenceEqual([0.5f, -0.5f]), "PCM 16-bit converted to samples");
         Check(VisionClient.Spoken("**Oui** : le total est bon.<turn|>\n- 11 022,50 €") == "Oui : le total est bon. 11 022,50 €", "Spoken answers without markers or Markdown");
+        Check(VisionClient.Spoken("-10 € d'écart.\n- -5 % de remise") == "-10 € d'écart. -5 % de remise", "Spoken answers keep minus signs");
         Console.WriteLine($"{count} screen-sharing call and speech checks passed.");
     }
 }

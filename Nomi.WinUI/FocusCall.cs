@@ -94,7 +94,8 @@ public sealed class FocusCall(string window, DateTimeOffset started, string mode
             {
                 var still = issues.Any(issue => issue.Row == point.Issue.Row && issue.Column == point.Issue.Column);
                 var visible = insight.Rows.Any(row => row.Any(cell => cell.Contains(point.Issue.Row, StringComparison.OrdinalIgnoreCase)));
-                if (still || !visible) continue;
+                var checkedAgain = report.Checked?.Contains(point.Issue.Formula) == true;
+                if (still || !visible || !checkedAgain) continue;
                 point.Fixed = true;
                 corrected.Add(point);
             }
