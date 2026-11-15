@@ -145,10 +145,12 @@ public sealed partial class MainWindow
             var outcome = call.Watched(print, seen, result, tableReport);
             if (call.Speaks(outcome))
             {
-                foreach (var point in outcome.Found) CallRemark(string.Format(T("callGap"), IssueText(point.Issue)), seen, point, true);
-                foreach (var point in outcome.Fixed) CallRemark(string.Format(T("callFixedLine"), point.Issue.Row, point.Issue.Column), seen, point, true);
+                var spoken = new List<string>();
+                foreach (var point in outcome.Found) spoken.Add(CallRemark(string.Format(T("callGap"), IssueText(point.Issue)), seen, point, true, speak: false));
+                foreach (var point in outcome.Fixed) spoken.Add(CallRemark(string.Format(T("callFixedLine"), point.Issue.Row, point.Issue.Column), seen, point, true, speak: false));
                 if (outcome.Found.Count == 0 && outcome.Fixed.Count == 0 && result.Task.Length > 0)
-                    CallRemark(result.Next.Length > 0 ? string.Format(T("callSeesNext"), result.Task, result.Next) : string.Format(T("callSees"), result.Task), seen, null, false);
+                    spoken.Add(CallRemark(result.Next.Length > 0 ? string.Format(T("callSeesNext"), result.Task, result.Next) : string.Format(T("callSees"), result.Task), seen, null, false, speak: false));
+                if (spoken.Count > 0) CallSpeak(string.Join(" ", spoken), false);
             }
             CallRefresh();
             BuildCompanion();
@@ -227,11 +229,12 @@ public sealed partial class MainWindow
         }
     }
 
-    private void CallRemark(string text, DateTimeOffset? seen, CallPoint? point, bool verified, bool answer = false)
+    private string CallRemark(string text, DateTimeOffset? seen, CallPoint? point, bool verified, bool answer = false, bool speak = true)
     {
-        if (call is null) return;
+        if (call is null) return text;
         CallAdd(call.Add(new CallLine("nomi", text, Now, seen, answer ? "answer" : "self", verified) { Point = point }));
-        CallSpeak(text, answer);
+        if (speak) CallSpeak(text, answer);
+        return text;
     }
 
     // Nomi's own remarks stay silent in calm mode; answers to the user are always spoken when the voice is on.
