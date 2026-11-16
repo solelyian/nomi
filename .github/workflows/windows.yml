@@ -170,7 +170,7 @@ jobs:
       - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          key: nomi-release-${{ github.run_id }}
+          key: nomi-release-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             artifacts/Nomi-Setup-*.exe
             artifacts/Nomi-win-x64.zip
@@ -185,7 +185,9 @@ jobs:
     steps:
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          key: nomi-release-${{ github.run_id }}
+          # A rerun of the release job alone falls back to the newest files built in this run.
+          key: nomi-release-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: nomi-release-${{ github.run_id }}-
           fail-on-cache-miss: true
           path: |
             artifacts/Nomi-Setup-*.exe
