@@ -52,6 +52,8 @@ static class RouterChecks
         Check(Router.Decide("Explique-moi le chapitre sur la guerre de 1914", 1, Levels.Auto).Primitive == "learn", "a year in a topic is not calculation evidence");
         Check(Router.Decide("Convert these notes to cheat sheet format", 0, Levels.Auto).Primitive == "sheet", "cheat sheet without an article");
         Check(Router.Decide("Explain how to organize an Excel workbook into sheets by month", 0, Levels.Auto).Primitive == "learn", "spreadsheet tabs are not revision sheets");
+        Check(Router.Decide("What is 15% of 80?", 0, Levels.Auto).Primitive == "verify", "an arithmetic question is calculated");
+        Check(Router.Decide("Make a revision sheet so I can learn the material", 0, Levels.Auto).Primitive == "sheet", "a purpose clause is not the request");
 
         var nl = ((char)10).ToString();
         Check(ChatThread.TitleFrom("  Devis Acme" + nl + "détails") == "Devis Acme", "title is the first line");

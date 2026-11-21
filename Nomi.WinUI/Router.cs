@@ -34,7 +34,7 @@ public static class Router
     // What follows these markers is the subject of the request, not the intent itself.
     private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
     // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
-    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheets?)\b", RegexOptions.Compiled);
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
     private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
     private static readonly string[] WriteVerbs = ["rédige*", "redige*", "écris*", "ecris*", "écrire", "ecrire", "réponds", "reponds", "envoie*", "envoyer", "compose*", "brouillon", "write", "writes", "draft", "reply", "send"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
@@ -63,8 +63,6 @@ public static class Router
         var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
         var primitive = Has(u, ConvertVerbs) && !SheetTarget.IsMatch(u) ? "convert"
             : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"
-            // An explicit explain/teach request wins over a detected sheet target ("explain ... into sheets").
-            : Has(u, LearnWords) ? "learn"
             : SheetTarget.IsMatch(u) ? "sheet"
             : Has(u, SheetWords) && Has(u, SoftReviewWords) && !Has(u, CreateWords) ? "review"
             : Has(u, WriteVerbs) && Has(u, MailWords) ? "communicate"
@@ -75,6 +73,7 @@ public static class Router
             : Has(u, WriteWords) ? "communicate"
             : Has(u, HardReviewWords) || Has(u, SoftReviewWords) ? "review"
             : amount || reads && digits ? "verify"
+            : Has(u, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
         var calculates = primitive is "verify" or "convert";
         var deep = Has(t, DeepWords) || t.Length > 700;
