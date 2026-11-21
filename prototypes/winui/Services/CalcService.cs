@@ -56,7 +56,7 @@ public static class CalcService
             if (char.IsDigit(c) || c == ',' || c == '.')
             {
                 int start = i;
-                while (i < expr.Length && (char.IsDigit(expr[i]) || expr[i] == ',' || expr[i] == '.' || expr[i] == ' '))
+                while (i < expr.Length && (char.IsDigit(expr[i]) || expr[i] == ',' || expr[i] == '.' || char.IsWhiteSpace(expr[i])))
                     i++;
                 var raw = expr.Substring(start, i - start).Trim();
                 tokens.Add(new Tok("num", NormalizeNumber(raw)));
@@ -69,26 +69,16 @@ public static class CalcService
     }
 
     /// <summary>
-    /// « 1 200,50 » / « 1,200 » (milliers US) / « 14 900 » → « 1200.5 ».
-    /// La virgule est décimale quand elle n'est suivie que de ≤2 groupes de 1-2 chiffres,
-    /// ou quand un point existe déjà ; sinon elle est millier.
+    /// « 1 200,50 » / « 14 900 » → « 1200.5 ».
+    /// Locale FR : virgule unique = séparateur décimal (« 0,125 » = 0.125) ;
+    /// les milliers se notent par espaces. « 1,234,567.89 » reste lu à l'anglaise.
     /// </summary>
     private static string NormalizeNumber(string raw)
     {
-        raw = raw.Replace(" ", "").Replace(" ", "");
+        raw = new string(raw.Where(c => !char.IsWhiteSpace(c)).ToArray());
         int commas = raw.Count(c => c == ',');
         int dots = raw.Count(c => c == '.');
-        if (commas == 1 && dots == 0)
-        {
-            int decDigits = raw.Length - raw.IndexOf(',') - 1;
-            if (decDigits == 3)
-            {
-                // « 1,200 » : millier US si 3 chiffres et pas de point décimal
-                var head = raw.Substring(0, raw.IndexOf(','));
-                if (head.Length <= 3) return raw.Replace(",", "");
-            }
-            return raw.Replace(',', '.');
-        }
+        if (commas == 1 && dots == 0) return raw.Replace(',', '.');
         if (commas > 1) return raw.Replace(",", "");
         if (commas == 1 && dots >= 1) return raw.Replace(",", ""); // 1,200.50 → 1200.50
         return raw;
@@ -120,21 +110,20 @@ public static class CalcService
 
     private static double ParseFactor(List<Tok> t, ref int pos)
     {
-        if (pos < t.Count && t[pos].Text == "-") { pos++; return -ParseFactor(t, ref pos); }
-        if (pos < t.Count && t[pos].Text == "(")
+        double v;
+        if (pos < t.Count && t[pos].Text == "-") { pos++; v = -ParseFactor(t, ref pos); }
+        else if (pos < t.Count && t[pos].Text == "(")
         {
             pos++;
-            double inner = ParseExpr(t, ref pos);
+            v = ParseExpr(t, ref pos);
             if (pos >= t.Count || t[pos].Text != ")") throw new FormatException("Parenthèse non fermée");
             pos++;
-            return inner;
         }
-        double v;
-        if (pos < t.Count && t[pos].Kind == "num")
+        else if (pos < t.Count && t[pos].Kind == "num")
             v = double.Parse(t[pos++].Text, CultureInfo.InvariantCulture);
         else
             throw new FormatException("Expression incomplète");
-        // % postfixe : « 20 % » = 0,20
+        // % postfixe : « 20 % » = 0,20 — vaut aussi après « ) » : « (10+10)% » = 0,20
         while (pos < t.Count && t[pos].Text == "%") { pos++; v /= 100.0; }
         return v;
     }
