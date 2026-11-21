@@ -18,12 +18,21 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-if (-not $SkipChecks) {
-    npm ci
-    npm run check
+# Native commands never raise on failure in Windows PowerShell 5 - check every exit code.
+function Invoke-Checked {
+    param([scriptblock]$Step, [string]$Name)
+    & $Step
+    if ($LASTEXITCODE -ne 0) { throw "$Name failed (exit $LASTEXITCODE)" }
 }
 
-dotnet publish Nomi.WinUI/Nomi.WinUI.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishReadyToRun=true -o artifacts/Nomi-win-x64
+if (-not $SkipChecks) {
+    Invoke-Checked { npm ci } "npm ci"
+    Invoke-Checked { npm run check } "npm run check"
+}
+
+Invoke-Checked {
+    dotnet publish Nomi.WinUI/Nomi.WinUI.csproj -c Release -r win-x64 -p:Platform=x64 -p:PublishReadyToRun=true -o artifacts/Nomi-win-x64
+} "dotnet publish"
 if (!(Get-ChildItem artifacts/Nomi-win-x64 -Recurse -Filter llama.dll)) {
     throw "Embedded native llama library missing from publish output"
 }
@@ -43,8 +52,11 @@ if (Test-Path $vswhere) {
 }
 if (!$copied) {
     # No Visual Studio on this machine: the installed VC++ redistributable in System32 does the job.
+    # From 32-bit PowerShell, System32 is WOW64-redirected to 32-bit DLLs - use Sysnative for the real x64 ones.
+    $system32 = Join-Path $env:windir 'System32'
+    if (-not [Environment]::Is64BitProcess) { $system32 = Join-Path $env:windir 'Sysnative\System32' }
     foreach ($name in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
-        $dll = "$env:windir\System32\$name"
+        $dll = Join-Path $system32 $name
         if (Test-Path $dll) { Copy-Item $dll -Destination artifacts/Nomi-win-x64 }
     }
 }
@@ -56,7 +68,7 @@ $iscc = Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe", "${env:P
     Sort-Object FullName -Descending | Select-Object -First 1
 if ($iscc -and !$SkipInstaller) {
     $env:NOMI_VERSION = $Version
-    & $iscc.FullName installer\nomi.iss
+    Invoke-Checked { & $iscc.FullName installer\nomi.iss } "ISCC"
 } elseif (!$SkipInstaller) {
     Write-Warning "Inno Setup not found - installer skipped, portable zip still produced. Install https://jrsoftware.org/inno-setup/downloads or pass -SkipInstaller."
 }
@@ -64,7 +76,10 @@ if ($iscc -and !$SkipInstaller) {
 Remove-Item artifacts/Nomi-win-x64.zip -Force -ErrorAction SilentlyContinue
 Compress-Archive -Path artifacts/Nomi-win-x64/* -DestinationPath artifacts/Nomi-win-x64.zip
 
-$targets = Get-ChildItem artifacts/Nomi-Setup-*.exe, artifacts/Nomi-win-x64.zip -ErrorAction SilentlyContinue
+# Only the artifacts this run produced - earlier installers of other versions stay out of the manifest.
+$targets = @(Get-Item artifacts/Nomi-win-x64.zip)
+$setup = "artifacts/Nomi-Setup-$Version.exe"
+if (Test-Path $setup) { $targets += Get-Item $setup }
 $targets | ForEach-Object {
     "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
 } | Set-Content -Encoding ascii artifacts/SHA256SUMS.txt
