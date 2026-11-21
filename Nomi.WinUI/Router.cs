@@ -28,7 +28,8 @@ public static class Router
     private static readonly string[] DeepWords = ["pourquoi", "optimis*", "compar*", "démontr*", "analys*", "why", "optimi*", "prove", "trade-off"];
     private static readonly string[] CalcWords = ["combien", "calcul*", "additionn*", "multipli*", "moyenne", "pourcent*", "how much", "how many", "how long", "average", "percent*"];
     private static readonly string[] AmountWords = ["total", "totaux", "reste", "restant", "remise", "budget", "tva", "left", "remaining", "discount", "vat", "%", "€", "$"];
-    private static readonly string[] ConvertWords = ["convert*", "en heures", "en minutes", "en euros", "in hours", "in minutes"];
+    private static readonly string[] ConvertVerbs = ["convert*"];
+    private static readonly string[] UnitWords = ["en heures", "en minutes", "en euros", "in hours", "in minutes"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
@@ -43,13 +44,14 @@ public static class Router
         var count = t.Count(char.IsDigit);
         var digits = count >= 2;
         var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
-        var primitive = Has(t, SheetWords) && Has(t, ReviewWords) && !Has(t, CreateWords) ? "review"
+        var primitive = Has(t, ConvertVerbs) ? "convert"
+            : Has(t, SheetWords) && Has(t, ReviewWords) && !Has(t, CreateWords) ? "review"
             : Has(t, SheetWords) ? "sheet"
-            : Has(t, ConvertWords) ? "convert"
             : Has(t, CalcWords) ? "verify"
             : Has(t, PlanWords) ? "plan"
             : Has(t, WriteWords) ? "communicate"
             : Has(t, ReviewWords) ? "review"
+            : Has(t, UnitWords) ? "convert"
             : amount || reads && digits ? "verify"
             : Has(t, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
