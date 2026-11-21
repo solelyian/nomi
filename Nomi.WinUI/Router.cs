@@ -43,6 +43,7 @@ public static class Router
         var digits = count >= 2;
         var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
         var primitive = Has(t, ConvertWords) ? "convert"
+            : Has(t, SheetWords) && Has(t, ReviewWords) ? "review"
             : Has(t, SheetWords) ? "sheet"
             : Has(t, CalcWords) ? "verify"
             : Has(t, PlanWords) ? "plan"
