@@ -42,15 +42,16 @@ public static class Router
         var count = t.Count(char.IsDigit);
         var digits = count >= 2;
         var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
-        var calculates = Has(t, CalcWords) || amount || Has(t, ConvertWords) || reads && digits;
         var primitive = Has(t, ConvertWords) ? "convert"
-            : calculates ? "verify"
+            : Has(t, SheetWords) ? "sheet"
+            : Has(t, CalcWords) ? "verify"
             : Has(t, PlanWords) ? "plan"
             : Has(t, WriteWords) ? "communicate"
             : Has(t, ReviewWords) ? "review"
-            : Has(t, SheetWords) ? "sheet"
+            : amount || reads && digits ? "verify"
             : Has(t, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
+        var calculates = primitive is "verify" or "convert";
         var deep = Has(t, DeepWords) || t.Length > 700;
         var level = Levels.All.Contains(chosen) && chosen != Levels.Auto ? chosen
             : deep ? Levels.Deep
