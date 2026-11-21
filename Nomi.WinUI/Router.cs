@@ -34,7 +34,11 @@ public static class Router
     // What follows these markers is the subject of the request, not the intent itself.
     private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
     // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
-    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
+    private static readonly string[] GridWords = ["excel", "workbook", "classeur", "tableur", "spreadsheet", "xlsx", "csv"];
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:(?!excel|workbook|classeur|tableur|spreadsheet|xlsx|csv)\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
+    // Bare English plural ("into sheets for studying") is a target only outside spreadsheet talk.
+    private static readonly Regex SheetTargetPlural = new(@"\b(?:en|into|to)\s+sheets\b", RegexOptions.Compiled);
+    private static bool SheetAsTarget(string u) => SheetTarget.IsMatch(u) || SheetTargetPlural.IsMatch(u) && !Has(u, GridWords);
     private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
     private static readonly string[] WriteVerbs = ["rédige*", "redige*", "écris*", "ecris*", "écrire", "ecrire", "réponds", "reponds", "envoie*", "envoyer", "compose*", "brouillon", "write", "writes", "draft", "reply", "send"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
@@ -61,9 +65,9 @@ public static class Router
         // Digits inside a topic ("la guerre de 1914") are not calculation evidence.
         var digits = u.Count(char.IsDigit) >= 2;
         var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
-        var primitive = Has(u, ConvertVerbs) && !SheetTarget.IsMatch(u) ? "convert"
+        var primitive = Has(u, ConvertVerbs) && !SheetAsTarget(u) ? "convert"
             : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"
-            : SheetTarget.IsMatch(u) ? "sheet"
+            : SheetAsTarget(u) ? "sheet"
             : Has(u, SheetWords) && Has(u, SoftReviewWords) && !Has(u, CreateWords) ? "review"
             : Has(u, WriteVerbs) && Has(u, MailWords) ? "communicate"
             : Has(u, SheetWords) ? "sheet"
