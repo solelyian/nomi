@@ -34,7 +34,7 @@ public static class Router
     // What follows these markers is the subject of the request, not the intent itself.
     private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
     // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
-    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|a|an)\s+)?(?:\w+\s+)?(?:fiche|sheet)\b", RegexOptions.Compiled);
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:\w+\s+)?)?(?:fiches?|sheets?)\b", RegexOptions.Compiled);
     private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
     private static readonly string[] WriteVerbs = ["rédige*", "redige*", "écris*", "ecris*", "écrire", "ecrire", "réponds", "reponds", "envoie*", "envoyer", "compose*", "brouillon", "write", "writes", "draft", "reply", "send"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
@@ -58,7 +58,8 @@ public static class Router
         var u = intentBefore ? head : t;
         var reads = documents > 0;
         var count = t.Count(char.IsDigit);
-        var digits = count >= 2;
+        // Digits inside a topic ("la guerre de 1914") are not calculation evidence.
+        var digits = u.Count(char.IsDigit) >= 2;
         var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
         var primitive = Has(u, ConvertVerbs) && !SheetTarget.IsMatch(u) ? "convert"
             : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"

@@ -47,6 +47,9 @@ static class RouterChecks
         Check(Router.Decide("Relis ce courriel", 0, Levels.Auto).Primitive == "review", "mail as proofread source");
         Check(Router.Decide("Convertis ce cours en une courte fiche de révision", 0, Levels.Auto).Primitive == "sheet", "adjective inside the sheet target");
         Check(Router.Decide("Convert this lecture to a cheat sheet", 0, Levels.Auto).Primitive == "sheet", "cheat sheet target");
+        Check(Router.Decide("Convertis ce cours en des fiches", 0, Levels.Auto).Primitive == "sheet", "plural sheet target");
+        Check(Router.Decide("Explain how to read sheet music", 0, Levels.Auto).Primitive == "learn", "sheet music is not a revision sheet");
+        Check(Router.Decide("Explique-moi le chapitre sur la guerre de 1914", 1, Levels.Auto).Primitive == "learn", "a year in a topic is not calculation evidence");
 
         var nl = ((char)10).ToString();
         Check(ChatThread.TitleFrom("  Devis Acme" + nl + "détails") == "Devis Acme", "title is the first line");
