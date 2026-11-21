@@ -11,6 +11,8 @@ namespace Nomi.Prototype.WinUI;
 public static class Nav
 {
     public static System.Action<string>? Go;
+    /// <summary>Reconstruit le chrome localisé (nav, badge, bouton langue) après un changement de Loc.English.</summary>
+    public static System.Action? Relocalize;
 }
 
 public sealed partial class MainWindow : Window
@@ -45,6 +47,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = false;
         BuildNav();
         Nav.Go = Navigate;
+        Nav.Relocalize = Relocalize;
         Navigate("accueil");
     }
 
@@ -90,12 +93,17 @@ public sealed partial class MainWindow : Window
         ThemeToggle.Content = root.ActualTheme == ElementTheme.Dark ? "☀" : "☾";
     }
 
-    private void OnLangToggle(object sender, RoutedEventArgs e)
+    private void Relocalize()
     {
-        Loc.English = !Loc.English;
         LangToggle.Content = Loc.English ? "EN" : "FR";
         DemoBadgeText.Text = Loc.T("demo");
         BuildNav();
+    }
+
+    private void OnLangToggle(object sender, RoutedEventArgs e)
+    {
+        Loc.English = !Loc.English;
+        Relocalize();
         Navigate("accueil");
     }
 }
