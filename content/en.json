@@ -82,7 +82,7 @@
     "documentReading": "Reading the file…",
     "documentReady": "Files ready. Add a question or start the analysis.",
     "documentStopped": "Reading stopped.",
-    "document-unsupported": "Unsupported format. Use PDF, DOCX, XLSX, PPTX, TXT, CSV or MD. Save older Office files in the newer format first.",
+    "document-unsupported": "Unsupported format. Use PDF, DOCX, XLSX, PPTX, TXT, CSV, MD or a text source file (CS, TS, PY, JS…) Save older Office files in the newer format first.",
     "document-unreadable": "This file could not be read. Check that it is valid, not password-protected and matches its extension. Text files must use UTF-8.",
     "document-no-text": "No readable text found. For a scanned PDF, use a version with selectable text; image recognition is not included yet.",
     "document-size": "This file exceeds 8 MB. Attach a smaller version.",
@@ -140,7 +140,7 @@
     "idle": "Ready for your request.",
     "tagline": "Nyne Technologies · local processing",
     "documentButton": "Document",
-    "documentFormats": "PDF · Word · Excel · PowerPoint",
+    "documentFormats": "PDF · Word · Excel · PowerPoint · text · code",
     "engineTitle": "Local engine",
     "engineMissing": "Model to prepare",
     "engineDownloading": "Downloading",
@@ -1019,6 +1019,18 @@
         "To revise: explain out loud why “5 points” and “a 25% increase” describe the same change using different reference points."
       ],
       "summary": "From 20% to 25%: +5 percentage points, or +25% relative to the initial rate. Points compare the rates directly; relative change uses the starting rate."
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "description": "Have your code or text read before moving on.",
+      "prompt": "Review this billing module: it adds up line items without rounding, applies a hard-coded 20% VAT rate and ignores the case of an empty order. Tell me what needs correcting.",
+      "steps": [
+        "The VAT rate is written directly into the formula: if the rate changes, every calculation must be edited. Use the rate constant defined in the module.",
+        "Each line is added without rounding: fractions of a cent accumulate in the total. Round each line before adding.",
+        "An order with no lines produces a silent zero total: decide whether the module should reject the input or flag it. No code is changed: these points are proposals to validate."
+      ],
+      "summary": "Three points to fix: a hard-coded VAT rate (replace with the module constant), no per-line rounding (fractions of a cent accumulate) and an undecided empty-order case. No code is changed."
     }
   ],
   "contexts": [

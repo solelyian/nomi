@@ -17,6 +17,7 @@
     "plan": "Turn the user's available time and tasks into a realistic sequence. Keep within their time budget, include a buffer and state assumptions.",
     "communicate": "Draft a clear, professional message using the user's numbers and context. Verify any calculations and avoid unsupported promises.",
     "learn": "Explain the supplied course material or concept in small steps, give a short example, then one useful revision question. Do not claim to transcribe audio.",
+    "review": "Review the code or text the user supplies. Report each point worth checking, with its location (line number or element name), why it matters and what to change instead — described in plain words. Never quote, reproduce or emit code or code blocks: the response must remain readable prose only. Nothing is applied or rewritten; Nomi only proposes. Sort the points by importance, then end with a short summary of what holds and what to fix first.",
     "chat": "Hold a helpful conversation about the user's work and their open tasks. Answer the latest message directly, keep earlier messages in mind and suggest a concrete next move when useful.",
     "draft": "Write a first draft the user can start from immediately: an email, a message, an outline, a plan or a checklist, based only on the task details supplied."
   },
