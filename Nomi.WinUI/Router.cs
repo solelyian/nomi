@@ -28,9 +28,13 @@ public static class Router
     private static readonly string[] DeepWords = ["pourquoi", "optimis*", "compar*", "démontr*", "analys*", "why", "optimi*", "prove", "trade-off"];
     private static readonly string[] CalcWords = ["combien", "calcul*", "additionn*", "multipli*", "moyenne", "pourcent*", "how much", "how many", "how long", "average", "percent*"];
     private static readonly string[] AmountWords = ["total", "totaux", "reste", "restant", "remise", "budget", "tva", "left", "remaining", "discount", "vat", "%", "€", "$"];
-    private static readonly string[] ConvertVerbs = ["convert*"];
+    private static readonly string[] ConvertVerbs = ["convertir", "converti", "convertis", "convertit", "convertissez", "convertissons", "convertissent", "conversion", "conversions", "convert", "converts", "converting", "converted"];
     private static readonly string[] UnitWords = ["en heures", "en minutes", "en euros", "in hours", "in minutes"];
-    private static readonly string[] SheetOutWords = ["une fiche", "en fiche", "des fiches", "fiche de révision", "fiche de synthèse", "a revision sheet", "a study sheet", "a cheat sheet", "into a sheet"];
+    // What follows these markers is the subject of the request, not the intent itself.
+    private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
+    // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
+    private static readonly string[] SheetOutWords = ["en fiche", "en une fiche", "en des fiches", "into a sheet", "into a revision sheet", "into a study sheet", "into a cheat sheet", "to a sheet", "to a revision sheet", "to a study sheet"];
+    private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
@@ -42,22 +46,25 @@ public static class Router
     public static Route Decide(string text, int documents, string chosen)
     {
         var t = Normalize(text);
+        var topicAt = TopicMarkers.Select(m => t.IndexOf(m, StringComparison.Ordinal)).Where(i => i >= 0).DefaultIfEmpty(-1).Min();
+        var u = topicAt >= 0 ? t[..topicAt] : t;
         var reads = documents > 0;
-        var count = t.Count(char.IsDigit);
+        var count = u.Count(char.IsDigit);
         var digits = count >= 2;
-        var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
-        var primitive = Has(t, ConvertVerbs) && !Has(t, SheetOutWords) ? "convert"
-            : Has(t, SheetWords) && Has(t, HardReviewWords) ? "review"
-            : Has(t, SheetOutWords) ? "sheet"
-            : Has(t, SheetWords) && Has(t, SoftReviewWords) && !Has(t, CreateWords) ? "review"
-            : Has(t, SheetWords) ? "sheet"
-            : Has(t, UnitWords) ? "convert"
-            : Has(t, CalcWords) ? "verify"
-            : Has(t, PlanWords) ? "plan"
-            : Has(t, WriteWords) ? "communicate"
-            : Has(t, HardReviewWords) || Has(t, SoftReviewWords) ? "review"
+        var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
+        var primitive = Has(u, ConvertVerbs) && !Has(u, SheetOutWords) ? "convert"
+            : Has(u, MailWords) ? "communicate"
+            : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"
+            : Has(u, SheetOutWords) ? "sheet"
+            : Has(u, SheetWords) && Has(u, SoftReviewWords) && !Has(u, CreateWords) ? "review"
+            : Has(u, SheetWords) ? "sheet"
+            : Has(u, UnitWords) ? "convert"
+            : Has(u, CalcWords) ? "verify"
+            : Has(u, PlanWords) ? "plan"
+            : Has(u, WriteWords) ? "communicate"
+            : Has(u, HardReviewWords) || Has(u, SoftReviewWords) ? "review"
             : amount || reads && digits ? "verify"
-            : Has(t, LearnWords) ? "learn"
+            : Has(u, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
         var calculates = primitive is "verify" or "convert";
         var deep = Has(t, DeepWords) || t.Length > 700;
