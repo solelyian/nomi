@@ -361,6 +361,9 @@
                 <ScrollViewer x:Name="FocusPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="FocusBody" Spacing="12" HorizontalAlignment="Stretch" Padding="4,0,4,10" />
                 </ScrollViewer>
+                <ScrollViewer x:Name="TranscriptPanel" Visibility="Collapsed" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="TranscriptBody" Spacing="14" MaxWidth="760" HorizontalAlignment="Left" Padding="4,4,4,8" />
+                </ScrollViewer>
                 </Grid>
 
                 <!-- Floating command bar -->

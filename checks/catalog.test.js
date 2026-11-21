@@ -62,6 +62,7 @@ test("every literal UI translation reference exists in both catalogs", async () 
     "Nomi.WinUI/MainWindow.Profile.cs",
     "Nomi.WinUI/MainWindow.Onboarding.cs",
     "Nomi.WinUI/MainWindow.Routines.cs",
+    "Nomi.WinUI/MainWindow.Transcript.cs",
     "Nomi.WinUI/MainWindow.Agenda.cs",
     "Nomi.WinUI/MainWindow.Presence.cs",
   ];
