@@ -340,7 +340,8 @@ public sealed partial class MainWindow : Window
             ["spaces"] = SpacesPanel,
             ["settings"] = SettingsPanel,
             ["routines"] = RoutinesPanel,
-            ["nomi"] = NomiPanel
+            ["nomi"] = NomiPanel,
+            ["transcript"] = TranscriptPanel
         };
         foreach (var (key, element) in panels) element.Visibility = key == view ? Visibility.Visible : Visibility.Collapsed;
         if (view == "spaces") BuildSpaces();
@@ -350,6 +351,7 @@ public sealed partial class MainWindow : Window
         else if (view == "focus") BuildFocus();
         else if (view == "routines") BuildRoutines();
         else if (view == "nomi") BuildNomi();
+        else if (view == "transcript") BuildTranscript();
         AsideColumn.Width = new GridLength(view is "nomi" or "today" ? 0 : 300);
         Aside.Visibility = view is "nomi" or "today" ? Visibility.Collapsed : Visibility.Visible;
         CommandBar.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
@@ -379,6 +381,7 @@ public sealed partial class MainWindow : Window
         "focus" => T("focus"),
         "spaces" => T("spaces"),
         "routines" => T("routines"),
+        "transcript" => T("transcript"),
         "conversation" => T("conversation"),
         "settings" => T("preferences"),
         _ => Action.Title
@@ -402,7 +405,8 @@ public sealed partial class MainWindow : Window
             ("board", T("board"), "\uF0E2", "NavBoard"),
             ("focus", T("focus"), "\uE7B3", "NavFocus"),
             ("nomi", "Nomi", "\uE8BD", "NavNomi"),
-            ("routines", T("routines"), "\uE823", "NavRoutines")
+            ("routines", T("routines"), "\uE823", "NavRoutines"),
+            ("transcript", T("transcript"), "\uE720", "NavTranscript")
         };
         for (var index = 0; index < views.Length; index++)
         {
@@ -412,6 +416,7 @@ public sealed partial class MainWindow : Window
                 "board" => board.Tasks.Count(task => task.Column != Columns.Done).ToString(CultureInfo.CurrentCulture),
                 "focus" when focusState != "idle" => "●",
                 "routines" when readyRoutine is not null => "●",
+                "transcript" when transcriptRunning => "●",
                 _ => $"{index + 1}"
             };
             var button = NavButton(label, glyph, view == id, badge, true);
