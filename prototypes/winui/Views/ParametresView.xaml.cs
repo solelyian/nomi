@@ -7,11 +7,11 @@ namespace Nomi.Prototype.WinUI.Views;
 
 public sealed partial class ParametresView : UserControl
 {
-    private static readonly (string Name, string Detail, string State, string StateBrush)[] ModelRows =
+    private static readonly (string Name, string Detail, string State, string Bg, string Fg)[] ModelRows =
     {
-        ("Qwen3 8B", "Raisonnement, réponses — ~5 Go", "Chargé", "OkSoftBrush"),
-        ("Gemma 4 E4B", "Vision — ~6 Go", "Présent", "InfoSoftBrush"),
-        ("Whisper small", "Voix → texte — ~488 Mo", "À télécharger", "WarnSoftBrush"),
+        ("Qwen3 8B", "Raisonnement, réponses — ~5 Go", "Chargé", "OkSoftBrush", "OkBrush"),
+        ("Gemma 4 E4B", "Vision — ~6 Go", "Présent", "InfoSoftBrush", "InfoBrush"),
+        ("Whisper small", "Voix → texte — ~488 Mo", "À télécharger", "WarnSoftBrush", "WarnBrush"),
     };
 
     private static readonly (string Label, string Detail)[] ReadRows =
@@ -29,7 +29,7 @@ public sealed partial class ParametresView : UserControl
         ThemeSwitch.IsOn = App.Current.RequestedTheme == ApplicationTheme.Dark;
         LangSwitch.IsOn = Loc.English;
         _ready = true;
-        foreach (var (name, detail, state, brush) in ModelRows)
+        foreach (var (name, detail, state, bg, fg) in ModelRows)
         {
             var grid = new Grid { Padding = new Thickness(0, 6, 0, 6), ColumnSpacing = 12 };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -40,9 +40,16 @@ public sealed partial class ParametresView : UserControl
             grid.Children.Add(left);
             var pill = new Border
             {
-                Style = (Style)Application.Current.Resources["PillBorder"], VerticalAlignment = VerticalAlignment.Center,
-                Background = (Brush)Application.Current.Resources[brush],
-                Child = new TextBlock { Text = state, Style = (Style)Application.Current.Resources["PillText"] },
+                Style = (Style)Application.Current.Resources["PillBorder"],
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Background = (Brush)Application.Current.Resources[bg],
+                Child = new TextBlock
+                {
+                    Style = (Style)Application.Current.Resources["PillText"],
+                    Foreground = (Brush)Application.Current.Resources[fg],
+                    Text = state,
+                },
             };
             Grid.SetColumn(pill, 1);
             grid.Children.Add(pill);

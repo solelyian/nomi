@@ -3,7 +3,7 @@
     x:Class="Nomi.Prototype.WinUI.Views.AccueilView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+    <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="8">
         <StackPanel Spacing="14" MaxWidth="980">
             <StackPanel Margin="8,4,0,6">
                 <TextBlock Text="Bonjour." FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegible-Regular.ttf#Atkinson Hyperlegible" FontSize="26" FontWeight="Bold"

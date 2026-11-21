@@ -8,7 +8,7 @@
             <ColumnDefinition Width="7*"/><ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="12">
                 <Border Style="{StaticResource GlassCard}">
                     <Grid ColumnSpacing="12">

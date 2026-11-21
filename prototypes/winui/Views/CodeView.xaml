@@ -24,7 +24,7 @@
                             Content="Analyser avec Nomi" Click="OnAnalyze"/>
                 </Grid>
                 <Border Grid.Row="1" BorderBrush="{ThemeResource StrokeBrush}" BorderThickness="0,1,0,0" Padding="18,12">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                         <TextBlock x:Name="Editor" Style="{StaticResource CodeText}" TextWrapping="NoWrap"
                                    Text="{x:Bind services:DemoData.InvoiceSource, Mode=OneTime}"/>
                     </ScrollViewer>
@@ -33,7 +33,7 @@
         </Border>
 
         <!-- Résultats -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="12">
                 <StackPanel x:Name="EmptyState" Spacing="10">
                     <TextBlock Text="RELECTURE" Style="{StaticResource OverlineText}"/>
