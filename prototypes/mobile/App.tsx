@@ -88,10 +88,17 @@ function Code() {
   const [review, setReview] = useState<CodeReview | null>(null);
   const [busy, setBusy] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [source, setSource] = useState(demoSource);
   const run = async () => {
-    setBusy(true); setApplied(false);
+    setBusy(true); setApplied(false); setSource(demoSource);
     setReview(await simulatedInference.reviewCode(demoSource));
     setBusy(false);
+  };
+  const apply = () => {
+    setSource(src => src
+      .replace('ht += l.prix * l.qte;', 'ht += Math.round(l.prix * l.qte * 100) / 100;')
+      .replace('const tva = ht * 0.2;', 'const TAUX_TVA = 0.2;\n  const tva = ht * TAUX_TVA;'));
+    setApplied(true);
   };
   const chip = (sev: string) =>
     sev === 'erreur' ? [t.errSoft, t.err] : sev === 'avertissement' ? [t.warnSoft, t.warn] : [t.infoSoft, t.info];
@@ -103,7 +110,7 @@ function Code() {
           <AccentButton label={busy ? 'Analyse…' : 'Analyser avec Nomi'} onPress={run} disabled={busy} />
         </View>
         <View style={[s.codeBox, { borderColor: t.stroke, marginTop: 12 }]}>
-          <Text style={{ color: t.ink, fontFamily: 'monospace', fontSize: 11.5, lineHeight: 17 }}>{demoSource}</Text>
+          <Text style={{ color: t.ink, fontFamily: 'monospace', fontSize: 11.5, lineHeight: 17 }}>{source}</Text>
         </View>
       </Card>
       {!review && !busy &&
@@ -135,7 +142,7 @@ function Code() {
           </View>
           <Text style={{ color: t.inkSoft, fontSize: 12, marginTop: 8 }}>{review.explanation}</Text>
           <View style={{ flexDirection: 'row', gap: 14, marginTop: 10 }}>
-            <AccentButton label="Appliquer" onPress={() => setApplied(true)} />
+            <AccentButton label="Appliquer" onPress={apply} />
             <Ghost label="Écarter" onPress={() => setReview(null)} />
           </View>
         </Card>}
