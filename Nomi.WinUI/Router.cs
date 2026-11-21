@@ -32,7 +32,7 @@ public static class Router
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
-    private static readonly string[] ReviewWords = ["relis ", "relecture", "relire", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "audite*", "review", "revue", "check this code", "check my code", "lint*"];
+    private static readonly string[] ReviewWords = ["relis*", "relecture", "relire", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "audite*", "review", "revue", "check this code", "check my code", "lint*"];
 
     public static Route Decide(string text, int documents, string chosen)
     {
