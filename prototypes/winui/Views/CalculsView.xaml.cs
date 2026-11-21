@@ -34,9 +34,14 @@ public sealed partial class CalculsView : UserControl
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var res = (Style)Application.Current.Resources["CodeText"];
-            grid.Children.Add(new TextBlock { Text = label, Style = (Style)Application.Current.Resources["BodyText"], VerticalAlignment = VerticalAlignment.Center });
-            grid.Children.Add(new TextBlock { Text = expr, Style = res, Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"], VerticalAlignment = VerticalAlignment.Center });
-            grid.Children.Add(new TextBlock { Text = CalcService.Format(expected) + " €", Style = res, VerticalAlignment = VerticalAlignment.Center });
+            var labelTb = new TextBlock { Text = label, Style = (Style)Application.Current.Resources["BodyText"], VerticalAlignment = VerticalAlignment.Center };
+            grid.Children.Add(labelTb);
+            var exprTb = new TextBlock { Text = expr, Style = res, Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"], VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(exprTb, 1);
+            grid.Children.Add(exprTb);
+            var expectedTb = new TextBlock { Text = CalcService.Format(expected) + " €", Style = res, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(expectedTb, 2);
+            grid.Children.Add(expectedTb);
 
             var computedTb = new TextBlock { Style = res, VerticalAlignment = VerticalAlignment.Center, Text = verified ? CalcService.Format(computed!.Value) + " €" : "—" };
             if (verified && !match) computedTb.Foreground = (Brush)Application.Current.Resources["ErrBrush"];
