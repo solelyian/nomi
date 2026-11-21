@@ -82,7 +82,7 @@
     "documentReading": "Lecture du fichier…",
     "documentReady": "Fichiers prêts. Ajoutez une question ou lancez l’analyse.",
     "documentStopped": "Lecture arrêtée.",
-    "document-unsupported": "Format non pris en charge. Utilisez PDF, DOCX, XLSX, PPTX, TXT, CSV ou MD. Pour un ancien fichier Office, enregistrez-le au format récent.",
+    "document-unsupported": "Format non pris en charge. Utilisez PDF, DOCX, XLSX, PPTX, TXT, CSV, MD ou un fichier code texte (CS, TS, PY, JS…) Pour un ancien fichier Office, enregistrez-le au format récent.",
     "document-unreadable": "Impossible de lire ce fichier. Vérifiez qu’il est valide, non protégé par un mot de passe et au format annoncé. Les fichiers texte doivent être en UTF-8.",
     "document-no-text": "Aucun texte exploitable trouvé. Pour un PDF scanné, utilisez une version avec texte sélectionnable ; la reconnaissance d’images n’est pas encore intégrée.",
     "document-size": "Ce fichier dépasse 8 Mo. Joignez une version plus légère.",
@@ -140,7 +140,7 @@
     "idle": "Prêt pour votre demande.",
     "tagline": "Nyne Technologies · traitement local",
     "documentButton": "Document",
-    "documentFormats": "PDF · Word · Excel · PowerPoint",
+    "documentFormats": "PDF · Word · Excel · PowerPoint · texte · code",
     "engineTitle": "Moteur local",
     "engineMissing": "Modèle à préparer",
     "engineDownloading": "Téléchargement",
@@ -1019,6 +1019,18 @@
         "Pour réviser : expliquez à voix haute pourquoi « 5 points » et « 25 % de hausse » décrivent ici la même évolution avec deux repères différents."
       ],
       "summary": "De 20 % à 25 % : +5 points de pourcentage, ou +25 % par rapport au taux initial. Les points comparent directement les taux ; la variation relative utilise le taux de départ."
+    },
+    {
+      "id": "review",
+      "title": "Relire",
+      "description": "Relisez votre code ou votre texte avant de continuer.",
+      "prompt": "Relis ce module de facturation : il additionne les lignes sans arrondi, applique un taux de TVA de 20 % codé en dur et ignore le cas d’une commande vide. Dis-moi ce qui mérite une correction.",
+      "steps": [
+        "Le taux de TVA est écrit directement dans la formule : si le taux évolue, chaque calcul doit être retouché. Utilisez la constante de taux prévue dans le module.",
+        "Chaque ligne est ajoutée sans arrondi : les fractions de centime s’accumulent dans le total. Arrondissez chaque ligne avant l’addition.",
+        "Une commande sans ligne produit un total à zéro silencieux : décidez si le module doit refuser l’entrée ou le signaler. Aucun code n’est modifié : ces points sont des propositions à valider."
+      ],
+      "summary": "Trois points à corriger : taux de TVA codé en dur (à remplacer par la constante du module), absence d’arrondi par ligne (des fractions de centime s’accumulent) et cas de la commande vide non tranché. Aucun code n’est modifié."
     }
   ],
   "contexts": [

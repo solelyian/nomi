@@ -20,7 +20,9 @@ public static class DocumentText
     private const long MaxExpandedBytes = 32_000_000;
     public const int MaxCharacters = 8_000;
     public const int MaxTotal = 12_000;
-    public static readonly string[] Extensions = [".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".csv", ".md"];
+    public static readonly string[] Extensions = [".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".csv", ".md",
+        ".cs", ".ts", ".tsx", ".js", ".jsx", ".py", ".java", ".cpp", ".cc", ".c", ".h", ".hpp",
+        ".json", ".xml", ".yml", ".yaml", ".sql", ".ps1", ".sh", ".html", ".css", ".go", ".rs", ".rb"];
     private static readonly XNamespace Word = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private static readonly XNamespace Drawing = "http://schemas.openxmlformats.org/drawingml/2006/main";
     private static readonly XNamespace Presentation = "http://schemas.openxmlformats.org/presentationml/2006/main";
