@@ -33,6 +33,7 @@ public static class Router
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
     private static readonly string[] ReviewWords = ["relis*", "relecture", "relire", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "audite*", "review", "revue", "check this code", "check my code", "lint*"];
+    private static readonly string[] SheetWords = ["fiche*", "révis*", "revis*", "revise*", "revision", "sheet*"];
 
     public static Route Decide(string text, int documents, string chosen)
     {
@@ -47,6 +48,7 @@ public static class Router
             : Has(t, PlanWords) ? "plan"
             : Has(t, WriteWords) ? "communicate"
             : Has(t, ReviewWords) ? "review"
+            : Has(t, SheetWords) ? "sheet"
             : Has(t, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
         var deep = Has(t, DeepWords) || t.Length > 700;
