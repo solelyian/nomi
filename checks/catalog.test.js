@@ -22,9 +22,9 @@ test("both clients receive complete catalogs with stable action and context iden
     Object.keys(en.labels).sort(),
   );
   for (const catalog of [fr, en]) {
-    assert.equal(catalog.actions.length, 7);
+    assert.equal(catalog.actions.length, 8);
     assert.equal(catalog.contexts.length, 4);
-    assert.equal(new Set(catalog.actions.map((action) => action.id)).size, 7);
+    assert.equal(new Set(catalog.actions.map((action) => action.id)).size, 8);
     for (const value of Object.values(catalog.labels))
       assert.ok(value.trim().length > 0);
     for (const action of catalog.actions) {
@@ -103,7 +103,7 @@ test("the palette supports accents, case, whitespace and multi-word queries", ()
     ),
   );
   assert.equal(filterCommands(fr, "does-not-exist").length, 0);
-  assert.equal(filterCommands(fr, "").length, 11);
+  assert.equal(filterCommands(fr, "").length, 12);
 });
 
 test("all palette destinations resolve and preserve identity across a language change", () => {
