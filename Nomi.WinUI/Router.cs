@@ -30,10 +30,12 @@ public static class Router
     private static readonly string[] AmountWords = ["total", "totaux", "reste", "restant", "remise", "budget", "tva", "left", "remaining", "discount", "vat", "%", "€", "$"];
     private static readonly string[] ConvertVerbs = ["convert*"];
     private static readonly string[] UnitWords = ["en heures", "en minutes", "en euros", "in hours", "in minutes"];
+    private static readonly string[] SheetOutWords = ["une fiche", "en fiche", "des fiches", "fiche de révision", "fiche de synthèse", "a revision sheet", "a study sheet", "a cheat sheet", "into a sheet"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
-    private static readonly string[] ReviewWords = ["relis*", "relecture", "relire", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "audite*", "review", "revue", "check this code", "check my code", "lint*"];
+    private static readonly string[] HardReviewWords = ["relis*", "relecture", "relire", "audite*", "lint*", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "check this code", "check my code", "proofread*"];
+    private static readonly string[] SoftReviewWords = ["review", "revue"];
     private static readonly string[] SheetWords = ["fiche*", "révis*", "revis*", "revise*", "revision", "revision sheet", "study sheet", "cheat sheet"];
     private static readonly string[] CreateWords = ["fais", "fait", "faites", "crée*", "génère*", "produis*", "make", "create*", "generate*", "produce*", "build"];
 
@@ -44,14 +46,16 @@ public static class Router
         var count = t.Count(char.IsDigit);
         var digits = count >= 2;
         var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
-        var primitive = Has(t, ConvertVerbs) ? "convert"
-            : Has(t, SheetWords) && Has(t, ReviewWords) && !Has(t, CreateWords) ? "review"
+        var primitive = Has(t, ConvertVerbs) && !Has(t, SheetOutWords) ? "convert"
+            : Has(t, SheetWords) && Has(t, HardReviewWords) ? "review"
+            : Has(t, SheetOutWords) ? "sheet"
+            : Has(t, SheetWords) && Has(t, SoftReviewWords) && !Has(t, CreateWords) ? "review"
             : Has(t, SheetWords) ? "sheet"
+            : Has(t, UnitWords) ? "convert"
             : Has(t, CalcWords) ? "verify"
             : Has(t, PlanWords) ? "plan"
             : Has(t, WriteWords) ? "communicate"
-            : Has(t, ReviewWords) ? "review"
-            : Has(t, UnitWords) ? "convert"
+            : Has(t, HardReviewWords) || Has(t, SoftReviewWords) ? "review"
             : amount || reads && digits ? "verify"
             : Has(t, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
