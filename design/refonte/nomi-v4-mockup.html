@@ -664,7 +664,7 @@ function apply(){
   document.body.style.padding=bare?'8px':'20px 12px 36px';
   document.querySelectorAll('.view').forEach(v=>v.hidden=v.dataset.view!==s);
   document.querySelectorAll('.page-tools [data-s]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===s));
-  document.querySelectorAll('.page-tools [data-t]').forEach(b=>b.setAttribute('aria-pressed',String(dark)===(b.dataset.t==='dark')));
+  document.querySelectorAll('.page-tools [data-t]').forEach(b=>b.setAttribute('aria-pressed',String(dark===(b.dataset.t==='dark'))));
   document.querySelectorAll('.nav').forEach(n=>{
     const on=n.dataset.nav===s;
     if(on)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
