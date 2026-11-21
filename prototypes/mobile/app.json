@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Nomi — prototype",
+    "slug": "nomi-prototype-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
+    "android": {},
+    "web": { "bundler": "metro" }
+  }
+}
