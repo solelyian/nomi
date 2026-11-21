@@ -323,6 +323,7 @@
     "transcriptSave": "Enregistrer en .txt",
     "transcriptClear": "Effacer",
     "transcriptSaved": "Transcription enregistrée.",
+    "transcriptSaveError": "L’enregistrement a échoué. La transcription reste affichée : copiez-la pour la conserver.",
     "callEnded": "Appel terminé",
     "callEndedNote": "Les images de l’appel sont déjà effacées. Ce résumé n’est conservé que si vous l’enregistrez.",
     "callDuration": "Durée de l’appel",

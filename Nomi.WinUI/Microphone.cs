@@ -59,6 +59,11 @@ public sealed class Microphone : IDisposable
         return true;
     }
 
+    public float[]? Finish()
+    {
+        lock (sync) return segmenter.Finish();
+    }
+
     public void Stop()
     {
         var input = wave;

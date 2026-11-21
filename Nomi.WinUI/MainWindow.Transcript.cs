@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.Storage;
 using Windows.Storage.Pickers;
 
 namespace Nomi;
@@ -191,7 +192,7 @@ public sealed partial class MainWindow
     {
         try
         {
-            if (!transcriptRunning) return;
+            if (transcriptStarted is null) return;
             transcriptBusy = true;
             RefreshTranscript();
             var text = await speech.TranscribeAsync(samples, language, transcriptRun?.Token ?? CancellationToken.None);
@@ -214,11 +215,10 @@ public sealed partial class MainWindow
     {
         transcriptRunning = false;
         transcriptTicker?.Stop();
+        var tail = transcriptMic?.Finish();
         transcriptMic?.Stop();
-        transcriptRun?.Cancel();
-        transcriptRun?.Dispose();
-        transcriptRun = null;
-        _ = speech.UnloadAsync();
+        if (tail is { Length: > 0 } rest) _ = TranscriptSegment(rest);
+        if (focusState == "idle") _ = speech.UnloadAsync();
         RefreshTranscript();
         BuildRail();
     }
@@ -228,10 +228,19 @@ public sealed partial class MainWindow
         var picker = new FileSavePicker { SuggestedFileName = $"transcription-{Now:yyyy-MM-dd-HHmm}" };
         picker.FileTypeChoices.Add("Text", [".txt"]);
         WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-        var file = await picker.PickSaveFileAsync();
+        StorageFile? file;
+        try { file = await picker.PickSaveFileAsync(); }
+        catch (Exception error) when (error is not OutOfMemoryException) { return; }
         if (file is null) return;
-        await Windows.Storage.FileIO.WriteTextAsync(file, TranscriptText());
-        transcriptMessage = T("transcriptSaved");
+        try
+        {
+            await Windows.Storage.FileIO.WriteTextAsync(file, TranscriptText());
+            transcriptMessage = T("transcriptSaved");
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            transcriptMessage = T("transcriptSaveError");
+        }
         RefreshTranscript();
     }
 }

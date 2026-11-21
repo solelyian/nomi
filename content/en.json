@@ -323,6 +323,7 @@
     "transcriptSave": "Save as .txt",
     "transcriptClear": "Clear",
     "transcriptSaved": "Transcript saved.",
+    "transcriptSaveError": "Saving failed. The transcript stays on screen: copy it to keep it.",
     "callEnded": "Call ended",
     "callEndedNote": "The call's images are already erased. This summary is only kept if you save it.",
     "callDuration": "Call length",

@@ -404,6 +404,6 @@ public sealed partial class MainWindow
         tableReport = null;
         callActivity = "listening";
         _ = vision.UnloadAsync();
-        _ = speech.UnloadAsync();
+        if (!transcriptRunning) _ = speech.UnloadAsync();
     }
 }

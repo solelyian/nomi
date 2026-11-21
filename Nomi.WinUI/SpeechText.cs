@@ -80,6 +80,14 @@ public sealed class SpeechSegmenter
         Speaking = false;
         loud = quiet = voiced = 0;
     }
+
+    // Flushes speech still buffered — e.g. when listening stops before the trailing silence.
+    public float[]? Finish()
+    {
+        var tail = Speaking && voiced >= MinimumVoiced ? speech.ToArray() : null;
+        Reset();
+        return tail;
+    }
 }
 
 // Started is true when the user begins to speak; Samples holds a finished utterance, or null when it was only noise.
