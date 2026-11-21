@@ -8,31 +8,33 @@
             <ColumnDefinition Width="7*"/><ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Spacing="12">
-            <Border Style="{StaticResource GlassCard}">
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Fiche de révision" Style="{StaticResource CardTitle}"/>
-                        <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0"
-                                   Text="Générée depuis « Cours — IPP » (transcription 38 min). Chaque section indique sa provenance."/>
-                    </StackPanel>
-                    <Button x:Name="GenButton" Grid.Column="1" Style="{StaticResource AccentButton}"
-                            Content="Générer la fiche" Click="OnGenerate"/>
-                </Grid>
-            </Border>
-
-            <ProgressRing x:Name="Spinner" IsActive="False" Visibility="Collapsed" Width="28" Height="28"
-                          Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Left"/>
-            <StackPanel x:Name="Sections" Spacing="10">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
                 <Border Style="{StaticResource GlassCard}">
-                    <TextBlock Style="{StaticResource CaptionText}"
-                               Text="La fiche apparaîtra ici, découpée en sections traçables : contenu du cours, explication ajoutée par Nomi, ou hypothèse à confirmer."/>
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Fiche de révision" Style="{StaticResource CardTitle}"/>
+                            <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0"
+                                       Text="Générée depuis « Cours — IPP » (transcription 38 min). Chaque section indique sa provenance."/>
+                        </StackPanel>
+                        <Button x:Name="GenButton" Grid.Column="1" Style="{StaticResource AccentButton}"
+                                Content="Générer la fiche" Click="OnGenerate"/>
+                    </Grid>
                 </Border>
+
+                <ProgressRing x:Name="Spinner" IsActive="False" Visibility="Collapsed" Width="28" Height="28"
+                              Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Left"/>
+                <StackPanel x:Name="Sections" Spacing="10">
+                    <Border Style="{StaticResource GlassCard}">
+                        <TextBlock Style="{StaticResource CaptionText}"
+                                   Text="La fiche apparaîtra ici, découpée en sections traçables : contenu du cours, explication ajoutée par Nomi, ou hypothèse à confirmer."/>
+                    </Border>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+        </ScrollViewer>
 
         <!-- Rail sources -->
         <Border Grid.Column="1" Style="{StaticResource GlassCard}">

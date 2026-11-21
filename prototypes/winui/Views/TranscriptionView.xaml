@@ -8,31 +8,33 @@
             <ColumnDefinition Width="7*"/><ColumnDefinition Width="5*"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Spacing="12">
-            <Border Style="{StaticResource GlassCard}">
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Analyse — séance 8" Style="{StaticResource CardTitle}"/>
-                        <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0"
-                                   Text="Enregistrement local — rien ne quitte la machine"/>
-                    </StackPanel>
-                    <TextBlock x:Name="Timer" Grid.Column="1" Text="00:00" VerticalAlignment="Center"
-                               FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono" FontSize="18" Foreground="{ThemeResource AccentInkBrush}"/>
-                    <Button x:Name="StartButton" Grid.Column="2" Style="{StaticResource AccentButton}"
-                            Content="Démarrer la transcription" Click="OnStart"/>
-                </Grid>
-            </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+                <Border Style="{StaticResource GlassCard}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Analyse — séance 8" Style="{StaticResource CardTitle}"/>
+                            <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0"
+                                       Text="Enregistrement local — rien ne quitte la machine"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Timer" Grid.Column="1" Text="00:00" VerticalAlignment="Center"
+                                   FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono" FontSize="18" Foreground="{ThemeResource AccentInkBrush}"/>
+                        <Button x:Name="StartButton" Grid.Column="2" Style="{StaticResource AccentButton}"
+                                Content="Démarrer la transcription" Click="OnStart"/>
+                    </Grid>
+                </Border>
 
-            <Border Style="{StaticResource GlassCard}" Padding="10">
-                <StackPanel x:Name="Transcript" Spacing="4">
-                    <TextBlock Style="{StaticResource CaptionText}" Padding="8"
-                               Text="La transcription s'affiche ici au fil de l'écoute. « [inaudible] » et les passages incertains sont marqués, pas inventés."/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                <Border Style="{StaticResource GlassCard}" Padding="10">
+                    <StackPanel x:Name="Transcript" Spacing="4">
+                        <TextBlock Style="{StaticResource CaptionText}" Padding="8"
+                                   Text="La transcription s'affiche ici au fil de l'écoute. « [inaudible] » et les passages incertains sont marqués, pas inventés."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- Panneau « En direct » -->
         <Border Grid.Column="1" Style="{StaticResource GlassCard}">
