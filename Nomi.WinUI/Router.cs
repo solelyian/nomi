@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Nomi;
 
@@ -33,8 +34,9 @@ public static class Router
     // What follows these markers is the subject of the request, not the intent itself.
     private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
     // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
-    private static readonly string[] SheetOutWords = ["en fiche", "en une fiche", "en des fiches", "into a sheet", "into a revision sheet", "into a study sheet", "into a cheat sheet", "to a sheet", "to a revision sheet", "to a study sheet"];
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|a|an)\s+)?(?:\w+\s+)?(?:fiche|sheet)\b", RegexOptions.Compiled);
     private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
+    private static readonly string[] WriteVerbs = ["rédige*", "redige*", "écris*", "ecris*", "écrire", "ecrire", "réponds", "reponds", "envoie*", "envoyer", "compose*", "brouillon", "write", "writes", "draft", "reply", "send"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
@@ -47,16 +49,22 @@ public static class Router
     {
         var t = Normalize(text);
         var topicAt = TopicMarkers.Select(m => t.IndexOf(m, StringComparison.Ordinal)).Where(i => i >= 0).DefaultIfEmpty(-1).Min();
-        var u = topicAt >= 0 ? t[..topicAt] : t;
+        var head = topicAt >= 0 ? t[..topicAt] : t;
+        // The tail after a marker is the topic only when the request already states its intent;
+        // otherwise the marker belongs to a subject phrase ("le cours sur les réseaux : fais une fiche").
+        var intentBefore = Has(head, SheetWords) || Has(head, HardReviewWords) || Has(head, SoftReviewWords)
+            || Has(head, ConvertVerbs) || Has(head, UnitWords) || Has(head, CalcWords) || Has(head, PlanWords)
+            || Has(head, WriteWords) || Has(head, LearnWords) || Has(head, AmountWords) || Has(head, CreateWords);
+        var u = intentBefore ? head : t;
         var reads = documents > 0;
-        var count = u.Count(char.IsDigit);
+        var count = t.Count(char.IsDigit);
         var digits = count >= 2;
         var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
-        var primitive = Has(u, ConvertVerbs) && !Has(u, SheetOutWords) ? "convert"
-            : Has(u, MailWords) ? "communicate"
+        var primitive = Has(u, ConvertVerbs) && !SheetTarget.IsMatch(u) ? "convert"
             : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"
-            : Has(u, SheetOutWords) ? "sheet"
+            : SheetTarget.IsMatch(u) ? "sheet"
             : Has(u, SheetWords) && Has(u, SoftReviewWords) && !Has(u, CreateWords) ? "review"
+            : Has(u, WriteVerbs) && Has(u, MailWords) ? "communicate"
             : Has(u, SheetWords) ? "sheet"
             : Has(u, UnitWords) ? "convert"
             : Has(u, CalcWords) ? "verify"
