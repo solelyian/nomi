@@ -80,12 +80,9 @@ function normalizeNumber(raw: string): string {
   raw = raw.replace(/[\s ]/g, '');
   const commas = (raw.match(/,/g) || []).length;
   const dots = (raw.match(/\./g) || []).length;
-  if (commas === 1 && dots === 0) {
-    const dec = raw.length - raw.indexOf(',') - 1;
-    const head = raw.slice(0, raw.indexOf(','));
-    if (dec === 3 && head.length <= 3) return raw.replace(/,/g, '');
-    return raw.replace(',', '.');
-  }
+  // Locale FR : virgule unique = séparateur décimal ; milliers par espaces.
+  if (commas === 1 && dots === 0) return raw.replace(',', '.');
+  // Forme anglaise « 1,234,567.89 » : virgules milliers, point décimal.
   if (commas >= 1 && dots >= 1) return raw.replace(/,/g, '');
   return raw;
 }
