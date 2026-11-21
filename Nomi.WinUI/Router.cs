@@ -34,8 +34,8 @@ public static class Router
     // What follows these markers is the subject of the request, not the intent itself.
     private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
     // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
-    private static readonly string[] GridWords = ["excel", "workbook", "classeur", "tableur", "spreadsheet", "xlsx", "csv"];
-    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:(?!excel|workbook|classeur|tableur|spreadsheet|xlsx|csv)\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
+    private static readonly string[] GridWords = ["excel", "workbook", "classeur", "tableur", "spreadsheet", "xlsx", "csv", "google sheets"];
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:(?!excel\b|workbook\b|classeur\b|tableur\b|spreadsheet\b|xlsx\b|csv\b)\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
     // Bare English plural ("into sheets for studying") is a target only outside spreadsheet talk.
     private static readonly Regex SheetTargetPlural = new(@"\b(?:en|into|to)\s+sheets\b", RegexOptions.Compiled);
     private static bool SheetAsTarget(string u) => SheetTarget.IsMatch(u) || SheetTargetPlural.IsMatch(u) && !Has(u, GridWords);

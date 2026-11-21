@@ -56,6 +56,8 @@ static class RouterChecks
         Check(Router.Decide("Make a revision sheet so I can learn the material", 0, Levels.Auto).Primitive == "sheet", "a purpose clause is not the request");
         Check(Router.Decide("Convert lecture notes into sheets for studying", 0, Levels.Auto).Primitive == "sheet", "bare plural is a target outside spreadsheets");
         Check(Router.Decide("Explain how to add a row to an Excel sheet", 0, Levels.Auto).Primitive == "learn", "an Excel sheet is a spreadsheet tab");
+        Check(Router.Decide("Convertis mes notes en une excellente fiche de révision", 0, Levels.Auto).Primitive == "sheet", "excellente is not Excel");
+        Check(Router.Decide("Explain how to add headers to sheets in Google Sheets", 0, Levels.Auto).Primitive == "learn", "Google Sheets is a spreadsheet app");
 
         var nl = ((char)10).ToString();
         Check(ChatThread.TitleFrom("  Devis Acme" + nl + "détails") == "Devis Acme", "title is the first line");
