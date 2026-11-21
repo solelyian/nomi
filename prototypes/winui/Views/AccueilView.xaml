@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Nomi.Prototype.WinUI.Views.AccueilView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+        <StackPanel Spacing="14" MaxWidth="980">
+            <StackPanel Margin="8,4,0,6">
+                <TextBlock Text="Bonjour." FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegible-Regular.ttf#Atkinson Hyperlegible" FontSize="26" FontWeight="Bold"
+                           Foreground="{ThemeResource InkBrush}"/>
+                <TextBlock Text="Samedi 21 novembre — 3 choses méritent votre regard."
+                           Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource GlassCard}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="RELECTURE" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Text="facture.ts — 3 points relus" Style="{StaticResource CardTitle}"/>
+                        <TextBlock Text="TVA en dur, arrondi par ligne, cas du tableau vide. Nomi a préparé un correctif à valider."
+                                   Style="{StaticResource CaptionText}"/>
+                        <Button Style="{StaticResource GhostButton}" Content="Ouvrir Studio →" Tag="code" Click="OnGo"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource GlassCard}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="CALCULS" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Text="1 écart détecté" Style="{StaticResource CardTitle}"/>
+                        <TextBlock Text="« 14 900 € » lu dans le document ; le recalcul donne 14 632 €. À trancher."
+                                   Style="{StaticResource CaptionText}"/>
+                        <Button Style="{StaticResource GhostButton}" Content="Voir l'écart →" Tag="calculs" Click="OnGo"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource GlassCard}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="ÉTUDES" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Text="Analyse, séance 8" Style="{StaticResource CardTitle}"/>
+                        <TextBlock Text="Transcription 42 min prête. La fiche de révision peut être générée."
+                                   Style="{StaticResource CaptionText}"/>
+                        <Button Style="{StaticResource GhostButton}" Content="Ouvrir la transcription →" Tag="transcriptions" Click="OnGo"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource GlassCard}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="AUJOURD'HUI" Style="{StaticResource OverlineText}"/>
+                    <StackPanel x:Name="TodayList" Spacing="8"/>
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource GlassCard}" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="42:17" FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono" FontSize="22" Foreground="{ThemeResource AccentInkBrush}"/>
+                        <TextBlock Text="transcrites cette semaine" Style="{StaticResource CaptionText}"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource GlassCard}" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="3" FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono" FontSize="22" Foreground="{ThemeResource AccentInkBrush}"/>
+                        <TextBlock Text="diagnostics code en attente" Style="{StaticResource CaptionText}"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource GlassCard}" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="1" FontFamily="ms-appx:///Assets/Fonts/AtkinsonHyperlegibleMono.ttf#Atkinson Hyperlegible Mono" FontSize="22" Foreground="{ThemeResource AccentInkBrush}"/>
+                        <TextBlock Text="écart de calcul à trancher" Style="{StaticResource CaptionText}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

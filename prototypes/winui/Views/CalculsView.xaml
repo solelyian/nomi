@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Nomi.Prototype.WinUI.Views.CalculsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="8" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="14" MaxWidth="980">
+            <StackPanel Margin="8,4,0,2">
+                <TextBlock Text="Vérification des calculs" Style="{StaticResource CardTitle}" FontSize="20"/>
+                <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                           Text="Note de frais — novembre. Nomi relit chaque ligne : l'IA extrait, le moteur déterministe recalcule."/>
+            </StackPanel>
+
+            <Border Style="{StaticResource GlassCard}" Padding="0">
+                <StackPanel>
+                    <!-- En-tête -->
+                    <Grid Padding="14,10" ColumnSpacing="12" BorderBrush="{ThemeResource StrokeBrush}" BorderThickness="0,0,0,1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/><ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="1.2*"/><ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="LIBELLÉ" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Grid.Column="1" Text="EXPRESSION" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Grid.Column="2" Text="LU" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Grid.Column="3" Text="RECALCULÉ" Style="{StaticResource OverlineText}"/>
+                        <TextBlock Grid.Column="4" Text="ÉTAT" Style="{StaticResource OverlineText}"/>
+                    </Grid>
+                    <StackPanel x:Name="Rows"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button x:Name="VerifyButton" Style="{StaticResource AccentButton}"
+                        Content="Vérifier les calculs" Click="OnVerify"/>
+                <Border Style="{StaticResource PillBorder}" VerticalAlignment="Center">
+                    <TextBlock Text="moteur déterministe — réel, sans IA" Style="{StaticResource PillText}"/>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Nomi.Prototype.WinUI.Views.BibliothequeView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Padding="8" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="14" MaxWidth="980">
+            <StackPanel Margin="8,4,0,2">
+                <TextBlock Text="Bibliothèque" Style="{StaticResource CardTitle}" FontSize="20"/>
+                <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                           Text="Cours, transcriptions et fiches — stockés chiffrés sur cette machine (DPAPI)."/>
+            </StackPanel>
+            <Grid x:Name="Cards" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
