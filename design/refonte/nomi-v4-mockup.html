@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nomi — maquette v4 · refonte des espaces</title>
+<style>
+:root{
+  --canvas:#ece6de; --blob1:#e7a98b; --blob2:#d8c6ae; --blob3:#b9c3ae;
+  --glass:rgba(255,255,255,.52); --glass-2:rgba(255,255,255,.72); --glass-3:rgba(255,255,255,.34);
+  --edge:rgba(255,255,255,.78); --edge-2:rgba(40,28,18,.08); --hi:rgba(255,255,255,.9);
+  --ink:#1a1714; --ink-2:#4f4841; --ink-3:#877e74; --accent:#b4482b; --accent-2:#d0694a; --accent-ink:#fff; --accent-soft:rgba(180,72,43,.12);
+  --ok:#2f7a4f; --warn:#9a6a12; --info:#5a6a78; --danger:#a33b2a;
+  --shadow:0 1px 1px rgba(40,25,15,.04),0 10px 30px rgba(60,35,20,.10),0 30px 60px -30px rgba(60,35,20,.25);
+  --mono:"Atkinson Hyperlegible Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
+  --ui:"Atkinson Hyperlegible","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --disp:"Atkinson Hyperlegible","Segoe UI Variable Display","Segoe UI",sans-serif;
+  --spring:cubic-bezier(.2,.9,.25,1.15); --ease:cubic-bezier(.2,.8,.2,1);
+}
+.dark{
+  --canvas:#0f0e0d; --blob1:#6b2f1c; --blob2:#3a3128; --blob3:#27302a;
+  --glass:rgba(34,31,28,.52); --glass-2:rgba(46,42,38,.72); --glass-3:rgba(34,31,28,.34);
+  --edge:rgba(255,255,255,.10); --edge-2:rgba(0,0,0,.4); --hi:rgba(255,255,255,.16);
+  --ink:#f3efe9; --ink-2:#cbc4bb; --ink-3:#8f877d; --accent:#e8825f; --accent-2:#f09a7a; --accent-ink:#1a110d; --accent-soft:rgba(232,130,95,.14);
+  --ok:#72c793; --warn:#e2b45c; --info:#8fa4b3; --danger:#e0715c;
+  --shadow:0 1px 1px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.40),0 30px 60px -30px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#7d7872;font-family:var(--ui);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 12px 36px;-webkit-font-smoothing:antialiased}
+.page-tools{display:flex;flex-wrap:wrap;gap:8px;background:rgba(0,0,0,.28);padding:8px;border-radius:14px;color:#fff;align-items:center;font-size:13px;position:sticky;top:8px;z-index:50}
+.page-tools b{font-weight:500;opacity:.85;padding:0 6px}
+.page-tools button{background:rgba(255,255,255,.9);border:0;border-radius:9px;padding:7px 12px;font:inherit;cursor:pointer;color:#1a1714}
+.page-tools button[aria-pressed=true]{background:#1a1714;color:#fff}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+.num{font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+
+/* window frame */
+.win{color:var(--ink);width:1280px;max-width:100%;height:820px;border-radius:14px;overflow:hidden;position:relative;background:var(--canvas);box-shadow:0 40px 90px rgba(0,0,0,.45);isolation:isolate;display:grid;grid-template-rows:44px 1fr}
+.ambient{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.ambient i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75;animation:drift 26s var(--ease) infinite alternate}
+.ambient i:nth-child(1){width:520px;height:520px;background:var(--blob1);left:-120px;top:-160px}
+.ambient i:nth-child(2){width:620px;height:460px;background:var(--blob2);right:-160px;top:120px;animation-duration:32s}
+.ambient i:nth-child(3){width:520px;height:420px;background:var(--blob3);left:30%;bottom:-240px;animation-duration:38s;opacity:.55}
+@keyframes drift{to{transform:translate(60px,40px) scale(1.08)}}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(28px) saturate(1.7);backdrop-filter:blur(28px) saturate(1.7);border:1px solid var(--edge);box-shadow:var(--shadow),inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--edge-2);position:relative}
+.lens{transition:transform .35s var(--spring),box-shadow .35s var(--ease)}
+.lens:hover{transform:translateY(-2px)}
+.lens:active{transform:scale(.985);transition-duration:.12s}
+
+/* title bar */
+.titlebar{display:flex;align-items:center;gap:12px;padding:0 0 0 16px;font-size:12px;color:var(--ink-3)}
+.logo{width:20px;height:20px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);letter-spacing:-.2px}
+.spacer{flex:1}
+.caption{display:flex}.caption span{width:46px;height:44px;display:grid;place-items:center;color:var(--ink-2);font-size:12px}
+.env{font-size:11px;color:var(--ink-3);border:1px dashed var(--edge);border-radius:8px;padding:2px 8px;background:var(--glass-3)}
+
+/* layout */
+.body{display:grid;grid-template-columns:218px 1fr;gap:14px;padding:4px 14px 14px;min-height:0}
+.side{border-radius:22px;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow:auto;scrollbar-width:thin}
+.side h2{font-size:10.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:13px 10px 5px}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;border:0;background:transparent;text-align:left;cursor:pointer;color:var(--ink-2);font-size:13.5px;position:relative;transition:background .2s,color .2s;width:100%}
+.nav:hover{background:var(--glass-3);color:var(--ink)}
+.nav svg{width:17px;height:17px;flex:none}
+.nav .k{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.nav[aria-current=page]{color:var(--ink);font-weight:600;background:var(--glass-2);box-shadow:inset 0 1px 0 var(--hi),0 4px 14px rgba(40,25,15,.10);border:1px solid var(--edge)}
+.side-foot{margin-top:auto;padding:10px;border-radius:14px;font-size:12px;color:var(--ink-3);line-height:1.45}
+.side-foot strong{display:block;color:var(--ink);font-size:12.5px;margin-bottom:2px}
+.side-foot .kbd{white-space:nowrap}
+
+.main{min-width:0;min-height:0;position:relative;display:flex;flex-direction:column}
+.view{position:absolute;inset:0;overflow:auto;padding:4px 4px 10px;scrollbar-width:thin}
+.head{display:flex;align-items:flex-end;gap:12px;margin:4px 6px 16px;flex-wrap:wrap}
+.head h1{font-family:var(--disp);font-size:27px;font-weight:600;letter-spacing:-.6px;margin:0}
+.head .sub{color:var(--ink-3);font-size:13px;margin-bottom:3px}
+.card{border-radius:20px;padding:16px 18px}
+.card h3{margin:0 0 10px;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)}
+.btn{border:1px solid var(--edge);background:var(--glass-2);border-radius:12px;padding:8px 13px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:inset 0 1px 0 var(--hi);transition:transform .3s var(--spring),background .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 18px -6px var(--accent)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--ink-2)}
+.btn.small{padding:5px 10px;font-size:12px;border-radius:10px}
+.btn.danger{color:var(--danger)}
+.kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--edge);background:var(--glass-3);border-radius:6px;padding:1px 6px;color:var(--ink-2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--edge);background:var(--glass-3);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;transition:background .2s}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11.5px;color:var(--ink-2);background:var(--glass-3);border:1px solid var(--edge)}
+.mut{color:var(--ink-3)}
+.demo{position:absolute;left:14px;bottom:12px;font-size:11px;color:var(--ink-3);background:var(--glass-3);border:1px dashed var(--edge);border-radius:999px;padding:3px 10px;z-index:8}
+
+/* E1 accueil */
+.home{display:grid;grid-template-rows:auto auto auto;gap:14px;min-height:100%}
+.home-top{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.resume{border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.resume .r-item{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--glass-3);border:1px solid var(--edge)}
+.resume .r-item .ic{width:34px;height:34px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.resume .r-item b{display:block;font-size:13.5px}
+.resume .r-item span{font-size:12px;color:var(--ink-3)}
+.resume .r-item .go{margin-left:auto}
+.daycard{border-radius:20px;padding:16px 18px}
+.daycard .task{font-size:15.5px;font-weight:600;margin:2px 0 6px}
+.daycard .meta{color:var(--ink-3);font-size:12.5px;display:flex;gap:12px;flex-wrap:wrap}
+.bar{height:6px;border-radius:6px;background:var(--glass-3);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:42%;background:var(--accent);border-radius:inherit}
+.spaces{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.space{border-radius:20px;padding:16px;text-align:left;cursor:pointer;display:grid;gap:8px}
+.space .t{font-size:15px;font-weight:600;display:flex;gap:9px;align-items:center}
+.space .t svg{width:18px;height:18px;color:var(--accent)}
+.space .d{font-size:12.5px;color:var(--ink-3);line-height:1.4}
+.space .c{font-size:11.5px;color:var(--ink-3)}
+.home-bot{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.sugg{padding:13px 14px;border-radius:14px;background:var(--glass-3);border:1px solid var(--edge);font-size:13px;line-height:1.5;display:grid;gap:8px}
+.sugg .src{font-size:11px;color:var(--ink-3);display:flex;gap:6px;align-items:center}
+.sugg .src svg{width:12px;height:12px;color:var(--accent)}
+.sugg .acts{display:flex;gap:6px}
+.feed{display:grid;gap:8px;font-size:12.5px}
+.feed .f{display:flex;gap:10px;align-items:baseline;padding:7px 10px;border-radius:11px;background:var(--glass-3);border:1px solid var(--edge)}
+.feed time{font-family:var(--mono);font-size:11px;color:var(--ink-3);flex:none}
+
+/* E2 code */
+.code{display:grid;grid-template-columns:190px 1fr 330px;gap:14px;height:100%;min-height:0}
+.files{border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.file{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:11px;font-size:12.5px;cursor:pointer;border:0;background:transparent;text-align:left;color:var(--ink-2);font-family:var(--mono)}
+.file:hover{background:var(--glass-3)}
+.file[aria-current=true]{background:var(--glass-2);color:var(--ink);border:1px solid var(--edge)}
+.file .n{margin-left:auto;font-size:10.5px;color:var(--ink-3)}
+.file .n.bad{color:var(--danger)}
+.editor{border-radius:20px;padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.ed-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--edge);font-size:12px;color:var(--ink-3)}
+.codeview{flex:1;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.7;padding:10px 0;scrollbar-width:thin}
+.ln{display:grid;grid-template-columns:44px 22px 1fr;gap:0;padding:0 12px 0 0;white-space:pre}
+.ln .no{text-align:right;color:var(--ink-3);font-size:11px;padding-right:10px;user-select:none}
+.ln .mk{width:8px;height:8px;border-radius:50%;margin-top:7px}
+.ln .mk.err{background:var(--danger)}.ln .mk.warn{background:var(--warn)}.ln .mk.info{background:var(--info)}
+.ln.flag{background:color-mix(in srgb,var(--danger) 8%,transparent)}
+.ln.flagw{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+.ln.flagi{background:color-mix(in srgb,var(--info) 9%,transparent)}
+.ln .tx{color:var(--ink)}
+.panel{border-radius:20px;padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ptabs{display:flex;gap:2px;padding:10px 10px 0;border-bottom:1px solid var(--edge)}
+.ptab{border:0;background:transparent;padding:8px 11px;font-size:12.5px;border-radius:10px 10px 0 0;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent}
+.ptab[aria-selected=true]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.pbody{flex:1;overflow:auto;padding:14px;scrollbar-width:thin;display:grid;gap:12px;align-content:start}
+.diag{border-radius:14px;background:var(--glass-3);border:1px solid var(--edge);padding:12px;font-size:12.5px;display:grid;gap:7px}
+.diag .dh{display:flex;align-items:center;gap:8px;font-size:12px}
+.sev{font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:600;letter-spacing:.3px}
+.sev.b{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
+.sev.i{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.sev.s{background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
+.loc{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.diff{border-radius:11px;overflow:hidden;overflow-x:auto;border:1px solid var(--edge);font-family:var(--mono);font-size:11.5px;line-height:1.6;scrollbar-width:thin}
+.diff .d{padding:3px 10px;white-space:pre}
+.diff .del{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.diff .add{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.ask{border-top:1px solid var(--edge);padding:12px 14px;display:grid;gap:8px}
+.ask .ctx{font-family:var(--mono);font-size:11px;color:var(--ink-3);background:var(--glass-3);border-radius:9px;padding:6px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ask .row{display:flex;gap:8px}
+.ask input{flex:1;border:1px solid var(--edge);background:var(--glass-3);border-radius:11px;padding:8px 12px;font:inherit;font-size:13px;color:var(--ink);outline:none}
+
+/* E3 calculs */
+.calcs{display:grid;grid-template-columns:1fr 330px;gap:14px;height:100%}
+.calctable{border-radius:20px;padding:16px;overflow:auto}
+.ct{display:grid;grid-template-columns:1.6fr .8fr .9fr .6fr 1fr;gap:0;font-size:12.5px;align-items:stretch}
+.ct .h{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--edge)}
+.ct .c{padding:10px 12px;border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:8px}
+.ct .mono{font-family:var(--mono);font-size:12px}
+.ct .gap{color:var(--danger);font-weight:600;font-family:var(--mono)}
+.ct .st{font-size:11px}
+.st.ok{color:var(--ok)}.st.ko{color:var(--danger)}.st.na{color:var(--ink-3)}
+.ct .row-gap .c{background:color-mix(in srgb,var(--danger) 8%,transparent)}
+.calcside{border-radius:20px;padding:16px;display:grid;gap:12px;align-content:start;font-size:12.5px}
+.stat{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:12px;background:var(--glass-3);border:1px solid var(--edge)}
+.stat b{font-family:var(--mono)}
+
+/* E4 transcription */
+.trans{display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto 1fr auto;gap:14px;height:100%}
+.recbar{grid-column:1/-1;border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--danger);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--danger) 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.recbar .t{font-weight:600;font-size:14px}
+.recbar .dur{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+.recbar .sig{display:flex;gap:3px;align-items:flex-end;height:16px}
+.recbar .sig i{width:4px;border-radius:2px;background:var(--ok)}
+.flow{border-radius:20px;padding:14px 16px;overflow:auto;display:grid;gap:4px;align-content:start;scrollbar-width:thin}
+.tsec{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--accent);font-weight:600;margin:14px 0 6px;display:flex;align-items:center;gap:8px}
+.tsec::after{content:"";flex:1;height:1px;background:var(--edge)}
+.trow{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:6px 8px;border-radius:11px;font-size:13.5px;line-height:1.5}
+.trow:hover{background:var(--glass-3)}
+.trow time{font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:3px}
+.trow .who{font-weight:600;color:var(--accent-2);font-size:12px;display:block}
+.trow .inaud{color:var(--ink-3);font-style:italic}
+.live{border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto;scrollbar-width:thin}
+.live .tag{font-size:10px;color:var(--warn);border:1px dashed var(--warn);border-radius:999px;padding:1px 8px}
+.ln-item{border-radius:12px;background:var(--glass-3);border:1px solid var(--edge);padding:9px 11px;font-size:12.5px;line-height:1.45}
+.ln-item b{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:3px}
+.tctl{grid-column:1/-1;border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.tctl .note{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+
+/* E5 fiche */
+.sheet-v{display:grid;grid-template-columns:1fr 300px;grid-template-rows:auto 1fr;gap:14px;height:100%}
+.shead{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.sdoc{border-radius:20px;padding:16px 18px;overflow:auto;scrollbar-width:thin;display:grid;gap:10px;align-content:start}
+.sdoc .ft{font-family:var(--disp);font-size:20px;font-weight:600;letter-spacing:-.4px}
+.sdoc .fm{font-size:12px;color:var(--ink-3);margin-bottom:6px}
+.sec{border-radius:14px;background:var(--glass-3);border:1px solid var(--edge);padding:11px 13px;font-size:13px;line-height:1.55;display:grid;gap:6px;position:relative}
+.sec .sh{display:flex;align-items:center;gap:8px}
+.sec .st2{font-weight:600;font-size:12.5px}
+.sec .grip{color:var(--ink-3);cursor:grab;font-size:14px;letter-spacing:2px}
+.sec.hl{background:color-mix(in srgb,var(--accent) 8%,transparent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.prov{font-size:10px;font-weight:600;letter-spacing:.4px;border-radius:999px;padding:2px 8px;margin-left:auto;text-transform:uppercase}
+.prov.cours{background:var(--accent-soft);color:var(--accent)}
+.prov.nomi{background:transparent;border:1px solid var(--edge);color:var(--ink-2)}
+.prov.hyp{background:transparent;border:1px dashed var(--warn);color:var(--warn)}
+.sec ul{margin:0;padding-left:18px}
+.src-rail{border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto;scrollbar-width:thin}
+.src-ex{border-radius:12px;background:var(--glass-3);border:1px solid var(--edge);padding:10px 12px;font-size:12px;line-height:1.5;color:var(--ink-2)}
+.src-ex mark{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--ink);border-radius:4px;padding:0 3px}
+.src-ex .ts{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);display:block;margin-bottom:4px}
+
+/* E6 biblio */
+.bib{display:grid;grid-template-rows:auto auto 1fr;gap:14px;height:100%}
+.search{border-radius:16px;padding:12px 16px;display:flex;gap:10px;align-items:center}
+.search svg{width:17px;height:17px;color:var(--ink-3)}
+.search input{flex:1;border:0;background:transparent;font:inherit;font-size:15px;color:var(--ink);outline:none}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start;overflow:auto;scrollbar-width:thin;padding:2px}
+.bcard{border-radius:18px;padding:14px;display:grid;gap:8px;cursor:pointer}
+.bcard .bt{display:flex;align-items:center;gap:8px}
+.bcard .ty{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 9px}
+.bcard .ty.t-tr{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.bcard .ty.t-doc{color:var(--info);background:color-mix(in srgb,var(--info) 13%,transparent)}
+.bcard .tt{font-size:14px;font-weight:600;line-height:1.35}
+.bcard .bm{font-size:11.5px;color:var(--ink-3);display:flex;gap:10px;flex-wrap:wrap}
+.bcard.import{border:1.5px dashed var(--edge);background:transparent;place-items:center;text-align:center;color:var(--ink-3);min-height:120px;align-content:center;box-shadow:none}
+.bcard.import:hover{color:var(--ink);background:var(--glass-3)}
+
+/* E7 paramètres */
+.prefs{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start;overflow:auto;scrollbar-width:thin;padding:2px}
+.pgroup{border-radius:20px;padding:16px 18px;display:grid;gap:10px}
+.prow{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;background:var(--glass-3);border:1px solid var(--edge);font-size:13px}
+.prow .lb{flex:1}
+.prow .lb small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:2px}
+.model .sz{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.mstate{font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px}
+.mstate.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.mstate.idle{color:var(--ink-2);background:var(--glass-3);border:1px solid var(--edge)}
+.mstate.miss{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent)}
+.tgl{width:38px;height:22px;border-radius:999px;background:var(--glass-3);border:1px solid var(--edge);position:relative;flex:none}
+.tgl::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--ink-2);top:2px;left:2px}
+.tgl.on{background:var(--accent)}.tgl.on::after{background:var(--accent-ink);left:18px}
+
+.notes{width:1280px;max-width:100%;background:#fff;color:#1a1714;border-radius:14px;padding:22px 26px;font-size:14px;line-height:1.55}
+.notes h2{font-size:17px;margin:0 0 8px}
+.notes h3{font-size:14px;margin:16px 0 4px}
+.notes ul{margin:4px 0;padding-left:20px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="page-tools" role="toolbar" aria-label="Écrans de la maquette">
+  <b>Maquette v4</b>
+  <button data-s="accueil">Accueil</button>
+  <button data-s="code">Code · relecture</button>
+  <button data-s="calculs">Calculs</button>
+  <button data-s="transcription">Transcription</button>
+  <button data-s="fiche">Fiche de révision</button>
+  <button data-s="bibliotheque">Bibliothèque</button>
+  <button data-s="parametres">Paramètres</button>
+  <b>·</b>
+  <button data-t="light">Clair</button>
+  <button data-t="dark">Sombre</button>
+</div>
+
+<div class="win" id="win">
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="titlebar">
+    <span class="logo">N</span><span class="brand">Nomi</span>
+    <span>Refonte · espace de travail</span>
+    <span class="env">maquette — données de démonstration</span>
+    <span class="spacer"></span>
+    <span>local · Qwen3 8B chargé</span>
+    <span class="caption"><span>—</span><span>▢</span><span>✕</span></span>
+  </div>
+  <div class="body">
+    <nav class="side glass" aria-label="Navigation principale">
+      <h2>Nomi</h2>
+      <button class="nav" data-nav="accueil" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2z"/></svg>
+        Accueil <span class="k">⌃1</span></button>
+      <h2>Journée</h2>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Aujourd'hui <span class="k">⌃2</span></button>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="5" height="13" rx="1.5"/></svg>
+        Tableau <span class="k">⌃3</span></button>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1 1 2.3 5.6L4 19l1.4-2.3A8 8 0 0 1 4 12z" transform="rotate(180 12 12)"/><path d="M12 8v4l2.5 1.5"/></svg>
+        Routines <span class="k">⌃4</span></button>
+      <h2>Studio</h2>
+      <button class="nav" data-nav="code">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>
+        Code <span class="k">⌃5</span></button>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="13" rx="2"/><circle cx="12" cy="10.5" r="2.5"/><path d="M9 21h6"/></svg>
+        Focus <span class="k">⌃6</span></button>
+      <h2>Études</h2>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/></svg>
+        Cours <span class="k">⌃7</span></button>
+      <button class="nav" data-nav="transcription">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        Transcriptions <span class="k">⌃8</span></button>
+      <button class="nav" data-nav="fiche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+        Fiches <span class="k">⌃9</span></button>
+      <h2>·</h2>
+      <button class="nav" data-nav="bibliotheque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16 4l4 2-3.5 14-4-2z"/></svg>
+        Bibliothèque</button>
+      <button class="nav" data-nav="x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2M12 19v2M4.2 7.5l1.7 1M18.1 15.5l1.7 1M4.2 16.5l1.7-1M18.1 8.5l1.7-1"/></svg>
+        Assistant</button>
+      <button class="nav" data-nav="parametres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1.1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5h.1a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+        Paramètres</button>
+      <div class="side-foot"><strong>Nyne Technologies</strong>Tout reste sur cet appareil. <span class="kbd">Ctrl K</span> palette</div>
+    </nav>
+
+    <div class="main">
+
+      <!-- ================= E1 ACCUEIL ================= -->
+      <section class="view" data-view="accueil">
+        <div class="head"><h1>Bonjour Ian</h1><p class="sub">samedi 21 novembre — il vous reste 3 tâches aujourd'hui</p><span class="spacer"></span><button class="btn small">＋ Tâche <span class="kbd">⌃N</span></button></div>
+        <div class="home">
+          <div class="home-top">
+            <div class="resume glass">
+              <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Reprendre</h3>
+              <div class="r-item"><span class="ic">✎</span><div><b>Fiche — Thermodynamique, ch. 3</b><span>modifiée hier à 18 h 12 · 6 sections</span></div><button class="btn small go">Ouvrir</button></div>
+              <div class="r-item"><span class="ic">🎙</span><div><b>Transcription — Analyse, séance 7</b><span>arrêtée hier à 16 h 04 · 1 h 12 · résumé prêt</span></div><button class="btn small go">Ouvrir</button></div>
+              <div class="r-item"><span class="ic">⌘</span><div><b>Relecture — invoice.ts</b><span>3 diagnostics restants · calculs vérifiés</span></div><button class="btn small go">Ouvrir</button></div>
+            </div>
+            <div class="daycard glass">
+              <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Votre journée</h3>
+              <div class="task">Préparer le point équipe <span class="mut" style="font-weight:400">— en cours</span></div>
+              <div class="meta"><span>écoulé 25 min</span><span>reste ≈ 35 min</span><span>fin probable <b class="num">16 h 40</b></span></div>
+              <div class="bar"><i></i></div>
+              <div style="display:flex;gap:8px;margin-top:12px"><button class="btn small">Pause</button><button class="btn small ghost">Ma journée déraille</button></div>
+            </div>
+          </div>
+          <div class="spaces">
+            <button class="space glass lens"><span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Journée</span><span class="d">Plan du jour, tableau, routines</span><span class="c">3 tâches · 1 routine prête</span></button>
+            <button class="space glass lens"><span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>Studio</span><span class="d">Relecture de code, calculs vérifiés, Focus écran</span><span class="c">3 diagnostics · Focus prêt</span></button>
+            <button class="space glass lens"><span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/></svg>Études</span><span class="d">Cours, transcriptions en direct, fiches de révision</span><span class="c">4 cours · 6 fiches</span></button>
+          </div>
+          <div class="home-bot">
+            <div class="card glass">
+              <h3>Nomi propose</h3>
+              <div class="sugg"><div class="src"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>d'après votre semaine</div>
+                <div>La transcription « Analyse, séance 7 » n'a pas encore de fiche. Voulez-vous que Nomi en prépare une au niveau <b>standard</b> ?</div>
+                <div class="acts"><button class="btn small primary">Préparer la fiche</button><button class="btn small">Plus tard</button><button class="btn small ghost">Pas pour ce cours</button></div>
+              </div>
+              <div class="sugg" style="margin-top:10px"><div class="src"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>d'après vos routines</div>
+                <div>« Relire les notes de cours » revient chaque mardi depuis 3 semaines. En faire une routine du mardi après le déjeuner ?</div>
+                <div class="acts"><button class="btn small primary">Voir la routine</button><button class="btn small ghost">Ignorer</button></div>
+              </div>
+            </div>
+            <div class="card glass">
+              <h3>Activité récente</h3>
+              <div class="feed">
+                <div class="f"><time>18:12</time><span>Fiche « Thermodynamique ch. 3 » modifiée</span></div>
+                <div class="f"><time>16:04</time><span>Transcription « Analyse, séance 7 » arrêtée</span></div>
+                <div class="f"><time>15:20</time><span>2 corrections appliquées dans invoice.ts</span></div>
+                <div class="f"><time>14:02</time><span>Cours « Optique ondulatoire » importé</span></div>
+                <div class="f"><time>09:31</time><span>Briefing du matin affiché</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E2 CODE ================= -->
+      <section class="view" data-view="code" hidden>
+        <div class="head"><h1>Code</h1><p class="sub">relecture et calculs — rien n'est appliqué sans votre clic</p><span class="spacer"></span>
+          <button class="btn small">Ouvrir un fichier</button><button class="btn small">Coller un diff</button>
+          <button class="btn small primary">Relire la sélection</button></div>
+        <div class="code">
+          <div class="files glass">
+            <h3 style="margin:2px 6px 6px;font-size:10.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--ink-3)">Espace de travail</h3>
+            <button class="file" aria-current="true">invoice.ts <span class="n bad">3</span></button>
+            <button class="file">Calc.cs <span class="n">0</span></button>
+            <button class="file">router.py <span class="n bad">1</span></button>
+            <button class="file">notes.md <span class="n">—</span></button>
+            <div style="margin-top:auto;padding:8px 6px;font-size:11px;color:var(--ink-3);border-top:1px solid var(--edge)">Dernière relecture : il y a 12 min · extrait 212 lignes</div>
+          </div>
+          <div class="editor glass">
+            <div class="ed-head">invoice.ts · TypeScript · <span class="mut">diagnostics en marge</span>
+              <span class="spacer"></span><span class="pill"><span class="sev b" style="padding:0 4px">●</span>1 bloquant</span>
+              <span class="pill"><span class="sev i" style="padding:0 4px">●</span>1 important</span>
+              <span class="pill"><span class="sev s" style="padding:0 4px">●</span>1 suggestion</span></div>
+            <div class="codeview"><div class="ln"><span class="no">18</span><span></span><span class="tx">const TAU = 0.20  // TVA 20 %</span></div>
+<div class="ln"><span class="no">19</span><span></span><span class="tx"></span></div>
+<div class="ln"><span class="no">20</span><span></span><span class="tx">export function totalHT(lignes: Ligne[]) {</span></div>
+<div class="ln"><span class="no">21</span><span></span><span class="tx">  let ht = 0</span></div>
+<div class="ln"><span class="no">22</span><span></span><span class="tx">  for (const l of lignes) {</span></div>
+<div class="ln flag"><span class="no">23</span><span class="mk err"></span><span class="tx">    ht += l.prix * l.qte * (1 - l.remise)</span></div>
+<div class="ln"><span class="no">24</span><span></span><span class="tx">  }</span></div>
+<div class="ln"><span class="no">25</span><span></span><span class="tx">  return ht</span></div>
+<div class="ln"><span class="no">26</span><span></span><span class="tx">}</span></div>
+<div class="ln"><span class="no">27</span><span></span><span class="tx"></span></div>
+<div class="ln flagw"><span class="no">28</span><span class="mk warn"></span><span class="tx">export function totalTTC(lignes) {</span></div>
+<div class="ln"><span class="no">29</span><span></span><span class="tx">  const ht = totalHT(lignes)</span></div>
+<div class="ln flagi"><span class="no">30</span><span class="mk info"></span><span class="tx">  return Math.round(ht * (1 + TAU) * 100) / 100  // arrondi au centime</span></div>
+<div class="ln"><span class="no">31</span><span></span><span class="tx">}</span></div>
+<div class="ln"><span class="no">32</span><span></span><span class="tx"></span></div>
+<div class="ln"><span class="no">33</span><span></span><span class="tx">// remise en fraction : 0.1 = 10 %</span></div>
+<div class="ln"><span class="no">34</span><span></span><span class="tx">const facture = [</span></div>
+<div class="ln"><span class="no">35</span><span></span><span class="tx">  { prix: 80, qte: 1, remise: 0.15 },</span></div>
+<div class="ln"><span class="no">36</span><span></span><span class="tx">  { prix: 12.5, qte: 4, remise: 0 },</span></div>
+<div class="ln"><span class="no">37</span><span></span><span class="tx">]</span></div></div>
+          </div>
+          <div class="panel glass">
+            <div class="ptabs" role="tablist">
+              <button class="ptab" aria-selected="true">Diagnostics</button>
+              <button class="ptab" data-goto="calculs">Calculs</button>
+              <button class="ptab">Discussion</button>
+            </div>
+            <div class="pbody">
+              <div class="diag">
+                <div class="dh"><span class="sev b">Bloquant</span><span class="loc">ligne 23</span></div>
+                <div><b>La remise est appliquée avant la multiplication par la quantité, mais le commentaire ligne 33 la documente en fraction.</b></div>
+                <div class="mut">Si <code>remise</code> arrive un jour en pourcentage (15 au lieu de 0.15), la ligne devient négative sans erreur. Le contrat de l'unité n'est pas vérifié.</div>
+                <div class="diff"><div class="d del">-  ht += l.prix * l.qte * (1 - l.remise)</div><div class="d add">+  const remise = l.remise > 1 ? l.remise / 100 : l.remise</div><div class="d add">+  ht += l.prix * l.qte * (1 - remise)</div></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small primary">Appliquer</button><button class="btn small">Expliquer</button><button class="btn small ghost">Ignorer</button></div>
+              </div>
+              <div class="diag">
+                <div class="dh"><span class="sev i">Important</span><span class="loc">ligne 28</span></div>
+                <div><b><code>lignes</code> n'est pas typé ici alors qu'il l'est dans <code>totalHT</code>.</b></div>
+                <div class="mut">Le paramètre est implicitement <code>any</code> : un tableau d'un autre forme passe la compilation.</div>
+                <div style="display:flex;gap:6px"><button class="btn small primary">Appliquer</button><button class="btn small ghost">Ignorer</button></div>
+              </div>
+              <div class="diag">
+                <div class="dh"><span class="sev s">Suggestion</span><span class="loc">ligne 30</span></div>
+                <div><b>L'arrondi au centime par ×100/÷100 peut dériver sur les grands montants.</b></div>
+                <div class="mut">Au-delà de ~9 × 10¹³, la représentation flottante perd les centimes. Une bibliothèque décimale serait plus sûre pour de la facturation.</div>
+                <div style="display:flex;gap:6px"><button class="btn small">Expliquer</button><button class="btn small ghost">Ignorer</button></div>
+              </div>
+            </div>
+            <div class="ask">
+              <div class="ctx">sélection : lignes 20–26 · totalHT</div>
+              <div class="row"><input placeholder="Poser une question sur la sélection…"><button class="btn small primary">Envoyer</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E3 CALCULS ================= -->
+      <section class="view" data-view="calculs" hidden>
+        <div class="head"><h1>Calculs</h1><p class="sub">chaque expression relue par le moteur — « écart » = reproduit par recalcul</p><span class="spacer"></span>
+          <div class="chips"><button class="chip" aria-pressed="true">Tous</button><button class="chip">Écarts</button><button class="chip">Non vérifiables</button></div></div>
+        <div class="calcs">
+          <div class="calctable glass">
+            <div class="ct">
+              <div class="h">Expression · invoice.ts</div><div class="h">Lue</div><div class="h">Recalculée</div><div class="h">Écart</div><div class="h">Statut</div>
+              <div class="c mono">80 × 1 × (1 − 0,15)</div><div class="c mono num">68,00</div><div class="c mono num">68,00</div><div class="c mono">—</div><div class="c st ok">vérifié</div>
+              <div class="c mono">12,5 × 4 × (1 − 0)</div><div class="c mono num">50,00</div><div class="c mono num">50,00</div><div class="c mono">—</div><div class="c st ok">vérifié</div>
+              <div class="c mono">(68 + 50) × 1,20</div><div class="c mono num">141,60</div><div class="c mono num">141,60</div><div class="c mono">—</div><div class="c st ok">vérifié</div>
+              <div class="c mono">Math.round(118 × 1,2 × 100) / 100</div><div class="c mono num">141,60</div><div class="c mono num">141,60</div><div class="c mono">—</div><div class="c st ok">vérifié</div>
+            </div>
+            <div class="ct" style="margin-top:18px">
+              <div class="h">Expression · rapport.docx (importé)</div><div class="h">Lue</div><div class="h">Recalculée</div><div class="h">Écart</div><div class="h">Statut</div>
+              <div class="c mono">« marge de 18 % sur 12 400 € »</div><div class="c mono num">2 232 €</div><div class="c mono num">2 232 €</div><div class="c mono">—</div><div class="c st ok">vérifié</div>
+              <div class="row-gap" style="display:contents"><div class="c mono">« total TTC : 14 900 € »</div><div class="c mono num">14 900 €</div><div class="c mono num">14 632 €</div><div class="c gap">−268 €</div><div class="c st ko">écart</div></div>
+              <div class="c mono">« délai : 3 semaines »</div><div class="c">—</div><div class="c">—</div><div class="c mono">—</div><div class="c st na">non vérifiable</div>
+            </div>
+          </div>
+          <div class="calcside glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Lecture du moteur</h3>
+            <div class="stat"><span>Expressions relues</span><b>7</b></div>
+            <div class="stat"><span>Vérifiées</span><b style="color:var(--ok)">5</b></div>
+            <div class="stat"><span>Écarts reproduits</span><b style="color:var(--danger)">1</b></div>
+            <div class="stat"><span>Non vérifiables</span><b style="color:var(--ink-3)">1</b></div>
+            <div class="ln-item"><b>Écart détecté</b>« total TTC : 14 900 € » — le document annonce 14 900 €, le moteur recalcule 14 632 € à partir des lignes HT et du taux de 20 %. Vérifier la ligne de remise ou le taux.</div>
+            <div class="ln-item"><b>Ce que « vérifié » veut dire</b>Le moteur recalcule l'expression par une seconde méthode et compare. Il ne juge pas si la formule choisie est la bonne — seulement si le calcul est juste.</div>
+            <button class="btn small">Voir la méthode de recalcul</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E4 TRANSCRIPTION ================= -->
+      <section class="view" data-view="transcription" hidden>
+        <div class="head"><h1>Transcriptions</h1><p class="sub">Analyse — séance 8 · enregistrement local, rien ne quitte l'appareil</p></div>
+        <div class="trans">
+          <div class="recbar glass">
+            <span class="live-dot"></span><span class="t">Enregistrement</span>
+            <span class="dur num">42:17</span>
+            <span class="pill">français</span>
+            <span class="sig" aria-label="signal micro"><i style="height:6px"></i><i style="height:11px"></i><i style="height:15px"></i><i style="height:9px"></i></span>
+            <span class="mut" style="font-size:11.5px">pause il y a 12 min · reprise OK</span>
+            <span class="spacer"></span>
+            <button class="btn small">Micro</button>
+            <button class="btn small">Pause</button>
+            <button class="btn small primary">Arrêter</button>
+          </div>
+          <div class="flow glass">
+            <div class="tsec">Introduction — détectée à 00:02:40</div>
+            <div class="trow"><time>00:03:12</time><div><span class="who">Prof</span>On reprend où on s'était arrêté : l'intégrale par parties. La formule, vous la connaissez — ce qui compte aujourd'hui, c'est <b>quand</b> l'utiliser.</div></div>
+            <div class="trow"><time>00:05:48</time><div><span class="who">Prof</span>Règle pratique : si vous voyez un produit de deux familles différentes — un polynôme et une exponentielle, un logarithme et n'importe quoi — c'est presque toujours par parties.</div></div>
+            <div class="tsec">Méthode — détectée à 00:11:05</div>
+            <div class="trow"><time>00:11:20</time><div><span class="who">Prof</span>Choisissez u comme la fonction qui se dérive « vers le bas » : le logarithme d'abord, puis le polynôme. Si vous inversez, vous tournez en rond.</div></div>
+            <div class="trow"><time>00:14:02</time><div><span class="who">Locuteur 2</span>Et quand les deux se dérivent pareil ?</div></div>
+            <div class="trow"><time>00:14:30</time><div><span class="who">Prof</span>Bonne question — là, vous regardez la primitive : prenez celle qui ne complique pas l'intégrale restante.</div></div>
+            <div class="trow"><time>00:18:44</time><div><span class="who">Prof</span><span class="inaud">[inaudible — 2 s]</span> …donc le piège classique : oublier le signe moins devant la seconde intégrale.</div></div>
+            <div class="tsec">Exemple — détectée à 00:22:10</div>
+            <div class="trow"><time>00:22:33</time><div><span class="who">Prof</span>Prenons ∫ x·eˣ dx. u = x, dv = eˣ dx. On dérive u, on primitive dv…</div></div>
+            <div class="trow"><time>00:26:10</time><div><span class="who">Prof</span>Et on obtient x·eˣ − eˣ + C. Factorisez : eˣ(x − 1) + C. C'est la forme que je veux en copie.</div></div>
+            <div class="trow"><time>00:31:52</time><div><span class="who">Locuteur 2</span>On peut reprendre le choix de u sur celui-là ?</div></div>
+            <div class="trow"><time>00:32:20</time><div><span class="who">Prof</span>Oui — si u = eˣ, vous retombez sur la même intégrale : ça boucle. C'est le deuxième piège.</div></div>
+          </div>
+          <div class="live glass">
+            <div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">En direct</h3><span class="tag">provisoire</span></div>
+            <div class="ln-item"><b>Points clés</b>· Intégration par parties : quand l'utiliser, pas seulement la formule.<br>· Choisir u = ce qui se dérive « vers le bas ».<br>· 2 pièges : le signe − devant ∫v·du, et le choix de u qui boucle.</div>
+            <div class="ln-item"><b>Définitions</b>· IPP : ∫u·dv = u·v − ∫v·du<br>· « Familles » : polynôme, exponentielle, logarithme, trigo.</div>
+            <div class="ln-item"><b>Questions relevées</b>· « Et quand les deux se dérivent pareil ? » → regarder la primitive.<br>· Choix de u sur ∫ x·eˣ dx.</div>
+            <div class="ln-item"><b>À retenir</b>· Forme attendue en copie : eˣ(x − 1) + C.</div>
+            <button class="btn small" style="align-self:start">En faire une fiche</button>
+          </div>
+          <div class="tctl glass">
+            <span class="pill"><span style="color:var(--ok)">●</span> écriture en continu — rien n'est perdu en cas de coupure</span>
+            <span class="note">Le résumé « En direct » est régénéré en entier, jamais repris morceau par morceau.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E5 FICHE ================= -->
+      <section class="view" data-view="fiche" hidden>
+        <div class="head"><h1>Fiche de révision</h1><p class="sub">Analyse — intégration par parties · depuis « séance 8 »</p><span class="spacer"></span>
+          <button class="btn small">Revenir à la version générée</button>
+          <button class="btn small primary">Exporter</button></div>
+        <div class="sheet-v">
+          <div class="shead">
+            <div class="chips"><span class="mut" style="font-size:12px;align-self:center">Format</span>
+              <button class="chip" aria-pressed="true">Fiche</button><button class="chip">Plan</button><button class="chip">Flashcards</button><button class="chip">Quiz</button><button class="chip">Résumé</button></div>
+            <div class="chips"><span class="mut" style="font-size:12px;align-self:center">Niveau</span>
+              <button class="chip">Ultra-condensé</button><button class="chip" aria-pressed="true">Standard</button><button class="chip">Détaillé</button></div>
+            <span class="pill" style="margin-left:auto">provenance : <b>cours</b> · <b style="font-weight:400">explication</b> · <b class="mut" style="font-weight:400">hypothèse</b></span>
+          </div>
+          <div class="sdoc glass">
+            <div class="ft">Intégration par parties — quand et comment</div>
+            <div class="fm">Générée le 21/11/2026 · source : transcription « Analyse, séance 8 » (42 min) · niveau standard</div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Objectif du cours</span><span class="prov cours">Cours</span></div>
+              <div>Savoir décider quand utiliser l'intégration par parties, et choisir u et dv sans tourner en rond.</div></div>
+            <div class="sec hl"><div class="sh"><span class="grip">⠿</span><span class="st2">Idées essentielles</span><span class="prov cours">Cours</span></div>
+              <ul><li>Produit de deux « familles » différentes (polynôme × exponentielle, logarithme × autre) → presque toujours IPP.</li><li>u = la fonction qui se dérive « vers le bas » : logarithme d'abord, puis polynôme.</li><li>La bonne dv est celle qui ne complique pas l'intégrale restante.</li></ul></div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Formule</span><span class="prov cours">Cours</span></div>
+              <div style="font-family:var(--mono);font-size:13px">∫ u·dv = u·v − ∫ v·du</div></div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Exemple</span><span class="prov cours">Cours</span></div>
+              <div>∫ x·eˣ dx avec u = x, dv = eˣ dx → x·eˣ − eˣ + C = <b>eˣ(x − 1) + C</b> (forme attendue en copie).</div></div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Pièges fréquents</span><span class="prov cours">Cours</span></div>
+              <ul><li>Oublier le signe − devant la seconde intégrale.</li><li>Choisir u qui boucle (u = eˣ redonne la même intégrale).</li></ul></div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Pour aller plus loin</span><span class="prov nomi">Explication Nomi</span></div>
+              <div>Quand deux fonctions se dérivent « pareil », la règle générale (ordre LIATE : logarithme, inverse trigo, algébrique, trigo, exponentielle) tranche. Le prof n'a pas nommé cette règle — elle est ajoutée pour compléter.</div></div>
+            <div class="sec"><div class="sh"><span class="grip">⠿</span><span class="st2">Questions de révision</span><span class="prov hyp">Hypothèse</span></div>
+              <ul><li>∫ x·ln(x) dx : quel u ?</li><li>∫ eˣ·cos(x) dx demande une double IPP — pourquoi ?</li></ul></div>
+          </div>
+          <div class="src-rail glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Source liée — « Idées essentielles »</h3>
+            <div class="src-ex"><span class="ts">00:05:48 · Prof</span>« Règle pratique : <mark>si vous voyez un produit de deux familles différentes</mark> — un polynôme et une exponentielle, un logarithme et n'importe quoi — <mark>c'est presque toujours par parties</mark>. »</div>
+            <div class="src-ex"><span class="ts">00:11:20 · Prof</span>« <mark>Choisissez u comme la fonction qui se dérive « vers le bas »</mark> : le logarithme d'abord, puis le polynôme. Si vous inversez, vous tournez en rond. »</div>
+            <div class="ln-item" style="font-size:12px">Un bloc « Hypothèse » ou « Explication Nomi » n'a pas d'extrait source : c'est fait exprès, pour distinguer le cours de ce que Nomi ajoute.</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:auto"><button class="btn small">Markdown</button><button class="btn small">Imprimer / PDF</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E6 BIBLIOTHÈQUE ================= -->
+      <section class="view" data-view="bibliotheque" hidden>
+        <div class="head"><h1>Bibliothèque</h1><p class="sub">cours, fiches, transcriptions et documents — tout est local</p><span class="spacer"></span><button class="btn small">Importer</button></div>
+        <div class="bib">
+          <div class="search glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input placeholder="Rechercher un cours, une fiche, un passage…"><span class="kbd">Ctrl K</span></div>
+          <div class="chips"><button class="chip" aria-pressed="true">Tout</button><button class="chip">Cours</button><button class="chip">Fiches</button><button class="chip">Transcriptions</button><button class="chip">Documents</button></div>
+          <div class="bgrid">
+            <div class="bcard glass lens"><div class="bt"><span class="ty">Fiche</span><span class="mut" style="font-size:11px;margin-left:auto">hier</span></div><div class="tt">Thermodynamique — ch. 3, entropie</div><div class="bm"><span>6 sections</span><span>niveau standard</span><span>source : séance 6</span></div></div>
+            <div class="bcard glass lens"><div class="bt"><span class="ty t-tr">Transcription</span><span class="mut" style="font-size:11px;margin-left:auto">hier</span></div><div class="tt">Analyse — séance 7</div><div class="bm"><span>1 h 12</span><span>résumé prêt</span><span>2 locuteurs estimés</span></div></div>
+            <div class="bcard glass lens"><div class="bt"><span class="ty">Fiche</span><span class="mut" style="font-size:11px;margin-left:auto">il y a 3 j</span></div><div class="tt">Macroéconomie — politiques monétaires</div><div class="bm"><span>quiz</span><span>12 cartes</span><span>corrigée à la main</span></div></div>
+            <div class="bcard glass lens"><div class="bt"><span class="ty t-doc">Cours</span><span class="mut" style="font-size:11px;margin-left:auto">il y a 5 j</span></div><div class="tt">Optique ondulatoire — polycopié.pdf</div><div class="bm"><span>48 pages</span><span>importé</span><span>1 fiche liée</span></div></div>
+            <div class="bcard glass lens"><div class="bt"><span class="ty t-tr">Transcription</span><span class="mut" style="font-size:11px;margin-left:auto">il y a 1 sem</span></div><div class="tt">Séminaire — gestion de projet</div><div class="bm"><span>48 min</span><span>corrigée</span><span>exportée</span></div></div>
+            <div class="bcard glass lens"><div class="bt"><span class="ty">Fiche</span><span class="mut" style="font-size:11px;margin-left:auto">il y a 1 sem</span></div><div class="tt">Intégration par parties — brouillon</div><div class="bm"><span>ultra-condensé</span><span>4 sections</span><span>à retravailler</span></div></div>
+            <div class="bcard import">＋ Importer un cours ou un document<br><small>PDF, Word, texte — lu en local</small></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= E7 PARAMÈTRES ================= -->
+      <section class="view" data-view="parametres" hidden>
+        <div class="head"><h1>Paramètres</h1><p class="sub">modèles, lecture, données — tout se règle ici, tout reste local</p></div>
+        <div class="prefs">
+          <div class="pgroup glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Modèles locaux</h3>
+            <div class="prow model"><div class="lb"><b>Qwen3 8B</b><small>réponses et raisonnement · Q4_K_M</small></div><span class="sz">5,2 Go</span><span class="mstate ok">Chargé</span></div>
+            <div class="prow model"><div class="lb"><b>Gemma 4 E4B + projecteur</b><small>lecture d'images et d'écrans · Focus</small></div><span class="sz">6,0 Go</span><span class="mstate idle">Présent</span><button class="btn small">Charger</button></div>
+            <div class="prow model"><div class="lb"><b>Whisper small</b><small>micro et transcription de cours</small></div><span class="sz">488 Mo</span><span class="mstate miss">À télécharger</span><button class="btn small primary">Télécharger</button></div>
+            <div class="mut" style="font-size:11.5px">Vérifiés par taille et SHA-256 avant usage. Aucun compte, aucune clé API, aucun envoi.</div>
+          </div>
+          <div class="pgroup glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Lecture</h3>
+            <div class="prow"><div class="lb"><b>Thème</b></div><div class="chips"><button class="chip" aria-pressed="true">Clair</button><button class="chip">Sombre</button><button class="chip">Système</button></div></div>
+            <div class="prow"><div class="lb"><b>Espacement</b></div><div class="chips"><button class="chip" aria-pressed="true">Aéré</button><button class="chip">Compact</button></div></div>
+            <div class="prow"><div class="lb"><b>Animations</b><small>désactivées aussi si Windows le demande</small></div><span class="tgl on"></span></div>
+            <div class="prow"><div class="lb"><b>Langue</b></div><div class="chips"><button class="chip" aria-pressed="true">Français</button><button class="chip">English</button></div></div>
+          </div>
+          <div class="pgroup glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Nombres et IA</h3>
+            <div class="prow"><div class="lb"><b>Affichage des nombres</b><small>horaires, durées, estimations</small></div><div class="chips"><button class="chip">En mots</button><button class="chip">En proportions</button><button class="chip" aria-pressed="true">En chiffres</button></div></div>
+            <div class="prow"><div class="lb"><b>Suggestions pendant une tâche</b><small>mode calme : gardées « pour après »</small></div><span class="tgl on"></span></div>
+            <div class="prow"><div class="lb"><b>Ce que Nomi retient</b><small>rythme appris, suggestions écartées, vos précisions</small></div><button class="btn small">Voir · modifier</button></div>
+            <div class="prow"><div class="lb"><b>Niveau de réponse par défaut</b></div><div class="chips"><button class="chip">Rapide</button><button class="chip" aria-pressed="true">Appliqué</button><button class="chip">Réflexion</button></div></div>
+          </div>
+          <div class="pgroup glass">
+            <h3 style="margin:0;font-size:11.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)">Données</h3>
+            <div class="prow"><div class="lb"><b>Export complet</b><small>tâches, historique, transcriptions, fiches — en clair, c'est à vous</small></div><button class="btn small">Exporter</button></div>
+            <div class="prow"><div class="lb"><b>Tout supprimer</b><small>toutes les données de Nomi sur cet appareil, y compris ce qu'il retient</small></div><button class="btn small danger">Supprimer…</button></div>
+            <div class="prow"><div class="lb"><b>Fichiers</b><small>tâches, routines, conversations, transcriptions, fiches — chiffrés sur cet appareil</small></div><span class="pill">DPAPI</span></div>
+          </div>
+        </div>
+      </section>
+
+      <span class="demo">données de démonstration</span>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <h2>Maquette v4 — notes de structure</h2>
+  <ul>
+    <li>La navigation se regroupe en trois espaces (Journée, Studio, Études) + Accueil, Bibliothèque, Assistant, Paramètres. Les entrées sans maquette reprennent les écrans existants.</li>
+    <li>Chaque écran porte la mention « données de démonstration » en bas à droite du cadre.</li>
+    <li>Relecture de code : aucune correction ne s'applique seule — toujours un diff + un clic.</li>
+    <li>Calculs : « écart » n'apparaît que si le moteur reproduit le calcul ; sinon « non vérifiable ».</li>
+    <li>Fiche : trois badges de provenance (Cours / Explication Nomi / Hypothèse) ; un bloc généré non relié à la source n'a pas d'extrait — c'est voulu.</li>
+    <li>Transcription : indicateur d'enregistrement permanent, « provisoire » tant que la session n'est pas arrêtée, [inaudible] plutôt que texte inventé.</li>
+  </ul>
+  <h3>Paramètres d'URL</h3>
+  <ul>
+    <li><code>?s=accueil|code|calculs|transcription|fiche|bibliotheque|parametres</code> — écran initial</li>
+    <li><code>?theme=dark</code> — thème sombre</li>
+  </ul>
+</div>
+
+<script>
+const SCREENS=['accueil','code','calculs','transcription','fiche','bibliotheque','parametres'];
+function apply(){
+  const q=new URLSearchParams(location.search);
+  const s=q.get('s')||'accueil';
+  const dark=q.get('theme')==='dark';
+  document.getElementById('win').classList.toggle('dark',dark);
+  const bare=q.get('bare')==='1';
+  document.querySelector('.page-tools').hidden=bare;
+  document.querySelector('.notes').hidden=bare;
+  document.body.style.padding=bare?'8px':'20px 12px 36px';
+  document.querySelectorAll('.view').forEach(v=>v.hidden=v.dataset.view!==s);
+  document.querySelectorAll('.page-tools [data-s]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===s));
+  document.querySelectorAll('.page-tools [data-t]').forEach(b=>b.setAttribute('aria-pressed',String(dark)===(b.dataset.t==='dark')));
+  document.querySelectorAll('.nav').forEach(n=>{
+    const on=n.dataset.nav===s;
+    if(on)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
+  });
+}
+document.querySelectorAll('.page-tools [data-s]').forEach(b=>b.onclick=()=>{const q=new URLSearchParams(location.search);q.set('s',b.dataset.s);location.search=q;});
+document.querySelectorAll('.page-tools [data-t]').forEach(b=>b.onclick=()=>{const q=new URLSearchParams(location.search);if(b.dataset.t==='dark')q.set('theme','dark');else q.delete('theme');location.search=q;});
+document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>{const d=n.dataset.nav;if(d==='x')return;const q=new URLSearchParams(location.search);q.set('s',d);location.search=q;});
+document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{const q=new URLSearchParams(location.search);q.set('s',b.dataset.goto);location.search=q;});
+apply();
+</script>
+</body>
+</html>
