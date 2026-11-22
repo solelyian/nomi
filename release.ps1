@@ -135,13 +135,24 @@ if ($Publish) {
             $rel = Invoke-RestMethod -Uri "$ghApi/releases/tags/$tag" -Headers $ghHeaders
         }
         $uploadBase = $rel.upload_url -replace '\{\?.*\}$', ''
-        # Reused release (retry after a partial run): remove same-named assets first, uploads reject duplicates.
+        # Uploads reject duplicate names: delete same-named assets before every attempt - a
+        # dropped connection can leave a partial asset behind, which would 422 the retry.
         $existing = @(Invoke-RestMethod -Uri "$ghApi/releases/$($rel.id)/assets" -Headers $ghHeaders)
         foreach ($f in $files) {
-            foreach ($d in @($existing | Where-Object { $_.name -eq $f.Name })) {
-                Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null
+            for ($try = 1; $try -le 3; $try++) {
+                foreach ($d in @($existing | Where-Object { $_.name -eq $f.Name })) {
+                    Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null
+                }
+                try {
+                    Invoke-RestMethod -Method Post -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -ContentType "application/octet-stream" -InFile $f.FullName | Out-Null
+                    break
+                } catch {
+                    if ($try -eq 3) { throw }
+                    Write-Warning "Upload of $($f.Name) failed (attempt $try/3): $($_.Exception.Message)"
+                    $existing = @(Invoke-RestMethod -Uri "$ghApi/releases/$($rel.id)/assets" -Headers $ghHeaders)
+                    Start-Sleep -Seconds (5 * $try)
+                }
             }
-            Invoke-Upload -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -File $f.FullName | Out-Null
             Write-Host "GitHub + $($f.Name)"
         }
     } else {
