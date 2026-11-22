@@ -98,6 +98,21 @@ Get-Content artifacts/SHA256SUMS.txt
 Write-Host "Release ready in artifacts\ : $Version"
 
 if ($Publish) {
+    # Windows PowerShell 5.1 defaults to TLS 1.0 - GitHub/GitLab need 1.2+.
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    # Big binaries cross flaky connections - retry each upload up to 3 times.
+    function Invoke-Upload {
+        param([string]$Uri, [hashtable]$Headers, [string]$File, [string]$Method = "Post")
+        for ($try = 1; $try -le 3; $try++) {
+            try {
+                return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $Headers -ContentType "application/octet-stream" -InFile $File
+            } catch {
+                if ($try -eq 3) { throw }
+                Write-Warning "Upload of $(Split-Path $File -Leaf) failed (attempt $try/3): $($_.Exception.Message)"
+                Start-Sleep -Seconds (5 * $try)
+            }
+        }
+    }
     $files = @($targets) + @(Get-Item artifacts/SHA256SUMS.txt)
     $tag = "v$Version"
     $headSha = (git rev-parse HEAD 2>$null)
@@ -126,7 +141,7 @@ if ($Publish) {
             foreach ($d in @($existing | Where-Object { $_.name -eq $f.Name })) {
                 Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null
             }
-            Invoke-RestMethod -Method Post -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -ContentType "application/octet-stream" -InFile $f.FullName | Out-Null
+            Invoke-Upload -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -File $f.FullName | Out-Null
             Write-Host "GitHub + $($f.Name)"
         }
     } else {
@@ -140,7 +155,7 @@ if ($Publish) {
         $links = @()
         foreach ($f in $files) {
             $url = "$glApi/packages/generic/nomi/$Version/$($f.Name)"
-            Invoke-RestMethod -Method Put -Uri $url -Headers $glHeaders -ContentType "application/octet-stream" -InFile $f.FullName | Out-Null
+            Invoke-Upload -Method Put -Uri $url -Headers $glHeaders -File $f.FullName | Out-Null
             $links += @{ name = $f.Name; url = $url; link_type = "package" }
             Write-Host "GitLab + $($f.Name)"
         }
