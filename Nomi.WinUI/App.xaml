@@ -1,4 +1,4 @@
-<Application
+﻿<Application
     x:Class="Nomi.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -48,6 +48,16 @@
                         <SolidColorBrush x:Key="NomiScrim" Color="#66171512" />
                         <SolidColorBrush x:Key="NomiHover" Color="#F1EDE8" />
                         <SolidColorBrush x:Key="NomiPressed" Color="#E8E2DB" />
+                        <SolidColorBrush x:Key="NomiToday" Color="#B4482B" />
+                        <SolidColorBrush x:Key="NomiTodaySoft" Color="#F6E6DF" />
+                        <SolidColorBrush x:Key="NomiBoard" Color="#3D6A98" />
+                        <SolidColorBrush x:Key="NomiBoardSoft" Color="#E2EAF3" />
+                        <SolidColorBrush x:Key="NomiFocus" Color="#7651A6" />
+                        <SolidColorBrush x:Key="NomiFocusSoft" Color="#ECE5F5" />
+                        <SolidColorBrush x:Key="NomiRoutines" Color="#2F7D4F" />
+                        <SolidColorBrush x:Key="NomiRoutinesSoft" Color="#E1EAE0" />
+                        <SolidColorBrush x:Key="NomiTranscript" Color="#23787F" />
+                        <SolidColorBrush x:Key="NomiTranscriptSoft" Color="#DDEDEE" />
                         <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F1EDE8" />
                         <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#E8E2DB" />
                         <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#CFC8BF" />
@@ -112,6 +122,16 @@
                         <SolidColorBrush x:Key="NomiScrim" Color="#99000000" />
                         <SolidColorBrush x:Key="NomiHover" Color="#2A2927" />
                         <SolidColorBrush x:Key="NomiPressed" Color="#343230" />
+                        <SolidColorBrush x:Key="NomiToday" Color="#E8825F" />
+                        <SolidColorBrush x:Key="NomiTodaySoft" Color="#3A2A23" />
+                        <SolidColorBrush x:Key="NomiBoard" Color="#7FA7D4" />
+                        <SolidColorBrush x:Key="NomiBoardSoft" Color="#1E2935" />
+                        <SolidColorBrush x:Key="NomiFocus" Color="#B08FDB" />
+                        <SolidColorBrush x:Key="NomiFocusSoft" Color="#2B2338" />
+                        <SolidColorBrush x:Key="NomiRoutines" Color="#6FBF8A" />
+                        <SolidColorBrush x:Key="NomiRoutinesSoft" Color="#22302A" />
+                        <SolidColorBrush x:Key="NomiTranscript" Color="#6CC3C9" />
+                        <SolidColorBrush x:Key="NomiTranscriptSoft" Color="#1C3133" />
                         <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#2A2927" />
                         <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#343230" />
                         <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#4A4641" />
@@ -169,6 +189,16 @@
                         <SolidColorBrush x:Key="NomiScrim" Color="{ThemeResource SystemColorWindowColor}" />
                         <SolidColorBrush x:Key="NomiHover" Color="{ThemeResource SystemColorHighlightColor}" />
                         <SolidColorBrush x:Key="NomiPressed" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiToday" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiTodaySoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiBoard" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiBoardSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiFocus" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiFocusSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiRoutines" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiRoutinesSoft" Color="{ThemeResource SystemColorWindowColor}" />
+                        <SolidColorBrush x:Key="NomiTranscript" Color="{ThemeResource SystemColorHighlightColor}" />
+                        <SolidColorBrush x:Key="NomiTranscriptSoft" Color="{ThemeResource SystemColorWindowColor}" />
                     </ResourceDictionary>
                     </ResourceDictionary.ThemeDictionaries>
                 </ResourceDictionary>
@@ -234,7 +264,7 @@
                 <Setter Property="MinHeight" Value="36" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="FontSize" Value="13.5" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk2}" />
             </Style>
 
@@ -273,7 +303,7 @@
                 <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="12,6" />
                 <Setter Property="MinHeight" Value="32" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
@@ -326,7 +356,7 @@
                 <Setter Property="CornerRadius" Value="15" />
                 <Setter Property="Padding" Value="11,5" />
                 <Setter Property="MinHeight" Value="30" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
@@ -338,7 +368,7 @@
                 <Setter Property="Padding" Value="12,9" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
         </ResourceDictionary>

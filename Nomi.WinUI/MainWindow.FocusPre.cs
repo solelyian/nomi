@@ -28,7 +28,7 @@ public sealed partial class MainWindow
         Grid.SetColumn(ready, 1);
         header.Children.Add(ready);
         stack.Children.Add(header);
-        var privacy = Text(T("callPrivacy"), 12.5, "NomiInk3");
+        var privacy = Text(T("callPrivacy"), 13, "NomiInk3");
         privacy.MaxWidth = 720;
         privacy.HorizontalAlignment = HorizontalAlignment.Left;
         AutomationProperties.SetAutomationId(privacy, "FocusPrivacy");
@@ -67,10 +67,10 @@ public sealed partial class MainWindow
         Grid.SetColumn(start, 1);
         bottom.Children.Add(start);
         stack.Children.Add(bottom);
-        if (focusWindow is null) stack.Children.Add(Text(T("focusChooseHelp"), 12.5, "NomiInk3"));
+        if (focusWindow is null) stack.Children.Add(Text(T("focusChooseHelp"), 13, "NomiInk3"));
         if (focusMessage.Length > 0)
         {
-            var message = Text(focusMessage, 12.5, "NomiAccent");
+            var message = Text(focusMessage, 13, "NomiAccent");
             AutomationProperties.SetAutomationId(message, "FocusMessage");
             AutomationProperties.SetLiveSetting(message, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
             stack.Children.Add(message);
@@ -93,7 +93,7 @@ public sealed partial class MainWindow
             {
                 var status = speechProgress.Stage == "model-downloading"
                     ? $"{speech.Model} · {Readable.Fraction(speechProgress.Fraction, language)}" : $"{speech.Model} · {Label(speechProgress.Stage)}";
-                var line = Text(status, 12.5, "NomiInk2");
+                var line = Text(status, 13, "NomiInk2");
                 AutomationProperties.SetLiveSetting(line, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
                 mic.Children.Add(line);
                 var stop = Chip(T("stop"), "NomiGhost", null, "CallSpeechStop");
@@ -104,7 +104,7 @@ public sealed partial class MainWindow
             else
             {
                 if (speechProgress.Stage is not ("vision-idle" or "local-model-ready" or "model-paused"))
-                    mic.Children.Add(Text(Label(speechProgress.Stage), 12.5, "NomiAccent"));
+                    mic.Children.Add(Text(Label(speechProgress.Stage), 13, "NomiAccent"));
                 var get = Chip(string.Format(T("callSpeechDownload"), Gigabytes(speech.Bytes)), "NomiChip", "\uE896", "CallSpeechDownload");
                 get.HorizontalAlignment = HorizontalAlignment.Left;
                 get.Click += (_, _) => _ = PrepareSpeech(true, load: false);
@@ -120,7 +120,7 @@ public sealed partial class MainWindow
         var title = Text(T("callModeTitle"), 14);
         title.FontWeight = FontWeights.SemiBold;
         mode.Children.Add(title);
-        mode.Children.Add(Text(T("callModeNote"), 12.5, "NomiInk3"));
+        mode.Children.Add(Text(T("callModeNote"), 13, "NomiInk3"));
         mode.Children.Add(ModeSelector("Focus", false));
         Grid.SetRow(mode, 1);
         Grid.SetColumnSpan(mode, 2);
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         var name = Text(title, 14);
         name.FontWeight = FontWeights.SemiBold;
         texts.Children.Add(name);
-        texts.Children.Add(Text(note, 12.5, "NomiInk3"));
+        texts.Children.Add(Text(note, 13, "NomiInk3"));
         row.Children.Add(texts);
         var toggle = new ToggleSwitch { IsOn = on, IsEnabled = enabled, OnContent = "", OffContent = "", MinWidth = 0, VerticalAlignment = VerticalAlignment.Top };
         AutomationProperties.SetName(toggle, title);

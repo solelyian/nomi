@@ -66,12 +66,12 @@ public sealed partial class MainWindow
         row.Children.Add(attach);
         var count = ChatContextNow().Count;
         var sees = Chip(chatHidden ? T("chatHidden") : string.Format(CultureInfo.CurrentCulture, T(count == 1 ? "nomiTasksVisibleOne" : "nomiTasksVisible"), count), "NomiGhost", chatHidden ? "\uE72E" : "\uE8FD", "NomiContext");
-        sees.FontSize = 12.5;
+        sees.FontSize = 13;
         ToolTipService.SetToolTip(sees, chatHidden ? T("chatShow") : T("chatHide"));
         sees.Click += (_, _) => { chatHidden = !chatHidden; BuildNomi(); };
         Grid.SetColumn(sees, 1);
         row.Children.Add(sees);
-        var level = new DropDownButton { Content = LevelName(nomiLevel), Style = (Style)Application.Current.Resources["NomiChip"], FontSize = 12.5, CornerRadius = new CornerRadius(12) };
+        var level = new DropDownButton { Content = LevelName(nomiLevel), Style = (Style)Application.Current.Resources["NomiChip"], FontSize = 13, CornerRadius = new CornerRadius(12) };
         AutomationProperties.SetName(level, $"{T("nomiLevel")} : {LevelName(nomiLevel)}");
         AutomationProperties.SetAutomationId(level, "NomiLevel");
         level.Flyout = LevelMenu();

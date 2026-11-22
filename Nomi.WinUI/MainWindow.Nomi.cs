@@ -86,7 +86,7 @@ public sealed partial class MainWindow
         FillHistory(list);
         var foot = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7, Padding = new Thickness(10, 8, 10, 4) };
         foot.Children.Add(new FontIcon { Glyph = "\uE72E", FontSize = 11, Foreground = Palette("NomiInk3") });
-        foot.Children.Add(Text(T("nomiEncrypted"), 11.5, "NomiInk3"));
+        foot.Children.Add(Text(T("nomiEncrypted"), 12, "NomiInk3"));
         Grid.SetRow(foot, 3);
         grid.Children.Add(foot);
         return new Border { Child = grid, Style = (Style)Application.Current.Resources["NomiCard"], CornerRadius = new CornerRadius(22), Padding = new Thickness(10, 12, 10, 8) };

@@ -39,7 +39,7 @@ public sealed partial class MainWindow
         heading.Margin = new Thickness(0, 14, 0, 0);
         AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level2);
         SettingsBody.Children.Add(heading);
-        if (help is not null) SettingsBody.Children.Add(Text(help, 12.5, "NomiInk2"));
+        if (help is not null) SettingsBody.Children.Add(Text(help, 13, "NomiInk2"));
     }
 
     private void ChangeProfile(Action change)
@@ -157,7 +157,7 @@ public sealed partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var text = new StackPanel { Spacing = 2 };
         text.Children.Add(Text(label, 12, "NomiInk3"));
-        text.Children.Add(Text(value, 13.5));
+        text.Children.Add(Text(value, 14));
         grid.Children.Add(text);
         if (action is not null)
         {
@@ -197,7 +197,7 @@ public sealed partial class MainWindow
             stack.Children.Add(MemoryLine(T(KindKey(kind)), value, resume));
         }
         stack.Children.Add(Text(T("memoryCorrections"), 12, "NomiInk3"));
-        if (profile.Corrections.Count == 0) stack.Children.Add(Text(T("memoryNoCorrections"), 12.5, "NomiInk2"));
+        if (profile.Corrections.Count == 0) stack.Children.Add(Text(T("memoryNoCorrections"), 13, "NomiInk2"));
         foreach (var correction in profile.Corrections.ToArray())
         {
             var remove = Chip(T("remove"), "NomiGhost");

@@ -15,7 +15,7 @@ public sealed partial class MainWindow
     {
         var stack = new StackPanel { Spacing = 10 };
         stack.Children.Add(Eyebrow(T("agendaTitle")));
-        stack.Children.Add(Text(T("agendaHelp"), 12.5, "NomiInk2"));
+        stack.Children.Add(Text(T("agendaHelp"), 13, "NomiInk2"));
         var now = Now;
         if (profile.AgendaSource is { } source)
         {
@@ -26,7 +26,7 @@ public sealed partial class MainWindow
             var end = Agenda.FirstMeetingEnd(meetings, profile.Day);
             var meeting = meetings.FirstOrDefault(item => item.End == end);
             stack.Children.Add(Text(meeting is null ? T("agendaNoMeeting")
-                : string.Format(CultureInfo.CurrentCulture, T("agendaFirst"), meeting.Title, At(meeting.End)), 12.5, "NomiInk2"));
+                : string.Format(CultureInfo.CurrentCulture, T("agendaFirst"), meeting.Title, At(meeting.End)), 13, "NomiInk2"));
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             var refresh = Chip(T("agendaRefresh"), "NomiChip", "\uE72C", "AgendaRefresh");
             refresh.IsEnabled = !agendaBusy;
@@ -64,9 +64,9 @@ public sealed partial class MainWindow
             file.Click += async (_, _) => await PickAgendaFile();
             stack.Children.Add(file);
         }
-        if (agendaBusy) stack.Children.Add(Text(T("agendaLoading"), 12.5, "NomiInk3"));
-        if (agendaStatus.Length > 0) stack.Children.Add(Text(agendaStatus, 12.5, "NomiAccent"));
-        stack.Children.Add(Text(T("agendaPrivacy"), 11.5, "NomiInk3"));
+        if (agendaBusy) stack.Children.Add(Text(T("agendaLoading"), 13, "NomiInk3"));
+        if (agendaStatus.Length > 0) stack.Children.Add(Text(agendaStatus, 13, "NomiAccent"));
+        stack.Children.Add(Text(T("agendaPrivacy"), 12, "NomiInk3"));
         var card = Glass(stack, 18);
         Mark(card, "AgendaCard", T("agendaTitle"));
         return card;
@@ -215,7 +215,7 @@ public sealed partial class MainWindow
         var stack = new StackPanel { Spacing = 10 };
         stack.Children.Add(Eyebrow(T("rescueTitle")));
         stack.Children.Add(Text(T("rescueIntro"), 13, "NomiInk2"));
-        var total = Text("", 12.5, "NomiInk2");
+        var total = Text("", 13, "NomiInk2");
         AutomationProperties.SetAutomationId(total, "RescueSummary");
         AutomationProperties.SetLiveSetting(total, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
         void Summarize()
@@ -233,7 +233,7 @@ public sealed partial class MainWindow
         Summarize();
         stack.Children.Add(total);
         stack.Children.Add(RescueButtons(lines));
-        stack.Children.Add(Text(T("rescueNote"), 11.5, "NomiInk3"));
+        stack.Children.Add(Text(T("rescueNote"), 12, "NomiInk3"));
         var card = Glass(stack, 18, true);
         Mark(card, "RescuePlan", T("rescueTitle"));
         return card;
