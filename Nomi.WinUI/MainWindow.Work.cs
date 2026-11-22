@@ -672,10 +672,10 @@ public sealed partial class MainWindow
         var planned = plan.Sum(task => TaskBoard.Remaining(task, now));
         var (ratio, samples) = board.Pace();
         var available = profile.Day.Available(now);
-        titles.Children.Add(Heading(T("today"), 28));
+        titles.Children.Add(Heading(T(now.Hour < 12 ? "greetMorning" : now.Hour < 18 ? "greetAfternoon" : "greetEvening"), 28));
         var over = planned * ratio > available;
         var balance = Text(string.Format(CultureInfo.CurrentCulture, T("dayBalance"), Minutes(planned * ratio), Minutes(Math.Max(0, available - planned * ratio))), 13, over ? "NomiAccent" : "NomiInk2");
-        titles.Children.Add(balance);
+        titles.Children.Add(DayProgress(now, available, balance.Text));
         header.Children.Add(titles);
         if (profile.Numbers != NumberModes.Figures)
         {
@@ -686,12 +686,18 @@ public sealed partial class MainWindow
             Grid.SetColumn(peek, 1);
             header.Children.Add(peek);
         }
-        if (plan.Count > 0 && rescue is null)
+        Button? derail = null;
+        if (plan.Count > 0)
         {
-            var derail = Chip(T("rescue"), "NomiChip", "\uE7BA", "DayRescue");
+            derail = Chip(T("rescue"), "NomiChip", "\uE7BA", "DayRescue");
             AutomationProperties.SetHelpText(derail, T("rescueHelp"));
             derail.VerticalAlignment = VerticalAlignment.Bottom;
-            derail.Click += (_, _) => { rescue = DayRescue.Propose(board.Plan(Now), Now, profile.Day, board.Pace().Ratio); Refresh(); };
+            derail.Click += (_, _) =>
+            {
+                rescue = rescue is null ? DayRescue.Propose(board.Plan(Now), Now, profile.Day, board.Pace().Ratio) : null;
+                morphRescue = rescue is not null;
+                Refresh();
+            };
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Bottom };
             actions.Children.Add(derail);
             if (AsideButton() is { } panel) actions.Children.Add(panel);
@@ -699,7 +705,25 @@ public sealed partial class MainWindow
             header.Children.Add(actions);
         }
         TodayBody.Children.Add(header);
-        if (rescue is not null) TodayBody.Children.Add(RescueCard(now, ratio));
+        if (rescue is not null)
+        {
+            var card = RescueCard(now, ratio);
+            card.KeyDown += (_, args) =>
+            {
+                if (args.Key != Windows.System.VirtualKey.Escape) return;
+                args.Handled = true;
+                rescue = null;
+                Refresh();
+                Find(TodayBody, "DayRescue")?.Focus(FocusState.Keyboard);
+            };
+            TodayBody.Children.Add(card);
+            if (morphRescue && derail is not null)
+            {
+                var origin = derail;
+                morphRescue = false;
+                DispatcherQueue.TryEnqueue(() => Morph(card, origin));
+            }
+        }
 
         TodayBody.Children.Add(TodayTiles(now, plan, planned * ratio, available, ratio, samples, over));
         var bento = new Grid { ColumnSpacing = 12 };
@@ -730,6 +754,42 @@ public sealed partial class MainWindow
             Grid.SetColumn((FrameworkElement)grid.Children[index], index % columns);
             Grid.SetRow((FrameworkElement)grid.Children[index], index / columns);
         }
+    }
+
+    private bool morphRescue;
+
+    private static Control? Find(DependencyObject root, string id)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is Control control && AutomationProperties.GetAutomationId(control) == id) return control;
+            if (Find(child, id) is { } found) return found;
+        }
+        return null;
+    }
+
+    private Grid DayProgress(DateTimeOffset now, double available, string balance)
+    {
+        var span = (profile.Day.End - profile.Day.Start).TotalMinutes;
+        var share = span <= 0 ? 0 : Math.Clamp((now.TimeOfDay - profile.Day.Start).TotalMinutes / span, 0, 1);
+        var row = new Grid { ColumnSpacing = 10, Margin = new Thickness(0, 4, 0, 0) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(220) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.Children.Add(Text(T("dayLabel"), 12, "NomiInk3"));
+        var bar = new ProgressBar { Maximum = 1, Value = share, Height = 5, MinHeight = 5, CornerRadius = new CornerRadius(3), VerticalAlignment = VerticalAlignment.Center, Foreground = Palette("NomiToday"), Background = Palette("NomiLine") };
+        var label = string.Format(CultureInfo.CurrentCulture, T("dayElapsed"), Math.Round(share * 100))
+            + " · " + string.Format(CultureInfo.CurrentCulture, T("dayFree"), Minutes(available), At(profile.Day.At(now, profile.Day.End)));
+        AutomationProperties.SetName(bar, label);
+        AutomationProperties.SetHelpText(bar, balance);
+        Grid.SetColumn(bar, 1);
+        row.Children.Add(bar);
+        var text = Text(label, 12, "NomiInk2");
+        text.TextTrimming = TextTrimming.CharacterEllipsis;
+        Grid.SetColumn(text, 2);
+        row.Children.Add(text);
+        return row;
     }
 
     private Border ActiveHero(DateTimeOffset now, double ratio)
@@ -796,11 +856,18 @@ public sealed partial class MainWindow
         var row = new Grid { ColumnSpacing = 18 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var clock = Text(Clock(task.Spent(now)), 34, task.RunningSince is null ? "NomiInk2" : "NomiInk");
+        var clock = Text(Clock(task.Spent(now)), 15, task.RunningSince is null ? "NomiInk2" : "NomiInk");
         clock.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
-        clock.FontWeight = FontWeights.Light;
+        clock.FontWeight = FontWeights.SemiBold;
+        clock.HorizontalAlignment = HorizontalAlignment.Center;
+        clock.VerticalAlignment = VerticalAlignment.Center;
         AutomationProperties.SetAutomationId(clock, "ActiveElapsed");
-        row.Children.Add(clock);
+        var ring = new ProgressRing { IsIndeterminate = false, Maximum = 100, Width = 76, Height = 76, Foreground = Palette("NomiToday"), Background = Palette("NomiLine") };
+        AutomationProperties.SetName(ring, T("progress"));
+        var dial = new Grid { Width = 76, Height = 76 };
+        dial.Children.Add(ring);
+        dial.Children.Add(clock);
+        row.Children.Add(dial);
         var remaining = TaskBoard.Remaining(task, now) * ratio;
         var facts = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         facts.Children.Add(Text($"{T("estimated")} {Minutes(task.Estimate)} · {T("remaining")} {Minutes(remaining)}", 13, "NomiInk2"));
@@ -808,26 +875,30 @@ public sealed partial class MainWindow
         Grid.SetColumn(facts, 1);
         row.Children.Add(facts);
         stack.Children.Add(row);
-        var bar = new ProgressBar { Maximum = 100, Value = task.Estimate > 0 ? Math.Min(100, task.Spent(now) / 60 / task.Estimate * 100) : 0, Height = 4, MinHeight = 4 };
-        AutomationProperties.SetName(bar, T("progress"));
+        var bar = new ProgressBar { Maximum = 100, Visibility = Visibility.Collapsed };
+        bar.ValueChanged += (_, args) => ring.Value = args.NewValue;
+        bar.Value = task.Estimate > 0 ? Math.Min(100, task.Spent(now) / 60 / task.Estimate * 100) : 0;
         stack.Children.Add(bar);
         liveTimers.Add((clock, bar, task.Id));
         var next = task.Steps.FirstOrDefault(step => !step.Done);
         if (next is not null) stack.Children.Add(Text($"{T("nextStep")} : {next.Title}", 13, "NomiInk2"));
         var buttons = new WrapPanel { Spacing = 8 };
-        var toggle = Chip(task.RunningSince is null ? T("resume") : T("pauseTimer"), "NomiChip", task.RunningSince is null ? "\uE768" : "\uE769", "ActiveToggle");
-        toggle.Click += (_, _) => { ToggleTimer(task); Refresh(); };
-        buttons.Children.Add(toggle);
-        var review = Chip(T("toReview"), "NomiChip", "\uE73E", "ActiveReview");
-        review.Click += (_, _) => { Move(task, Columns.Review); Refresh(); };
-        buttons.Children.Add(review);
-        var focusNow = Primary(T("startFocus"), "ActiveFocus");
-        focusNow.Click += (_, _) => { focusTaskId = task.Id; Show("focus"); };
-        buttons.Children.Add(focusNow);
-        var done = Chip(T("markDone"), "NomiChip", "\uE73E", "ActiveDone");
+        var done = Primary(T("markDone"), "ActiveDone");
         done.Click += (_, _) => { Move(task, Columns.Done); Refresh(); };
         buttons.Children.Add(done);
-        var open = Chip(T("open"), "NomiGhost");
+        var toggle = Chip(task.RunningSince is null ? T("resume") : T("pauseTimer"), "NomiChip", task.RunningSince is null ? "" : "", "ActiveToggle");
+        toggle.Click += (_, _) => { ToggleTimer(task); Refresh(); };
+        buttons.Children.Add(toggle);
+        var review = Chip(T("toReview"), "NomiChip", "", "ActiveReview");
+        review.Click += (_, _) => { Move(task, Columns.Review); Refresh(); };
+        buttons.Children.Add(review);
+        var focusNow = Chip(T("startFocus"), "NomiGhost", null, "ActiveFocus");
+        focusNow.Click += (_, _) => { focusTaskId = task.Id; Show("focus"); };
+        buttons.Children.Add(focusNow);
+        var open = new Button { Style = (Style)Application.Current.Resources["NomiGhost"], Content = new FontIcon { Glyph = "", FontSize = 13 }, Padding = new Thickness(9, 6, 9, 6) };
+        AutomationProperties.SetName(open, T("open"));
+        ToolTipService.SetToolTip(open, T("open"));
+        Springy(open, 1.03f);
         open.Click += (_, _) => OpenSheet(task.Id);
         buttons.Children.Add(open);
         stack.Children.Add(buttons);
@@ -966,7 +1037,7 @@ public sealed partial class MainWindow
             said.VerticalAlignment = VerticalAlignment.Center;
             item.Children.Add(said);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-            var apply = Primary(SuggestionAction(suggestion), $"Suggestion_{suggestion.Kind}");
+            var apply = ReferenceEquals(suggestion, suggestions.First()) ? Primary(SuggestionAction(suggestion), $"Suggestion_{suggestion.Kind}") : Chip(SuggestionAction(suggestion), "NomiChip", null, $"Suggestion_{suggestion.Kind}");
             AutomationProperties.SetName(apply, $"{SuggestionAction(suggestion)} : {SuggestionText(suggestion)}");
             apply.Click += async (_, _) =>
             {

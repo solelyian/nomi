@@ -4,3 +4,6 @@ obj/
 .vs/
 artifacts/
 *.user
+design/compare/app/
+design/compare/mock/
+design/compare/out/

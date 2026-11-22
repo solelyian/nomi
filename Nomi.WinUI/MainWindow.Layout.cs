@@ -22,6 +22,7 @@ public sealed partial class MainWindow
             if (next == tier) return;
             tier = next;
             asideOpen = false;
+            historyShown = next.Name != Tokens.Compact.Name;
             Refresh();
         };
     }

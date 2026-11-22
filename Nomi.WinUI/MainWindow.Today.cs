@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -9,19 +9,24 @@ namespace Nomi;
 
 public sealed partial class MainWindow
 {
-    private Border Tile(string label, string glyph, string value, bool mono, string detail, string id, UIElement? extra = null, bool warn = false)
+    private Border Tile(string label, string glyph, string value, bool mono, string detail, string id, string section, UIElement? extra = null, bool warn = false)
     {
         var stack = new StackPanel { Spacing = 4 };
-        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        head.Children.Add(new FontIcon { Glyph = glyph, FontSize = 12, Foreground = Palette("NomiAccent") });
+        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        head.Children.Add(new Border
+        {
+            Width = 24, Height = 24, CornerRadius = new CornerRadius(7),
+            Background = Palette(section + "Soft"),
+            Child = new FontIcon { Glyph = glyph, FontSize = 12, Foreground = Palette(section) }
+        });
         head.Children.Add(Eyebrow(label));
         stack.Children.Add(head);
-        var number = Text(value, mono ? 25 : 19);
+        var number = Text(value, mono ? 22 : 17);
         number.FontWeight = FontWeights.Bold;
         number.TextWrapping = TextWrapping.WrapWholeWords;
         number.MaxLines = 2;
         number.TextTrimming = TextTrimming.CharacterEllipsis;
-        number.Margin = new Thickness(0, 6, 0, 0);
+        number.Margin = new Thickness(0, 2, 0, 0);
         if (mono) number.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
         stack.Children.Add(number);
         var text = Text(detail, 13, warn ? "NomiAccent" : "NomiInk2");
@@ -33,18 +38,23 @@ public sealed partial class MainWindow
         return tile;
     }
 
-    private UIElement Meter(double value, double maximum)
+    private UIElement Meter(double value, double maximum, string section = "NomiToday")
     {
-        var bar = new ProgressBar { Maximum = Math.Max(1, maximum), Value = Math.Min(maximum, value), Height = 6, MinHeight = 6, Margin = new Thickness(0, 8, 0, 0), CornerRadius = new CornerRadius(3), Foreground = Palette("NomiAccent"), Background = Palette("NomiLine") };
+        var bar = new ProgressBar { Maximum = Math.Max(1, maximum), Value = Math.Min(maximum, value), Height = 5, MinHeight = 5, Margin = new Thickness(0, 8, 0, 0), CornerRadius = new CornerRadius(3), Foreground = Palette(section), Background = Palette("NomiLine") };
         AutomationProperties.SetName(bar, T("metricCapacity"));
         return bar;
     }
 
-    private UIElement Dots(int count, int on)
+    private UIElement Dots(int count, int on, string section = "NomiRoutines")
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Margin = new Thickness(0, 8, 0, 0) };
+        var row = new Grid { ColumnSpacing = 5, Margin = new Thickness(0, 8, 0, 0) };
         for (var index = 0; index < count; index++)
-            row.Children.Add(new Border { Width = 18, Height = 6, CornerRadius = new CornerRadius(3), Background = Palette(index < on ? "NomiOk" : "NomiLine") });
+        {
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var segment = new Border { Height = 5, CornerRadius = new CornerRadius(3), Background = Palette(index < on ? section : "NomiLine") };
+            Grid.SetColumn(segment, index);
+            row.Children.Add(segment);
+        }
         AutomationProperties.SetAccessibilityView(row, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
         return row;
     }
@@ -55,23 +65,23 @@ public sealed partial class MainWindow
         var total = doneToday.Length + plan.Count;
         var due = board.Tasks.Where(task => task.Column != Columns.Done && task.Due is { } at && at.Date == now.Date)
             .OrderBy(task => task.Due).FirstOrDefault();
-        var grid = new Grid { ColumnSpacing = 12 };
+        var grid = new Grid { ColumnSpacing = tier.Gap };
         for (var column = 0; column < 4; column++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var figures = NumberMode == NumberModes.Figures;
         var tiles = new[]
         {
             Tile(T("metricPlanned"), "\uE823", plan.Count == 0 ? T("todayNothing") : Minutes(planned), figures,
                 plan.Count == 0 ? T("todayFree") : over ? T("metricOver") : string.Format(CultureInfo.CurrentCulture, T("todayPlannedDetail"), Minutes(available)),
-                "MetricPlanned", Meter(planned, available), over),
+                "MetricPlanned", "NomiToday", Meter(planned, available), over),
             Tile(T("metricDone"), "\uE73E", total == 0 ? T("todayNoneYet") : string.Format(CultureInfo.CurrentCulture, T("todayDoneOf"), doneToday.Length, total), figures,
                 doneToday.Length > 0 ? string.Format(CultureInfo.CurrentCulture, T("todayLastDone"), doneToday[0].Title) : T("todayDoneEmpty"),
-                "MetricDone", total > 0 ? Dots(Math.Min(total, 8), Math.Min(doneToday.Length, 8)) : null),
+                "MetricDone", "NomiRoutines", total > 0 ? Dots(Math.Min(total, 8), Math.Min(doneToday.Length, 8)) : null),
             Tile(T("todayDue"), "\uE787", due?.Title ?? T("todayDueNone"), false,
                 due is { Due: { } at } ? string.Format(CultureInfo.CurrentCulture, T(figures ? "todayDueDetail" : "todayDueDetailWords"), At(at), At(at.AddMinutes(-TaskBoard.Remaining(due, now) * ratio))) : T("todayDueNoneDetail"),
-                "MetricDue"),
+                "MetricDue", "NomiBoard", due is { Due: { } dueAt } ? Meter(Math.Max(0, 480 - (dueAt - now).TotalMinutes), 480, "NomiBoard") : null),
             Tile(T("metricPace"), "\uE945", samples >= 3 ? Readable.Pace(ratio, language) : T("todayLearning"), false,
                 samples >= 3 ? (figures ? $"×{ratio.ToString("0.0", CultureInfo.CurrentCulture)} · {T("metricPaceDetail")}" : T("metricPaceDetail")) : string.Format(CultureInfo.CurrentCulture, T("metricLearning"), samples, 3),
-                "MetricPace", samples >= 3 ? null : Dots(3, samples))
+                "MetricPace", "NomiFocus", samples >= 3 ? null : Dots(3, samples, "NomiFocus"))
         };
         for (var index = 0; index < tiles.Length; index++)
         {
