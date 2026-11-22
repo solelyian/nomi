@@ -112,7 +112,7 @@ public sealed partial class MainWindow
         for (var index = 0; index < rows.Length; index++)
         {
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var key = Text(T(rows[index].Item1), 12.5, "NomiInk3");
+            var key = Text(T(rows[index].Item1), 13, "NomiInk3");
             Grid.SetRow(key, index);
             var value = Text(rows[index].Item2, 13);
             Grid.SetRow(value, index);

@@ -30,7 +30,7 @@ public sealed partial class MainWindow
         var titles = new StackPanel { Spacing = 4 };
         titles.Children.Add(Eyebrow(T("transcriptEyebrow")));
         titles.Children.Add(Heading(T("transcript"), 28));
-        titles.Children.Add(Text(T("transcriptIntro"), 13.5, "NomiInk2"));
+        titles.Children.Add(Text(T("transcriptIntro"), 14, "NomiInk2"));
         TranscriptBody.Children.Add(titles);
 
         var control = new StackPanel { Spacing = 10 };
@@ -54,10 +54,10 @@ public sealed partial class MainWindow
             state.Children.Add(status);
         }
         control.Children.Add(state);
-        if (!Microphone.Available) control.Children.Add(Text(T("micUnavailable"), 12.5, "NomiAccent"));
+        if (!Microphone.Available) control.Children.Add(Text(T("micUnavailable"), 13, "NomiAccent"));
         else if (!speech.HasModel)
         {
-            control.Children.Add(Text(T("transcriptNeedModel"), 12.5, "NomiInk2"));
+            control.Children.Add(Text(T("transcriptNeedModel"), 13, "NomiInk2"));
             var download = Primary(T("transcriptDownload"), "TranscriptDownload");
             download.Click += async (_, _) => await TranscriptDownload();
             control.Children.Add(download);
@@ -68,7 +68,7 @@ public sealed partial class MainWindow
             toggle.Click += async (_, _) => await TranscriptToggle();
             control.Children.Add(toggle);
         }
-        if (transcriptMessage.Length > 0) control.Children.Add(Text(transcriptMessage, 12.5, "NomiAccent"));
+        if (transcriptMessage.Length > 0) control.Children.Add(Text(transcriptMessage, 13, "NomiAccent"));
         control.Children.Add(Pill(T("callLocal"), "NomiSageSoft", "NomiOk"));
         var card = Glass(control, 18);
         Mark(card, "TranscriptControl", T("transcript"));
@@ -90,10 +90,10 @@ public sealed partial class MainWindow
             var row = new Grid { ColumnSpacing = 10 };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var at = Text(line.At.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture), 12.5, "NomiInk3");
+            var at = Text(line.At.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture), 13, "NomiInk3");
             at.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
             row.Children.Add(at);
-            var body = Text(line.Text, 13.5);
+            var body = Text(line.Text, 14);
             Grid.SetColumn(body, 1);
             row.Children.Add(body);
             lines.Children.Add(row);

@@ -24,7 +24,7 @@ public sealed partial class MainWindow
         number.Margin = new Thickness(0, 6, 0, 0);
         if (mono) number.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
         stack.Children.Add(number);
-        var text = Text(detail, 12.5, warn ? "NomiAccent" : "NomiInk2");
+        var text = Text(detail, 13, warn ? "NomiAccent" : "NomiInk2");
         text.TextWrapping = TextWrapping.WrapWholeWords;
         stack.Children.Add(text);
         if (extra is not null) stack.Children.Add(extra);
@@ -126,7 +126,7 @@ public sealed partial class MainWindow
         foreach (var (kind, label) in new[] { ("task", T("legendTask")), ("meet", T("legendMeeting")), ("pause", T("legendPause")) })
         {
             legend.Children.Add(new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(3), Background = EventBrush(kind), BorderBrush = Palette("NomiLine"), BorderThickness = new Thickness(1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
-            legend.Children.Add(Text(label, 11.5, "NomiInk3"));
+            legend.Children.Add(Text(label, 12, "NomiInk3"));
         }
         Grid.SetColumn(legend, 1);
         head.Children.Add(legend);
@@ -144,7 +144,7 @@ public sealed partial class MainWindow
             {
                 var left = X(item.From);
                 var size = Math.Max(6, X(item.To) - left - 3);
-                var label = Text(item.Title, 11.5, item.Kind == "done" ? "NomiInk3" : "NomiInk");
+                var label = Text(item.Title, 12, item.Kind == "done" ? "NomiInk3" : "NomiInk");
                 label.TextTrimming = TextTrimming.CharacterEllipsis;
                 label.TextWrapping = TextWrapping.NoWrap;
                 label.VerticalAlignment = VerticalAlignment.Center;
@@ -183,7 +183,7 @@ public sealed partial class MainWindow
             }
             if (plan.Count == 0 && meetings.Length == 0)
             {
-                var hint = Text(T("todayPlanEmpty"), 12.5, "NomiInk3");
+                var hint = Text(T("todayPlanEmpty"), 13, "NomiInk3");
                 hint.HorizontalAlignment = HorizontalAlignment.Right;
                 hint.TextWrapping = TextWrapping.WrapWholeWords;
                 hint.MaxWidth = width * 0.45;

@@ -32,7 +32,7 @@ public sealed partial class MainWindow
             var number = Text(values[index].Value, 24);
             number.FontWeight = FontWeights.SemiBold;
             cell.Children.Add(number);
-            cell.Children.Add(Text(values[index].Label, 12.5, "NomiInk3"));
+            cell.Children.Add(Text(values[index].Label, 13, "NomiInk3"));
             var card = Glass(cell, 16);
             Mark(card, $"CallStat_{index}", $"{values[index].Label} : {values[index].Value}");
             Grid.SetColumn(card, index);
@@ -42,7 +42,7 @@ public sealed partial class MainWindow
 
         var noticed = new StackPanel { Spacing = 12 };
         noticed.Children.Add(CardTitle(T("callNoticed")));
-        if (ended.Points.Count == 0) noticed.Children.Add(Text(T("callNothing"), 13.5, "NomiInk3"));
+        if (ended.Points.Count == 0) noticed.Children.Add(Text(T("callNothing"), 14, "NomiInk3"));
         foreach (var point in ended.Points)
         {
             var note = $"{point.At.ToString("HH:mm:ss", CultureInfo.CurrentCulture)} · {point.Window}";
@@ -56,7 +56,7 @@ public sealed partial class MainWindow
         var actions = new StackPanel { Spacing = 12 };
         var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         head.Children.Add(CardTitle(T("callActions")));
-        head.Children.Add(Text($"· {T("callNothingApplied")}", 12.5, "NomiInk3"));
+        head.Children.Add(Text($"· {T("callNothingApplied")}", 13, "NomiInk3"));
         actions.Children.Add(head);
         var open = ended.Points.Where(point => !point.Fixed).ToArray();
         foreach (var point in open)
@@ -89,7 +89,7 @@ public sealed partial class MainWindow
             };
             actions.Children.Add(EndRow(string.Format(T("callMarkDoneTask"), linked.Title), null, done));
         }
-        if (open.Length == 0 && linked is not { Column: not Columns.Done }) actions.Children.Add(Text(T("callNoAction"), 13.5, "NomiInk3"));
+        if (open.Length == 0 && linked is not { Column: not Columns.Done }) actions.Children.Add(Text(T("callNoAction"), 14, "NomiInk3"));
         var actionsCard = Glass(actions, 18);
         Mark(actionsCard, "CallActions", T("callActions"));
         stack.Children.Add(actionsCard);

@@ -78,19 +78,19 @@
                         Background="{ThemeResource NomiAccentSoft}" BorderBrush="{ThemeResource NomiAccent}" Padding="10,3" MinHeight="26">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <Ellipse x:Name="FocusPillDot" Width="7" Height="7" Fill="{ThemeResource NomiAccent}" VerticalAlignment="Center" />
-                        <TextBlock x:Name="FocusPillText" FontSize="11.5" Foreground="{ThemeResource NomiInk}" MaxWidth="240" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="FocusPillText" FontSize="12" Foreground="{ThemeResource NomiInk}" MaxWidth="240" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Button>
                 <Border x:Name="EnginePill" Style="{StaticResource NomiPill}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Ellipse x:Name="EnginePillDot" Width="6" Height="6" Fill="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
-                        <TextBlock x:Name="EnginePillText" FontSize="11.5" Foreground="{ThemeResource NomiInk2}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="EnginePillText" FontSize="12" Foreground="{ThemeResource NomiInk2}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Border>
                 <Border x:Name="LanguageSwitch" Style="{StaticResource NomiPill}" Padding="2">
                     <StackPanel Orientation="Horizontal" Spacing="0">
-                        <ToggleButton x:Name="FrenchToggle" Content="FR" Tag="fr" Style="{StaticResource NomiSegment}" CornerRadius="11" MinHeight="22" Padding="8,1" FontSize="11.5" Click="LanguageToggled" />
-                        <ToggleButton x:Name="EnglishToggle" Content="EN" Tag="en" Style="{StaticResource NomiSegment}" CornerRadius="11" MinHeight="22" Padding="8,1" FontSize="11.5" Click="LanguageToggled" />
+                        <ToggleButton x:Name="FrenchToggle" Content="FR" Tag="fr" Style="{StaticResource NomiSegment}" CornerRadius="11" MinHeight="22" Padding="8,1" FontSize="12" Click="LanguageToggled" />
+                        <ToggleButton x:Name="EnglishToggle" Content="EN" Tag="en" Style="{StaticResource NomiSegment}" CornerRadius="11" MinHeight="22" Padding="8,1" FontSize="12" Click="LanguageToggled" />
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -226,7 +226,7 @@
                                                   VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
                                         <StackPanel x:Name="DocumentChips" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" />
                                     </ScrollViewer>
-                                    <TextBlock x:Name="DocumentFormats" FontSize="11.5" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center"
+                                    <TextBlock x:Name="DocumentFormats" FontSize="12" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center"
                                                TextTrimming="CharacterEllipsis" Margin="2,0,8,0" />
                                 </Grid>
                                 <DropDownButton x:Name="ContextChip" Grid.Column="3" Style="{StaticResource NomiChip}" CornerRadius="15" Padding="11,4" MinHeight="30" />
@@ -237,7 +237,7 @@
                                         <ToggleButton x:Name="SummaryToggle" Style="{StaticResource NomiSegment}" CornerRadius="12" MinHeight="24" Padding="9,1" Click="FormatToggled" />
                                     </StackPanel>
                                 </Border>
-                                <Button x:Name="ExampleButton" Grid.Column="5" Style="{StaticResource NomiGhost}" Padding="9,6" FontSize="12.5" Click="ExampleClicked" />
+                                <Button x:Name="ExampleButton" Grid.Column="5" Style="{StaticResource NomiGhost}" Padding="9,6" FontSize="13" Click="ExampleClicked" />
                                 <Button x:Name="StopButton" Grid.Column="6" Style="{StaticResource NomiChip}" Click="StopClicked" Visibility="Collapsed" />
                                 <Button x:Name="LaunchButton" Grid.Column="7" Style="{StaticResource NomiPrimary}" Click="LaunchClicked">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -251,7 +251,7 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock x:Name="StatusText" Grid.Row="2" FontSize="12.5" Foreground="{ThemeResource NomiInk2}"
+                    <TextBlock x:Name="StatusText" Grid.Row="2" FontSize="13" Foreground="{ThemeResource NomiInk2}"
                                TextWrapping="Wrap" Margin="8,-2,8,0" />
 
                     <!-- Result -->
@@ -287,7 +287,7 @@
                                     <ProgressRing x:Name="WorkingRing" Width="16" Height="16" IsActive="False" Foreground="{ThemeResource NomiAccent}" />
                                     <TextBlock x:Name="WorkingTitle" Grid.Column="1" FontSize="14" FontWeight="SemiBold"
                                                Foreground="{ThemeResource NomiInk}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="WorkingMeta" Grid.Column="2" FontFamily="{StaticResource NomiMono}" FontSize="11.5"
+                                    <TextBlock x:Name="WorkingMeta" Grid.Column="2" FontFamily="{StaticResource NomiMono}" FontSize="12"
                                                Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
                                 </Grid>
                                 <TextBlock x:Name="WorkingText" Style="{StaticResource NomiMuted}" Margin="26,-6,0,0" />
@@ -302,7 +302,7 @@
                                         MaxWidth="440" Spacing="8" Padding="24">
                                 <TextBlock x:Name="EmptyTitle" FontSize="17" FontWeight="SemiBold" TextAlignment="Center"
                                            Foreground="{ThemeResource NomiInk}" TextWrapping="Wrap" />
-                                <TextBlock x:Name="EmptyText" FontSize="13.5" TextAlignment="Center" Foreground="{ThemeResource NomiInk2}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="EmptyText" FontSize="14" TextAlignment="Center" Foreground="{ThemeResource NomiInk2}" TextWrapping="Wrap" />
                                 <Button x:Name="EmptyAction" Style="{StaticResource NomiPrimary}" HorizontalAlignment="Center" Margin="0,10,0,0" Click="PrepareClicked" />
                             </StackPanel>
                             <StackPanel x:Name="ResultFoot" Grid.Row="2" Padding="20,4,20,14" Spacing="10">
@@ -319,20 +319,20 @@
                                             <TextBlock x:Name="RetryLabel" />
                                         </StackPanel>
                                     </Button>
-                                    <Button x:Name="TaskButton" Style="{StaticResource NomiPrimary}" Padding="12,6" MinHeight="32" FontSize="12.5" Click="TaskClicked">
+                                    <Button x:Name="TaskButton" Style="{StaticResource NomiPrimary}" Padding="12,6" MinHeight="32" FontSize="13" Click="TaskClicked">
                                         <StackPanel Orientation="Horizontal" Spacing="7">
                                             <FontIcon Glyph="&#xE9D5;" FontSize="12" />
                                             <TextBlock x:Name="TaskLabel" />
                                         </StackPanel>
                                     </Button>
-                                    <Button x:Name="EditButton" Style="{StaticResource NomiGhost}" Padding="10,6" FontSize="12.5" Click="EditClicked">
+                                    <Button x:Name="EditButton" Style="{StaticResource NomiGhost}" Padding="10,6" FontSize="13" Click="EditClicked">
                                         <StackPanel Orientation="Horizontal" Spacing="7">
                                             <FontIcon Glyph="&#xE70F;" FontSize="12" />
                                             <TextBlock x:Name="EditLabel" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock x:Name="ResultFootText" FontSize="11.5" Foreground="{ThemeResource NomiInk3}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="ResultFootText" FontSize="12" Foreground="{ThemeResource NomiInk3}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -385,7 +385,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE945;" FontSize="17" Foreground="{ThemeResource NomiInk3}" VerticalAlignment="Center" />
-                        <TextBlock x:Name="CommandText" Grid.Column="1" FontSize="14.5" Foreground="{ThemeResource NomiInk3}"
+                        <TextBlock x:Name="CommandText" Grid.Column="1" FontSize="15" Foreground="{ThemeResource NomiInk3}"
                                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                         <Border Grid.Column="2" Style="{StaticResource NomiKbd}">
                             <TextBlock Text="Ctrl K" Style="{StaticResource NomiKbdText}" />
@@ -424,7 +424,7 @@
                                 <Ellipse Width="14" Height="11" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,6,0,0" Fill="#88FFFFFF" />
                             </Grid>
                             <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                                <TextBlock x:Name="CompanionTitle" FontSize="13.5" FontWeight="SemiBold" Foreground="{ThemeResource NomiInk}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="CompanionTitle" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource NomiInk}" TextWrapping="Wrap" />
                                 <TextBlock x:Name="CompanionState" FontSize="12" Foreground="{ThemeResource NomiInk3}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </Grid>
@@ -463,7 +463,7 @@
                                 <Grid>
                                     <TextBlock x:Name="HistoryTitle" Style="{StaticResource NomiCardTitle}" VerticalAlignment="Center" />
                                     <Button x:Name="HistoryClear" Style="{StaticResource NomiGhost}" HorizontalAlignment="Right" Padding="8,2"
-                                            MinHeight="24" FontSize="11.5" Margin="0,-4,-6,-4" Click="HistoryClearClicked" />
+                                            MinHeight="24" FontSize="12" Margin="0,-4,-6,-4" Click="HistoryClearClicked" />
                                 </Grid>
                                 <StackPanel x:Name="HistoryList" Spacing="4" />
                                 <TextBlock x:Name="HistoryNote" Style="{StaticResource NomiMuted}" />

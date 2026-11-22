@@ -40,7 +40,7 @@ public sealed partial class MainWindow
         Grid.SetColumn(names, 1);
         head.Children.Add(names);
         root.Children.Add(head);
-        miniCaption = Text(LastNomi(), 13.5, "NomiInk2");
+        miniCaption = Text(LastNomi(), 14, "NomiInk2");
         miniCaption.MaxLines = 3;
         miniCaption.TextTrimming = TextTrimming.CharacterEllipsis;
         AutomationProperties.SetLiveSetting(miniCaption, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
