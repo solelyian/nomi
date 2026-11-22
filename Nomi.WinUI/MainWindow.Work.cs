@@ -779,8 +779,8 @@ public sealed partial class MainWindow
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.Children.Add(Text(T("dayLabel"), 12, "NomiInk3"));
         var bar = new ProgressBar { Maximum = 1, Value = share, Height = 5, MinHeight = 5, CornerRadius = new CornerRadius(3), VerticalAlignment = VerticalAlignment.Center, Foreground = Palette("NomiToday"), Background = Palette("NomiLine") };
-        var label = string.Format(CultureInfo.CurrentCulture, T("dayElapsed"), Math.Round(share * 100))
-            + " · " + string.Format(CultureInfo.CurrentCulture, T("dayFree"), Minutes(available), At(profile.Day.At(now, profile.Day.End)));
+        var label = string.Format(CultureInfo.CurrentCulture, T("dayElapsed"), Math.Round(share * 100));
+        if (NumberMode == NumberModes.Figures) label += " · " + string.Format(CultureInfo.CurrentCulture, T("dayFree"), Minutes(available), At(profile.Day.At(now, profile.Day.End)));
         AutomationProperties.SetName(bar, label);
         AutomationProperties.SetHelpText(bar, balance);
         Grid.SetColumn(bar, 1);
@@ -852,7 +852,11 @@ public sealed partial class MainWindow
         }
         var title = Text(task.Title, 20);
         title.FontWeight = FontWeights.SemiBold;
-        stack.Children.Add(title);
+        var titleRow = new Grid { ColumnSpacing = 8 };
+        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        titleRow.Children.Add(title);
+        stack.Children.Add(titleRow);
         var row = new Grid { ColumnSpacing = 18 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -900,7 +904,9 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(open, T("open"));
         Springy(open, 1.03f);
         open.Click += (_, _) => OpenSheet(task.Id);
-        buttons.Children.Add(open);
+        open.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(open, 1);
+        titleRow.Children.Add(open);
         stack.Children.Add(buttons);
         var hero = Glass(stack, 20, true);
         Mark(hero, "ActiveTask", T("activeTask"));
