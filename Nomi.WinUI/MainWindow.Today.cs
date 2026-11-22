@@ -125,7 +125,7 @@ public sealed partial class MainWindow
         var legend = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         foreach (var (kind, label) in new[] { ("task", T("legendTask")), ("meet", T("legendMeeting")), ("pause", T("legendPause")) })
         {
-            legend.Children.Add(new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(3), Background = EventBrush(kind), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+            legend.Children.Add(new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(3), Background = EventBrush(kind), BorderBrush = Palette("NomiLine"), BorderThickness = new Thickness(1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
             legend.Children.Add(Text(label, 11.5, "NomiInk3"));
         }
         Grid.SetColumn(legend, 1);

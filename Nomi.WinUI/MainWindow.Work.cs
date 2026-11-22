@@ -412,12 +412,24 @@ public sealed partial class MainWindow
         Grid.SetColumn(name, 1);
         head.Children.Add(name);
         var minutes = tasks.Where(task => column != Columns.Done).Sum(task => TaskBoard.Remaining(task, Now));
-        var count = Text(column == Columns.Done || minutes == 0 ? $"{tasks.Length}" : $"{tasks.Length} · {Minutes(minutes)}", 11.5, "NomiInk3");
+        var count = Text($"{tasks.Length}", 11.5, "NomiInk3");
         count.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+        count.HorizontalAlignment = HorizontalAlignment.Right;
         count.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(count, 2);
         head.Children.Add(count);
-        grid.Children.Add(head);
+        var header = new StackPanel { Spacing = 2 };
+        header.Children.Add(head);
+        if (column != Columns.Done && minutes > 0)
+        {
+            var load = Text($"≈ {Minutes(minutes)}", 11.5, "NomiInk3");
+            load.Margin = new Thickness(20, 0, 4, 0);
+            load.TextWrapping = TextWrapping.NoWrap;
+            load.TextTrimming = TextTrimming.CharacterEllipsis;
+            if (NumberMode == NumberModes.Figures) load.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+            header.Children.Add(load);
+        }
+        grid.Children.Add(header);
 
         var list = new ListView
         {
@@ -813,7 +825,7 @@ public sealed partial class MainWindow
         liveTimers.Add((clock, bar, task.Id));
         var next = task.Steps.FirstOrDefault(step => !step.Done);
         if (next is not null) stack.Children.Add(Text($"{T("nextStep")} : {next.Title}", 12.5, "NomiInk2"));
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var buttons = new WrapPanel { Spacing = 8 };
         var toggle = Chip(task.RunningSince is null ? T("resume") : T("pauseTimer"), "NomiChip", task.RunningSince is null ? "\uE768" : "\uE769", "ActiveToggle");
         toggle.Click += (_, _) => { ToggleTimer(task); Refresh(); };
         buttons.Children.Add(toggle);
@@ -1065,8 +1077,17 @@ public sealed partial class MainWindow
                 cell.Children.Add(Text(cells[index].Label, 11, "NomiInk3"));
                 if (cells[index].Value is TextBlock value && value != clock)
                 {
-                    value.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
-                    value.TextWrapping = TextWrapping.NoWrap;
+                    if (NumberMode == NumberModes.Figures)
+                    {
+                        value.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+                        value.TextWrapping = TextWrapping.NoWrap;
+                    }
+                    else
+                    {
+                        value.FontSize = 14;
+                        value.FontWeight = FontWeights.SemiBold;
+                        value.TextWrapping = TextWrapping.WrapWholeWords;
+                    }
                 }
                 cell.Children.Add(cells[index].Value);
                 Grid.SetColumn(cell, index);

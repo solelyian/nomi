@@ -116,6 +116,7 @@ public sealed partial class MainWindow
         var text = Text(message, 13.5);
         text.TextWrapping = TextWrapping.Wrap;
         text.MaxWidth = 460;
+        text.HorizontalAlignment = HorizontalAlignment.Left;
         Grid.SetColumn(text, 1);
         AutomationProperties.SetAutomationId(text, "OnboardingHardwareVerdict");
         AutomationProperties.SetLiveSetting(text, AutomationLiveSetting.Polite);

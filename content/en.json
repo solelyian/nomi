@@ -701,7 +701,7 @@
     "visionDownload": "Download",
     "visionInstalled": "installed, loaded when focus starts",
     "visionMissing": "to download ({0} GB)",
-    "visionNote": "One-time download, verified by SHA-256. Analysis then works offline. On a CPU, allow about a minute per analysis.",
+    "visionNote": "One-time download, verified by SHA-256. Analysis then works offline. On a CPU, allow about 30 seconds per analysis.",
     "visionReady": "loaded",
     "visionTitle": "Local vision model",
     "work": "Work",

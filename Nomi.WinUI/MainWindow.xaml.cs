@@ -247,10 +247,13 @@ public sealed partial class MainWindow : Window
 
     private bool Dark => Root.ActualTheme == ElementTheme.Dark;
 
+    private ResourceDictionary? lightTheme, darkTheme;
+
     private Brush Palette(string key)
     {
-        var nomi = Application.Current.Resources.MergedDictionaries.Last(dictionary => dictionary.ThemeDictionaries.Count > 0);
-        var theme = (ResourceDictionary)nomi.ThemeDictionaries[Dark ? "Default" : "Light"];
+        ResourceDictionary Theme(string name) =>
+            (ResourceDictionary)Application.Current.Resources.MergedDictionaries.Last(dictionary => dictionary.ThemeDictionaries.Count > 0).ThemeDictionaries[name];
+        var theme = Dark ? darkTheme ??= Theme("Default") : lightTheme ??= Theme("Light");
         return (Brush)theme[key];
     }
 
@@ -926,7 +929,7 @@ public sealed partial class MainWindow : Window
 
     private void RefreshAside()
     {
-        EngineTitle.Text = T("engineTitle");
+        EngineTitle.Text = T("engineTitle").ToUpper(CultureInfo.CurrentCulture);
         EngineDetail.Text = EngineLabel();
         AutomationProperties.SetLiveSetting(EngineStatus, AutomationLiveSetting.Polite);
         AutomationProperties.SetLiveSetting(DocumentStatus, AutomationLiveSetting.Polite);
@@ -990,7 +993,11 @@ public sealed partial class MainWindow : Window
         UpdateControls();
     }
 
-    private string EngineLabel() => inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
+    private string EngineLabel()
+    {
+        if (!inference.HasModel) return ReasoningDefinition()?.Name ?? inference.Model;
+        return inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
+    }
 
     private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 8B";
 
@@ -1494,7 +1501,7 @@ public sealed partial class MainWindow : Window
     {
         if (onboarding is not null) return;
         var index = (int)sender.Key - (int)VirtualKey.Number1;
-        string[] views = ["today", "board", "focus", "nomi", "routines"];
+        string[] views = ["today", "board", "focus", "nomi", "routines", "transcript"];
         if (index < 0 || index >= views.Length) return;
         args.Handled = true;
         CloseSheet();
