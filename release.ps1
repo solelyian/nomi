@@ -100,6 +100,7 @@ Write-Host "Release ready in artifacts\ : $Version"
 if ($Publish) {
     $files = @($targets) + @(Get-Item artifacts/SHA256SUMS.txt)
     $tag = "v$Version"
+    $headSha = (git rev-parse HEAD 2>$null)
     if (!$GitHubRepo) {
         $remote = git config --get remote.origin.url
         if ($remote -match 'github\.com[:/]+(.+?)(\.git)?$') { $GitHubRepo = $Matches[1] }
@@ -110,13 +111,21 @@ if ($Publish) {
         if (!$ght) { throw "-Publish needs GH_TOKEN (or GITHUB_TOKEN) for GitHub Releases" }
         $ghHeaders = @{ Authorization = "Bearer $ght"; Accept = "application/vnd.github+json" }
         $ghApi = "https://api.github.com/repos/$GitHubRepo"
+        $ghBody = @{ tag_name = $tag; name = "Nomi $Version"; body = "Nomi $Version" }
+        # Pin the new tag to the commit just built, not whatever the default branch points at.
+        if ($headSha) { $ghBody.target_commitish = $headSha }
         try {
-            $rel = Invoke-RestMethod -Method Post -Uri "$ghApi/releases" -Headers $ghHeaders -ContentType "application/json" -Body (@{ tag_name = $tag; name = "Nomi $Version"; body = "Nomi $Version" } | ConvertTo-Json)
+            $rel = Invoke-RestMethod -Method Post -Uri "$ghApi/releases" -Headers $ghHeaders -ContentType "application/json" -Body ($ghBody | ConvertTo-Json)
         } catch {
             $rel = Invoke-RestMethod -Uri "$ghApi/releases/tags/$tag" -Headers $ghHeaders
         }
         $uploadBase = $rel.upload_url -replace '\{\?.*\}$', ''
+        # Reused release (retry after a partial run): remove same-named assets first, uploads reject duplicates.
+        $existing = @(Invoke-RestMethod -Uri "$ghApi/releases/$($rel.id)/assets" -Headers $ghHeaders)
         foreach ($f in $files) {
+            foreach ($d in @($existing | Where-Object { $_.name -eq $f.Name })) {
+                Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null
+            }
             Invoke-RestMethod -Method Post -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -ContentType "application/octet-stream" -InFile $f.FullName | Out-Null
             Write-Host "GitHub + $($f.Name)"
         }
@@ -135,11 +144,15 @@ if ($Publish) {
             $links += @{ name = $f.Name; url = $url; link_type = "package" }
             Write-Host "GitLab + $($f.Name)"
         }
-        $glBody = @{ tag_name = $tag; name = "Nomi $Version"; description = "Nomi $Version"; assets = @{ links = $links } } | ConvertTo-Json -Depth 4
+        # ref is required when the tag does not exist yet on GitLab.
+        $glCreate = @{ tag_name = $tag; name = "Nomi $Version"; description = "Nomi $Version"; assets = @{ links = $links } }
+        if ($headSha) { $glCreate.ref = $headSha }
         try {
-            Invoke-RestMethod -Method Post -Uri "$glApi/releases" -Headers $glHeaders -ContentType "application/json" -Body $glBody | Out-Null
+            Invoke-RestMethod -Method Post -Uri "$glApi/releases" -Headers $glHeaders -ContentType "application/json" -Body ($glCreate | ConvertTo-Json -Depth 4) | Out-Null
         } catch {
-            Invoke-RestMethod -Method Put -Uri "$glApi/releases/$tag" -Headers $glHeaders -ContentType "application/json" -Body $glBody | Out-Null
+            # Update accepts only mutable fields - no tag_name/ref.
+            $glUpdate = @{ name = "Nomi $Version"; description = "Nomi $Version"; assets = @{ links = $links } }
+            Invoke-RestMethod -Method Put -Uri "$glApi/releases/$tag" -Headers $glHeaders -ContentType "application/json" -Body ($glUpdate | ConvertTo-Json -Depth 4) | Out-Null
         }
         Write-Host "GitLab release $tag ready"
     }
