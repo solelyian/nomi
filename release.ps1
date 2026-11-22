@@ -141,7 +141,8 @@ if ($Publish) {
         foreach ($f in $files) {
             for ($try = 1; $try -le 3; $try++) {
                 foreach ($d in @($existing | Where-Object { $_.name -eq $f.Name })) {
-                    Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null
+                    # Stale entries 404 if the asset is already gone - either way it must not abort the retry.
+                    try { Invoke-RestMethod -Method Delete -Uri "$ghApi/releases/assets/$($d.id)" -Headers $ghHeaders | Out-Null } catch { }
                 }
                 try {
                     Invoke-RestMethod -Method Post -Uri "$uploadBase`?name=$($f.Name)" -Headers $ghHeaders -ContentType "application/octet-stream" -InFile $f.FullName | Out-Null
@@ -149,7 +150,10 @@ if ($Publish) {
                 } catch {
                     if ($try -eq 3) { throw }
                     Write-Warning "Upload of $($f.Name) failed (attempt $try/3): $($_.Exception.Message)"
-                    $existing = @(Invoke-RestMethod -Uri "$ghApi/releases/$($rel.id)/assets" -Headers $ghHeaders)
+                    # The listing may itself fail during the same outage - keep the stale list and retry anyway.
+                    try {
+                        $existing = @(Invoke-RestMethod -Uri "$ghApi/releases/$($rel.id)/assets" -Headers $ghHeaders)
+                    } catch { }
                     Start-Sleep -Seconds (5 * $try)
                 }
             }
