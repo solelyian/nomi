@@ -1051,6 +1051,18 @@
         "Une commande sans ligne produit un total à zéro silencieux : décidez si le module doit refuser l’entrée ou le signaler. Aucun code n’est modifié : ces points sont des propositions à valider."
       ],
       "summary": "Trois points à corriger : taux de TVA codé en dur (à remplacer par la constante du module), absence d’arrondi par ligne (des fractions de centime s’accumulent) et cas de la commande vide non tranché. Aucun code n’est modifié."
+    },
+    {
+      "id": "sheet",
+      "title": "Fiche de révision",
+      "description": "Transformez un cours ou une transcription en fiche à réviser.",
+      "prompt": "Fais une fiche de révision de ce cours sur les pourcentages : un taux passe de 20 % à 25 % ; distinction entre points de pourcentage et variation relative ; exemple avec une remise de 15 % sur 80 €.",
+      "steps": [
+        "Notions clés : passer de 20 % à 25 %, c’est +5 points de pourcentage ; par rapport au taux de départ, c’est +25 %. Deux repères, deux façons de le dire.",
+        "À retenir : la variation relative se calcule à partir de la valeur initiale — (25 − 20) ÷ 20 = 25 % ; une remise de 15 % sur 80 € retire 12 €, soit 68 €.",
+        "Pour s’entraîner : reformulez « +5 points » et « +25 % » sur un autre exemple, puis vérifiez avec l’action Vérifier."
+      ],
+      "summary": "Fiche : +5 points de pourcentage et +25 % relatif décrivent la même évolution ; la variation relative part du taux initial. Exemple de contrôle : 15 % de 80 € = 12 €, soit 68 € après remise."
     }
   ],
   "contexts": [

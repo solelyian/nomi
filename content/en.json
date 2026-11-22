@@ -1051,6 +1051,18 @@
         "An order with no lines produces a silent zero total: decide whether the module should reject the input or flag it. No code is changed: these points are proposals to validate."
       ],
       "summary": "Three points to fix: a hard-coded VAT rate (replace with the module constant), no per-line rounding (fractions of a cent accumulate) and an undecided empty-order case. No code is changed."
+    },
+    {
+      "id": "sheet",
+      "title": "Revision sheet",
+      "description": "Turn a course or a transcript into a sheet you can revise from.",
+      "prompt": "Make a revision sheet from this course on percentages: a rate moves from 20% to 25%; the difference between percentage points and relative change; a worked example with a 15% discount on 80 €.",
+      "steps": [
+        "Key notions: moving from 20% to 25% is +5 percentage points; relative to the starting rate it is +25%. Two reference points, two ways to say it.",
+        "To remember: relative change is computed from the initial value — (25 − 20) ÷ 20 = 25%; a 15% discount on 80 € removes 12 €, leaving 68 €.",
+        "To practise: restate “+5 points” and “+25%” on another example, then check it with the Review action."
+      ],
+      "summary": "Sheet: +5 percentage points and +25% relative describe the same change; relative change starts from the initial rate. Check example: 15% of 80 € is 12 €, leaving 68 € after the discount."
     }
   ],
   "contexts": [

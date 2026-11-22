@@ -30,6 +30,35 @@ static class RouterChecks
         Check(Router.Decide("Quel est 15 % de 80 ?", 0, Levels.Auto).Calculates && Router.Decide("80 €, remise de 15 %", 0, Levels.Auto).Calculates, "amounts with figures are calculated");
         Check(Router.Decide("Restart my laptop", 0, Levels.Auto).Primitive == "talk", "keywords match whole words");
 
+        Check(Router.Decide("Convertis les durées de cette fiche en heures", 0, Levels.Auto).Primitive == "convert", "converting a sheet's durations");
+        Check(Router.Decide("Fiche sur les convertisseurs", 0, Levels.Auto).Primitive == "sheet", "convertisseurs is a topic, not a command");
+        Check(Router.Decide("Convert this lecture into a revision sheet", 0, Levels.Auto).Primitive == "sheet", "sheet named as conversion target");
+        Check(Router.Decide("Combien font 90 minutes en heures ?", 0, Levels.Auto).Primitive == "convert", "unit question converts");
+        Check(Router.Decide("Relis ma fiche", 0, Levels.Auto).Primitive == "review", "proofreading a sheet");
+        Check(Router.Decide("Relis mes calculs", 0, Levels.Auto).Primitive == "verify", "checking calculations");
+        Check(Router.Decide("Fais une relecture de ma fiche", 0, Levels.Auto).Primitive == "review", "asked proofread of a sheet");
+        Check(Router.Decide("Make a revision sheet so I can review", 0, Levels.Auto).Primitive == "sheet", "sheet named by creator");
+        Check(Router.Decide("Rédige un mail pour demander une fiche", 0, Levels.Auto).Primitive == "communicate", "mail about a sheet stays mail");
+        Check(Router.Decide("Fiche de révision sur la relecture", 0, Levels.Auto).Primitive == "sheet", "relecture as topic stays sheet");
+        Check(Router.Decide("Summarize this Excel sheet", 0, Levels.Auto).Primitive != "sheet", "Excel sheets are not revision sheets");
+        Check(Router.Decide("Mon cours sur les réseaux : fais une fiche", 0, Levels.Auto).Primitive == "sheet", "intent after a subject phrase");
+        Check(Router.Decide("Sous-total sur la facture 300", 0, Levels.Auto).Primitive == "verify", "total named before its subject");
+        Check(Router.Decide("Convertis ce message en fiche de révision", 0, Levels.Auto).Primitive == "sheet", "message as conversion source");
+        Check(Router.Decide("Relis ce courriel", 0, Levels.Auto).Primitive == "review", "mail as proofread source");
+        Check(Router.Decide("Convertis ce cours en une courte fiche de révision", 0, Levels.Auto).Primitive == "sheet", "adjective inside the sheet target");
+        Check(Router.Decide("Convert this lecture to a cheat sheet", 0, Levels.Auto).Primitive == "sheet", "cheat sheet target");
+        Check(Router.Decide("Convertis ce cours en des fiches", 0, Levels.Auto).Primitive == "sheet", "plural sheet target");
+        Check(Router.Decide("Explain how to read sheet music", 0, Levels.Auto).Primitive == "learn", "sheet music is not a revision sheet");
+        Check(Router.Decide("Explique-moi le chapitre sur la guerre de 1914", 1, Levels.Auto).Primitive == "learn", "a year in a topic is not calculation evidence");
+        Check(Router.Decide("Convert these notes to cheat sheet format", 0, Levels.Auto).Primitive == "sheet", "cheat sheet without an article");
+        Check(Router.Decide("Explain how to organize an Excel workbook into sheets by month", 0, Levels.Auto).Primitive == "learn", "spreadsheet tabs are not revision sheets");
+        Check(Router.Decide("What is 15% of 80?", 0, Levels.Auto).Primitive == "verify", "an arithmetic question is calculated");
+        Check(Router.Decide("Make a revision sheet so I can learn the material", 0, Levels.Auto).Primitive == "sheet", "a purpose clause is not the request");
+        Check(Router.Decide("Convert lecture notes into sheets for studying", 0, Levels.Auto).Primitive == "sheet", "bare plural is a target outside spreadsheets");
+        Check(Router.Decide("Explain how to add a row to an Excel sheet", 0, Levels.Auto).Primitive == "learn", "an Excel sheet is a spreadsheet tab");
+        Check(Router.Decide("Convertis mes notes en une excellente fiche de révision", 0, Levels.Auto).Primitive == "sheet", "excellente is not Excel");
+        Check(Router.Decide("Explain how to add headers to sheets in Google Sheets", 0, Levels.Auto).Primitive == "learn", "Google Sheets is a spreadsheet app");
+
         var nl = ((char)10).ToString();
         Check(ChatThread.TitleFrom("  Devis Acme" + nl + "détails") == "Devis Acme", "title is the first line");
         Check(ChatThread.TitleFrom(new string('a', 80)).Length == 48, "long titles are cut");

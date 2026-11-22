@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Nomi;
 
@@ -28,27 +29,57 @@ public static class Router
     private static readonly string[] DeepWords = ["pourquoi", "optimis*", "compar*", "démontr*", "analys*", "why", "optimi*", "prove", "trade-off"];
     private static readonly string[] CalcWords = ["combien", "calcul*", "additionn*", "multipli*", "moyenne", "pourcent*", "how much", "how many", "how long", "average", "percent*"];
     private static readonly string[] AmountWords = ["total", "totaux", "reste", "restant", "remise", "budget", "tva", "left", "remaining", "discount", "vat", "%", "€", "$"];
-    private static readonly string[] ConvertWords = ["convert*", "en heures", "en minutes", "en euros", "in hours", "in minutes"];
+    private static readonly string[] ConvertVerbs = ["convertir", "converti", "convertis", "convertit", "convertissez", "convertissons", "convertissent", "conversion", "conversions", "convert", "converts", "converting", "converted"];
+    private static readonly string[] UnitWords = ["en heures", "en minutes", "en euros", "in hours", "in minutes"];
+    // What follows these markers is the subject of the request, not the intent itself.
+    private static readonly string[] TopicMarkers = [" sur ", " about ", " à propos", " portant sur", " au sujet de"];
+    // A sheet named as the conversion target ("en fiche", "into a sheet") — not as source or topic.
+    private static readonly string[] GridWords = ["excel", "workbook", "classeur", "tableur", "spreadsheet", "xlsx", "csv", "google sheets"];
+    private static readonly Regex SheetTarget = new(@"\b(?:en|into|to)\s+(?:(?:une|des|a|an)\s+(?:(?!excel\b|workbook\b|classeur\b|tableur\b|spreadsheet\b|xlsx\b|csv\b)\w+\s+)?)?(?:fiches?|cheat sheets?|revision sheets?|study sheets?|sheet)\b", RegexOptions.Compiled);
+    // Bare English plural ("into sheets for studying") is a target only outside spreadsheet talk.
+    private static readonly Regex SheetTargetPlural = new(@"\b(?:en|into|to)\s+sheets\b", RegexOptions.Compiled);
+    private static bool SheetAsTarget(string u) => SheetTarget.IsMatch(u) || SheetTargetPlural.IsMatch(u) && !Has(u, GridWords);
+    private static readonly string[] MailWords = ["mail", "mails", "email", "e-mail", "emails", "message", "messages", "courriel", "sms"];
+    private static readonly string[] WriteVerbs = ["rédige*", "redige*", "écris*", "ecris*", "écrire", "ecrire", "réponds", "reponds", "envoie*", "envoyer", "compose*", "brouillon", "write", "writes", "draft", "reply", "send"];
     private static readonly string[] PlanWords = ["commenc*", "journée", "priorit*", "planifi*", "organis*", "start", "my day", "plan", "plans", "planning"];
     private static readonly string[] WriteWords = ["mail", "mails", "email", "e-mail", "message", "rédige*", "réponds", "brouillon", "write", "draft", "reply"];
     private static readonly string[] LearnWords = ["expliqu*", "c'est quoi", "qu'est-ce", "apprendre", "apprends-moi", "comment fonctionne", "explain*", "what is", "learn", "teach", "how does"];
-    private static readonly string[] ReviewWords = ["relis*", "relecture", "relire", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "audite*", "review", "revue", "check this code", "check my code", "lint*"];
+    private static readonly string[] HardReviewWords = ["relis*", "relecture", "relire", "audite*", "lint*", "revue de code", "passe le code", "lis ce code", "lis ce fichier", "check this code", "check my code", "proofread*"];
+    private static readonly string[] SoftReviewWords = ["review", "revue"];
+    private static readonly string[] SheetWords = ["fiche*", "révis*", "revis*", "revise*", "revision", "revision sheet", "study sheet", "cheat sheet"];
+    private static readonly string[] CreateWords = ["fais", "fait", "faites", "crée*", "génère*", "produis*", "make", "create*", "generate*", "produce*", "build"];
 
     public static Route Decide(string text, int documents, string chosen)
     {
         var t = Normalize(text);
+        var topicAt = TopicMarkers.Select(m => t.IndexOf(m, StringComparison.Ordinal)).Where(i => i >= 0).DefaultIfEmpty(-1).Min();
+        var head = topicAt >= 0 ? t[..topicAt] : t;
+        // The tail after a marker is the topic only when the request already states its intent;
+        // otherwise the marker belongs to a subject phrase ("le cours sur les réseaux : fais une fiche").
+        var intentBefore = Has(head, SheetWords) || Has(head, HardReviewWords) || Has(head, SoftReviewWords)
+            || Has(head, ConvertVerbs) || Has(head, UnitWords) || Has(head, CalcWords) || Has(head, PlanWords)
+            || Has(head, WriteWords) || Has(head, LearnWords) || Has(head, AmountWords) || Has(head, CreateWords);
+        var u = intentBefore ? head : t;
         var reads = documents > 0;
         var count = t.Count(char.IsDigit);
-        var digits = count >= 2;
-        var amount = Has(t, AmountWords) && (count > 0 || reads) && !Has(t, WriteWords);
-        var calculates = Has(t, CalcWords) || amount || Has(t, ConvertWords) || reads && digits;
-        var primitive = Has(t, ConvertWords) ? "convert"
-            : calculates ? "verify"
-            : Has(t, PlanWords) ? "plan"
-            : Has(t, WriteWords) ? "communicate"
-            : Has(t, ReviewWords) ? "review"
-            : Has(t, LearnWords) ? "learn"
+        // Digits inside a topic ("la guerre de 1914") are not calculation evidence.
+        var digits = u.Count(char.IsDigit) >= 2;
+        var amount = Has(u, AmountWords) && (count > 0 || reads) && !Has(u, WriteWords);
+        var primitive = Has(u, ConvertVerbs) && !SheetAsTarget(u) ? "convert"
+            : Has(u, SheetWords) && Has(u, HardReviewWords) ? "review"
+            : SheetAsTarget(u) ? "sheet"
+            : Has(u, SheetWords) && Has(u, SoftReviewWords) && !Has(u, CreateWords) ? "review"
+            : Has(u, WriteVerbs) && Has(u, MailWords) ? "communicate"
+            : Has(u, SheetWords) ? "sheet"
+            : Has(u, UnitWords) ? "convert"
+            : Has(u, CalcWords) ? "verify"
+            : Has(u, PlanWords) ? "plan"
+            : Has(u, WriteWords) ? "communicate"
+            : Has(u, HardReviewWords) || Has(u, SoftReviewWords) ? "review"
+            : amount || reads && digits ? "verify"
+            : Has(u, LearnWords) ? "learn"
             : reads ? "understand" : "talk";
+        var calculates = primitive is "verify" or "convert";
         var deep = Has(t, DeepWords) || t.Length > 700;
         var level = Levels.All.Contains(chosen) && chosen != Levels.Auto ? chosen
             : deep ? Levels.Deep

@@ -19,6 +19,7 @@
             <KeyboardAccelerator Key="Number5" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number6" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="Number7" Modifiers="Menu" Invoked="ActionShortcut" />
+            <KeyboardAccelerator Key="Number8" Modifiers="Menu" Invoked="ActionShortcut" />
             <KeyboardAccelerator Key="N" Modifiers="Control" Invoked="NewTaskInvoked" />
         </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
