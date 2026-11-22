@@ -20,7 +20,7 @@ public sealed partial class MainWindow
         AutomationProperties.SetHeadingLevel(title, Microsoft.UI.Xaml.Automation.Peers.AutomationHeadingLevel.Level2);
         hello.Children.Add(title);
         stack.Children.Add(hello);
-        var intro = Text(T("nomiNeedsModelText"), 14.5, "NomiInk2");
+        var intro = Text(T("nomiNeedsModelText"), 15, "NomiInk2");
         intro.TextAlignment = TextAlignment.Center;
         stack.Children.Add(intro);
         var host = new Border { Child = Glass(ResourcesCard(nomiResources, null), 22, true) };

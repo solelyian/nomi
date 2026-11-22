@@ -80,7 +80,7 @@ public sealed partial class MainWindow
         stack.Children.Add(hello);
         var context = ChatContextNow();
         var line = Text(chatHidden ? T("chatHidden") : context.Count == 0 ? T("chatSeesNone") : context.Count == 1 ? T("chatSeesOne")
-            : string.Format(CultureInfo.CurrentCulture, T("chatSees"), context.Count), 14.5, "NomiInk2");
+            : string.Format(CultureInfo.CurrentCulture, T("chatSees"), context.Count), 15, "NomiInk2");
         line.TextAlignment = TextAlignment.Center;
         line.Margin = new Thickness(0, 6, 0, 26);
         stack.Children.Add(line);

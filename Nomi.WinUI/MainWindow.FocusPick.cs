@@ -38,7 +38,7 @@ public sealed partial class MainWindow
             grid.Children.Add(tile);
         }
         stack.Children.Add(grid);
-        if (focusChoices.Count == 0) stack.Children.Add(Text(T("focusNoWindows"), 12.5, "NomiInk3"));
+        if (focusChoices.Count == 0) stack.Children.Add(Text(T("focusNoWindows"), 13, "NomiInk3"));
         return stack;
     }
 
@@ -48,7 +48,7 @@ public sealed partial class MainWindow
         var selected = focusWindow is { } current && current.Handle == choice.Handle;
         var content = new StackPanel { Spacing = 8 };
         content.Children.Add(TileImage(choice));
-        var title = Text(screen ? T("callWholeScreen") : choice.Title, 13.5);
+        var title = Text(screen ? T("callWholeScreen") : choice.Title, 14);
         title.FontWeight = FontWeights.SemiBold;
         title.MaxLines = 1;
         title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -167,7 +167,7 @@ public sealed partial class MainWindow
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var preparing = visionPreparation is not null;
         var info = new StackPanel { Spacing = 2 };
-        var name = Text(T("visionTitle"), 13.5);
+        var name = Text(T("visionTitle"), 14);
         name.FontWeight = FontWeights.SemiBold;
         info.Children.Add(name);
         var status = visionProgress.Stage == "model-downloading" ? $"{T("engineDownloading")} · {Readable.Fraction(visionProgress.Fraction, language)}"
@@ -196,7 +196,7 @@ public sealed partial class MainWindow
         }
         else if (visionProgress.Stage is not ("vision-idle" or "local-model-ready" or "model-downloading"))
             stack.Children.Add(Text(Label(visionProgress.Stage), 12, "NomiAccent"));
-        stack.Children.Add(Text(T("visionNote"), 11.5, "NomiInk3"));
+        stack.Children.Add(Text(T("visionNote"), 12, "NomiInk3"));
         var card = Glass(stack, 16);
         Mark(card, "VisionCard", T("visionTitle"));
         return card;

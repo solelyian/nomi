@@ -200,16 +200,16 @@ public sealed partial class MainWindow
                 Margin = new Thickness(0, 4, 0, 0)
             });
             var names = new StackPanel { Spacing = 2 };
-            var name = Text(item.Name, 14.5);
+            var name = Text(item.Name, 15);
             name.FontWeight = FontWeights.SemiBold;
             names.Children.Add(name);
-            names.Children.Add(Text(T(item.Id switch { "vision" => "resVisionRole", "speech" => "resSpeechRole", _ => "resReasoningRole" }), 12.5, "NomiInk3"));
+            names.Children.Add(Text(T(item.Id switch { "vision" => "resVisionRole", "speech" => "resSpeechRole", _ => "resReasoningRole" }), 13, "NomiInk3"));
             Grid.SetColumn(names, 1);
             row.Children.Add(names);
             var where = item.Present ? T("resOnComputer")
                 : item.Busy ? T("resGetting")
                 : string.Format(T("resToGet"), Gigabytes(item.Bytes));
-            var side = Text(where, 12.5, "NomiInk2");
+            var side = Text(where, 13, "NomiInk2");
             side.VerticalAlignment = VerticalAlignment.Center;
             Grid.SetColumn(side, 2);
             row.Children.Add(side);
@@ -218,14 +218,14 @@ public sealed partial class MainWindow
             rows.Children.Add(row);
         }
         card.Children.Add(rows);
-        card.Children.Add(ResourcesStatusLine(target, items, 13.5));
+        card.Children.Add(ResourcesStatusLine(target, items, 14));
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         if (state == LocalResources.Busy)
         {
             card.Children.Add(ResourcesBar(target, items));
             actions.Children.Add(ResourcesPause(target));
             card.Children.Add(actions);
-            card.Children.Add(Text(T(later is null ? "nomiDownloading" : "oobeModelBackground"), 12.5, "NomiInk3"));
+            card.Children.Add(Text(T(later is null ? "nomiDownloading" : "oobeModelBackground"), 13, "NomiInk3"));
             return card;
         }
         if (state == LocalResources.Ready && (inference.Ready || modelPreparation is not null)) return card;
@@ -274,7 +274,7 @@ public sealed partial class MainWindow
                 : Text(string.Format(T("resBanner"), vision.Model, Gigabytes(vision.MissingBytes)), 13, "NomiInk2");
             AutomationProperties.SetAutomationId(line, "NomiModelStatus");
             text.Children.Add(line);
-            if (LocalResources.Error(items) is { } error) text.Children.Add(Text(Label(error), 12.5, "NomiAccent"));
+            if (LocalResources.Error(items) is { } error) text.Children.Add(Text(Label(error), 13, "NomiAccent"));
             var download = Chip(ResourcesAction(items), "NomiPrimary", null, "NomiDownload");
             download.Click += (_, _) => _ = PrepareResources();
             nomiResources.First = download;

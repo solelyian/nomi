@@ -50,7 +50,7 @@ public sealed partial class MainWindow
             if (drafting is not null)
             {
                 card.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 3, MinHeight = 3 });
-                var status = Text(T("draftWriting"), 12.5, "NomiInk2");
+                var status = Text(T("draftWriting"), 13, "NomiInk2");
                 AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
                 card.Children.Add(status);
                 var stop = Chip(T("stop"), "NomiGhost", "\uE71A", "SheetDraftStop");
@@ -97,7 +97,7 @@ public sealed partial class MainWindow
         write.IsEnabled = drafting is null;
         write.Click += async (_, _) => await WriteFirstStep(task.Id);
         stack.Children.Add(write);
-        if (!inference.Ready && !inference.HasModel) stack.Children.Add(Text(T("draftNeedsModel"), 11.5, "NomiInk3"));
+        if (!inference.Ready && !inference.HasModel) stack.Children.Add(Text(T("draftNeedsModel"), 12, "NomiInk3"));
         return stack;
     }
 

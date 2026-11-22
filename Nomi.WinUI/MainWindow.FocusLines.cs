@@ -92,7 +92,7 @@ public sealed partial class MainWindow
         Grid.SetColumn(send, 2);
         row.Children.Add(send);
         stack.Children.Add(row);
-        stack.Children.Add(Text(T("callHint"), 11.5, "NomiInk3"));
+        stack.Children.Add(Text(T("callHint"), 12, "NomiInk3"));
         return stack;
     }
 
@@ -124,7 +124,7 @@ public sealed partial class MainWindow
         AutomationProperties.SetAccessibilityView(avatar, AccessibilityView.Raw);
         row.Children.Add(avatar);
         var body = new StackPanel { Spacing = 4 };
-        body.Children.Add(Text(LineMeta(line), 11.5, "NomiInk3"));
+        body.Children.Add(Text(LineMeta(line), 12, "NomiInk3"));
         var text = Text(line.Text.Length > 0 ? line.Text : T("callLookingAt"), 14);
         text.IsTextSelectionEnabled = true;
         body.Children.Add(text);

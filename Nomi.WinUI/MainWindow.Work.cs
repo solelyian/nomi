@@ -412,12 +412,24 @@ public sealed partial class MainWindow
         Grid.SetColumn(name, 1);
         head.Children.Add(name);
         var minutes = tasks.Where(task => column != Columns.Done).Sum(task => TaskBoard.Remaining(task, Now));
-        var count = Text(column == Columns.Done || minutes == 0 ? $"{tasks.Length}" : $"{tasks.Length} · {Minutes(minutes)}", 11.5, "NomiInk3");
+        var count = Text($"{tasks.Length}", 12, "NomiInk3");
         count.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+        count.HorizontalAlignment = HorizontalAlignment.Right;
         count.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(count, 2);
         head.Children.Add(count);
-        grid.Children.Add(head);
+        var header = new StackPanel { Spacing = 2 };
+        header.Children.Add(head);
+        if (column != Columns.Done && minutes > 0)
+        {
+            var load = Text($"≈ {Minutes(minutes)}", 12, "NomiInk3");
+            load.Margin = new Thickness(20, 0, 4, 0);
+            load.TextWrapping = TextWrapping.NoWrap;
+            load.TextTrimming = TextTrimming.CharacterEllipsis;
+            if (NumberMode == NumberModes.Figures) load.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+            header.Children.Add(load);
+        }
+        grid.Children.Add(header);
 
         var list = new ListView
         {
@@ -535,7 +547,7 @@ public sealed partial class MainWindow
         var top = new Grid { ColumnSpacing = 8 };
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var title = Text(task.Title, 13.5);
+        var title = Text(task.Title, 14);
         title.FontWeight = FontWeights.SemiBold;
         title.MaxLines = 3;
         title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -745,7 +757,7 @@ public sealed partial class MainWindow
                 var name = Text(upcoming.Title, 20);
                 name.FontWeight = FontWeights.SemiBold;
                 stack.Children.Add(name);
-                stack.Children.Add(Text($"{T("estimated")} {Minutes(upcoming.Estimate)}{(upcoming.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 12.5, "NomiInk2"));
+                stack.Children.Add(Text($"{T("estimated")} {Minutes(upcoming.Estimate)}{(upcoming.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 13, "NomiInk2"));
                 var focus = Primary(T("startFocus"), "TodayStartFocus");
                 focus.Click += (_, _) => { board.Start(upcoming, Now); focusTaskId = upcoming.Id; Show("focus"); };
                 actions.Children.Add(focus);
@@ -774,7 +786,7 @@ public sealed partial class MainWindow
                 var ask = Text(T("todayStartTitle"), 20);
                 ask.FontWeight = FontWeights.SemiBold;
                 stack.Children.Add(ask);
-                var lead = Text(T("todayStartLead"), 13.5, "NomiInk2");
+                var lead = Text(T("todayStartLead"), 14, "NomiInk2");
                 lead.TextWrapping = TextWrapping.WrapWholeWords;
                 stack.Children.Add(lead);
                 var add = Primary(T("todayAddTask"), "TodayAddTask");
@@ -802,8 +814,8 @@ public sealed partial class MainWindow
         row.Children.Add(clock);
         var remaining = TaskBoard.Remaining(task, now) * ratio;
         var facts = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
-        facts.Children.Add(Text($"{T("estimated")} {Minutes(task.Estimate)} · {T("remaining")} {Minutes(remaining)}", 12.5, "NomiInk2"));
-        facts.Children.Add(Text($"{T("likelyEnd")} {At(now.AddMinutes(remaining))}", 12.5, "NomiInk2"));
+        facts.Children.Add(Text($"{T("estimated")} {Minutes(task.Estimate)} · {T("remaining")} {Minutes(remaining)}", 13, "NomiInk2"));
+        facts.Children.Add(Text($"{T("likelyEnd")} {At(now.AddMinutes(remaining))}", 13, "NomiInk2"));
         Grid.SetColumn(facts, 1);
         row.Children.Add(facts);
         stack.Children.Add(row);
@@ -812,8 +824,8 @@ public sealed partial class MainWindow
         stack.Children.Add(bar);
         liveTimers.Add((clock, bar, task.Id));
         var next = task.Steps.FirstOrDefault(step => !step.Done);
-        if (next is not null) stack.Children.Add(Text($"{T("nextStep")} : {next.Title}", 12.5, "NomiInk2"));
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        if (next is not null) stack.Children.Add(Text($"{T("nextStep")} : {next.Title}", 13, "NomiInk2"));
+        var buttons = new WrapPanel { Spacing = 8 };
         var toggle = Chip(task.RunningSince is null ? T("resume") : T("pauseTimer"), "NomiChip", task.RunningSince is null ? "\uE768" : "\uE769", "ActiveToggle");
         toggle.Click += (_, _) => { ToggleTimer(task); Refresh(); };
         buttons.Children.Add(toggle);
@@ -845,7 +857,7 @@ public sealed partial class MainWindow
         stack.Children.Add(head);
         if (plan.Count == 0)
         {
-            stack.Children.Add(Text(T("planEmpty"), 12.5, "NomiInk3"));
+            stack.Children.Add(Text(T("planEmpty"), 13, "NomiInk3"));
             var empty = Glass(stack, 18);
             Mark(empty, "DayPlan", T("dayPlan"));
             return empty;
@@ -863,11 +875,11 @@ public sealed partial class MainWindow
             slot.VerticalAlignment = VerticalAlignment.Center;
             row.Children.Add(slot);
             var info = new StackPanel { Spacing = 1 };
-            var name = Text(task.Title, 13.5);
+            var name = Text(task.Title, 14);
             name.MaxLines = 2;
             name.TextTrimming = TextTrimming.CharacterEllipsis;
             info.Children.Add(name);
-            info.Children.Add(Text($"{ColumnName(task.Column)} · {Minutes(minutes)}{(task.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 11.5, "NomiInk3"));
+            info.Children.Add(Text($"{ColumnName(task.Column)} · {Minutes(minutes)}{(task.Due is { } due ? $" · {T("dueAt")} {At(due)}" : "")}", 12, "NomiInk3"));
             Grid.SetColumn(info, 1);
             row.Children.Add(info);
             var action = Chip(task.RunningSince is null ? T("start") : T("pauseTimer"), "NomiGhost", task.RunningSince is null ? "\uE768" : "\uE769");
@@ -938,7 +950,7 @@ public sealed partial class MainWindow
         suggestionSignature = string.Join('|', suggestions.Select(item => item.Id));
         if (suggestions.Count == 0)
         {
-            stack.Children.Add(Text(T("noSuggestions"), 12.5, "NomiInk3"));
+            stack.Children.Add(Text(T("noSuggestions"), 13, "NomiInk3"));
         }
         var held = Busy && !showLater && suggestions.Count > 0;
         if (Busy && suggestions.Count > 0)
@@ -947,7 +959,7 @@ public sealed partial class MainWindow
             var title = Text(T("laterTitle"), 13);
             title.FontWeight = FontWeights.SemiBold;
             later.Children.Add(title);
-            later.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("laterBody"), suggestions.Count), 12.5, "NomiInk2"));
+            later.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("laterBody"), suggestions.Count), 13, "NomiInk2"));
             var toggle = Chip(T(showLater ? "laterHide" : "laterShow"), "NomiGhost", null, "SuggestionsLater");
             toggle.Click += (_, _) => { showLater = !showLater; Refresh(); };
             later.Children.Add(toggle);
@@ -960,7 +972,7 @@ public sealed partial class MainWindow
             first = false;
             item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var said = Text(SuggestionText(suggestion), 13.5);
+            var said = Text(SuggestionText(suggestion), 14);
             said.TextWrapping = TextWrapping.WrapWholeWords;
             said.VerticalAlignment = VerticalAlignment.Center;
             item.Children.Add(said);
@@ -998,7 +1010,7 @@ public sealed partial class MainWindow
             item.Children.Add(buttons);
             stack.Children.Add(item);
         }
-        stack.Children.Add(Text(T("suggestionsNote"), 11.5, "NomiInk3"));
+        stack.Children.Add(Text(T("suggestionsNote"), 12, "NomiInk3"));
         var card = Glass(stack, 18);
         Mark(card, "Suggestions", T("suggestions"));
         return card;
@@ -1035,14 +1047,14 @@ public sealed partial class MainWindow
         var time = new StackPanel { Spacing = 10 };
         if (task is null)
         {
-            time.Children.Add(Text(T("noActiveHelp"), 12.5, "NomiInk2"));
+            time.Children.Add(Text(T("noActiveHelp"), 13, "NomiInk2"));
             var open = Chip(T("openBoard"), "NomiChip", null, "CompanionBoard");
             open.Click += (_, _) => Show("board");
             time.Children.Add(open);
         }
         else
         {
-            var title = Text(task.Title, 13.5);
+            var title = Text(task.Title, 14);
             title.FontWeight = FontWeights.SemiBold;
             title.MaxLines = 2;
             title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -1065,8 +1077,17 @@ public sealed partial class MainWindow
                 cell.Children.Add(Text(cells[index].Label, 11, "NomiInk3"));
                 if (cells[index].Value is TextBlock value && value != clock)
                 {
-                    value.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
-                    value.TextWrapping = TextWrapping.NoWrap;
+                    if (NumberMode == NumberModes.Figures)
+                    {
+                        value.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
+                        value.TextWrapping = TextWrapping.NoWrap;
+                    }
+                    else
+                    {
+                        value.FontSize = 14;
+                        value.FontWeight = FontWeights.SemiBold;
+                        value.TextWrapping = TextWrapping.WrapWholeWords;
+                    }
                 }
                 cell.Children.Add(cells[index].Value);
                 Grid.SetColumn(cell, index);
@@ -1092,7 +1113,7 @@ public sealed partial class MainWindow
         var openSteps = task?.Steps.Where(step => !step.Done).Take(4).ToArray() ?? [];
         foreach (var step in openSteps)
         {
-            var check = new CheckBox { Content = step.Title, FontSize = 12.5, MinHeight = 28, Padding = new Thickness(6, 4, 0, 0) };
+            var check = new CheckBox { Content = step.Title, FontSize = 13, MinHeight = 28, Padding = new Thickness(6, 4, 0, 0) };
             check.Checked += (_, _) => { step.Done = true; board.Save(); BuildCompanion(); };
             steps.Children.Add(check);
         }
@@ -1105,17 +1126,17 @@ public sealed partial class MainWindow
                 var row = new Grid { ColumnSpacing = 10, Padding = new Thickness(0, 4, 0, 4) };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                var number = Text($"{index + 1}", 11.5, "NomiInk3");
+                var number = Text($"{index + 1}", 12, "NomiInk3");
                 number.FontFamily = (FontFamily)Application.Current.Resources["NomiMono"];
                 row.Children.Add(number);
-                var name = Text(item.Title, 12.5, "NomiInk2");
+                var name = Text(item.Title, 13, "NomiInk2");
                 name.MaxLines = 2;
                 name.TextTrimming = TextTrimming.CharacterEllipsis;
                 Grid.SetColumn(name, 1);
                 row.Children.Add(name);
                 steps.Children.Add(row);
             }
-            if (upcoming.Length == 0) steps.Children.Add(Text(T("planEmpty"), 12.5, "NomiInk3"));
+            if (upcoming.Length == 0) steps.Children.Add(Text(T("planEmpty"), 13, "NomiInk3"));
         }
         CompanionBody.Children.Add(Inner(T("nextSteps"), steps, "CompanionSteps"));
         if (task is { Column: Columns.Doing } started && draftTaskId != started.Id && (inference.Ready || inference.HasModel))
@@ -1132,9 +1153,9 @@ public sealed partial class MainWindow
             name.FontWeight = FontWeights.SemiBold;
             context.Children.Add(name);
             if (insight.Place.Length > 0) context.Children.Add(Text(insight.Place, 12, "NomiInk3"));
-            if (insight.Check.Length > 0) context.Children.Add(Text($"{T("toVerify")} : {insight.Check}", 12.5, "NomiAccent"));
+            if (insight.Check.Length > 0) context.Children.Add(Text($"{T("toVerify")} : {insight.Check}", 13, "NomiAccent"));
         }
-        else context.Children.Add(Text(T("contextEmpty"), 12.5, "NomiInk3"));
+        else context.Children.Add(Text(T("contextEmpty"), 13, "NomiInk3"));
         CompanionBody.Children.Add(Inner(T("understood"), context, "CompanionContext"));
     }
 
@@ -1285,7 +1306,7 @@ public sealed partial class MainWindow
             row.Children.Add(check);
             if (step.Minutes > 0)
             {
-                var minutes = Text($"{step.Minutes} min", 11.5, "NomiInk3");
+                var minutes = Text($"{step.Minutes} min", 12, "NomiInk3");
                 minutes.VerticalAlignment = VerticalAlignment.Center;
                 Grid.SetColumn(minutes, 1);
                 row.Children.Add(minutes);
@@ -1316,7 +1337,7 @@ public sealed partial class MainWindow
             var proposal = new StackPanel { Spacing = 4, Padding = new Thickness(12, 10, 12, 10) };
             proposal.Children.Add(Eyebrow(T("proposedSteps")));
             foreach (var step in proposedSteps)
-                proposal.Children.Add(Text(step.Minutes > 0 ? $"· {step.Title} — {step.Minutes} min" : $"· {step.Title}", 12.5, "NomiInk2"));
+                proposal.Children.Add(Text(step.Minutes > 0 ? $"· {step.Title} — {step.Minutes} min" : $"· {step.Title}", 13, "NomiInk2"));
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 6, 0, 0) };
             var keep = Primary(T("addSteps"), "SheetKeepSteps");
             keep.Click += (_, _) =>
@@ -1341,7 +1362,7 @@ public sealed partial class MainWindow
             ai.IsEnabled = splitting is null;
             ai.Click += async (_, _) => await SplitTask(task.Id);
             split.Children.Add(ai);
-            if (!inference.Ready && !inference.HasModel) split.Children.Add(Text(T("splitNeedsModel"), 11.5, "NomiInk3"));
+            if (!inference.Ready && !inference.HasModel) split.Children.Add(Text(T("splitNeedsModel"), 12, "NomiInk3"));
         }
         SheetBody.Children.Add(split);
         SheetBody.Children.Add(DraftSection(task));

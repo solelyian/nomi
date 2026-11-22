@@ -15,7 +15,7 @@ public sealed partial class MainWindow
         var items = threads.Search(historyQuery).ToList();
         if (items.Count == 0)
         {
-            list.Children.Add(Text(threads.Threads.Count == 0 ? T("nomiNoConversations") : T("nomiNoMatch"), 12.5, "NomiInk3"));
+            list.Children.Add(Text(threads.Threads.Count == 0 ? T("nomiNoConversations") : T("nomiNoMatch"), 13, "NomiInk3"));
             return;
         }
         string? group = null;
@@ -48,7 +48,7 @@ public sealed partial class MainWindow
         var grid = new Grid { CornerRadius = new CornerRadius(10), Background = selected ? Palette("NomiSurface") : null };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var title = new TextBlock { Text = thread.Title, FontSize = 13.5, FontFamily = readingFont, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = Palette(selected ? "NomiInk" : "NomiInk2") };
+        var title = new TextBlock { Text = thread.Title, FontSize = 14, FontFamily = readingFont, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = Palette(selected ? "NomiInk" : "NomiInk2") };
         var open = new Button { Content = title, Style = (Style)Application.Current.Resources["NomiGhost"], HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 8, 10, 8) };
         AutomationProperties.SetName(open, thread.Title);
         AutomationProperties.SetAutomationId(open, "NomiThread");

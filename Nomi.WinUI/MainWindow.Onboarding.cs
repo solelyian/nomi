@@ -165,7 +165,7 @@ public sealed partial class MainWindow
                 Width = 16,
                 Foreground = Palette(i <= index ? "NomiAccent" : "NomiInk3")
             });
-            var label = Text(StepTitle(step), 13.5, i == index ? "NomiInk" : i < index ? "NomiInk2" : "NomiInk3");
+            var label = Text(StepTitle(step), 14, i == index ? "NomiInk" : i < index ? "NomiInk2" : "NomiInk3");
             if (i == index) label.FontWeight = FontWeights.SemiBold;
             row.Children.Add(label);
             if (i < index)
@@ -191,7 +191,7 @@ public sealed partial class MainWindow
         var heading = Heading(T($"oobe-{onboardingStep}Title"), 28);
         AutomationProperties.SetAutomationId(heading, $"OnboardingStep_{onboardingStep}");
         onboardingBody.Children.Add(heading);
-        onboardingBody.Children.Add(Text(T($"oobe-{onboardingStep}Intro"), 14.5, "NomiInk2"));
+        onboardingBody.Children.Add(Text(T($"oobe-{onboardingStep}Intro"), 15, "NomiInk2"));
         switch (onboardingStep)
         {
             case Onboarding.Welcome: BuildWelcomeStep(); break;
@@ -286,10 +286,10 @@ public sealed partial class MainWindow
     private void OnboardingChoice(string id, string label, string help, string[] options, int selected, Action<int> changed)
     {
         var header = new StackPanel { Spacing = 2 };
-        var title = Text(label, 14.5);
+        var title = Text(label, 15);
         title.FontWeight = FontWeights.SemiBold;
         header.Children.Add(title);
-        if (help.Length > 0) header.Children.Add(Text(help, 12.5, "NomiInk3"));
+        if (help.Length > 0) header.Children.Add(Text(help, 13, "NomiInk3"));
         var choice = new RadioButtons { Header = header, MaxColumns = Math.Min(options.Length, 3), SelectedIndex = selected };
         foreach (var option in options) choice.Items.Add(option);
         AutomationProperties.SetName(choice, label);
@@ -336,7 +336,7 @@ public sealed partial class MainWindow
             CancelGeneration();
             language = value == 0 ? "fr" : "en";
         });
-        onboardingBody.Children.Add(Text(T("oobeWelcomeNote"), 12.5, "NomiInk3"));
+        onboardingBody.Children.Add(Text(T("oobeWelcomeNote"), 13, "NomiInk3"));
     }
 
     private void BuildReadingStep()
@@ -358,7 +358,7 @@ public sealed partial class MainWindow
         title.FontWeight = FontWeights.SemiBold;
         sample.Children.Add(title);
         sample.Children.Add(Text(T("oobeReadingSample"), 14));
-        sample.Children.Add(Text(T("oobeReadingSampleNote"), 12.5, "NomiInk3"));
+        sample.Children.Add(Text(T("oobeReadingSampleNote"), 13, "NomiInk3"));
         onboardingBody!.Children.Add(Glass(sample, 18));
     }
 
@@ -375,7 +375,7 @@ public sealed partial class MainWindow
         AutomationProperties.SetLiveSetting(preview, AutomationLiveSetting.Polite);
         sample.Children.Add(preview);
         onboardingBody!.Children.Add(Glass(sample, 18));
-        onboardingBody.Children.Add(Text(T("welcomeNote"), 12.5, "NomiInk3"));
+        onboardingBody.Children.Add(Text(T("welcomeNote"), 13, "NomiInk3"));
     }
 
     private void BuildDayStep()
@@ -414,7 +414,7 @@ public sealed partial class MainWindow
         Picker("lunchEnd", day.LunchEnd, 1, 1, value => day with { LunchEnd = value });
         onboardingBody!.Children.Add(grid);
 
-        var label = Text(T("oobeWorkingDays"), 14.5);
+        var label = Text(T("oobeWorkingDays"), 15);
         label.FontWeight = FontWeights.SemiBold;
         label.Margin = new Thickness(0, 8, 0, 0);
         onboardingBody.Children.Add(label);
@@ -445,7 +445,7 @@ public sealed partial class MainWindow
             days.Children.Add(toggle);
         }
         onboardingBody.Children.Add(days);
-        onboardingBody.Children.Add(Text(T("oobeDayNote"), 12.5, "NomiInk3"));
+        onboardingBody.Children.Add(Text(T("oobeDayNote"), 13, "NomiInk3"));
     }
 
     private void BuildPaceStep()
@@ -477,7 +477,7 @@ public sealed partial class MainWindow
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.Children.Add(new FontIcon { Glyph = glyph, FontSize = 18, Foreground = Palette("NomiAccent"), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) });
             var text = new StackPanel { Spacing = 2 };
-            var title = Text(T(key), 14.5);
+            var title = Text(T(key), 15);
             title.FontWeight = FontWeights.SemiBold;
             text.Children.Add(title);
             text.Children.Add(Text(T($"{key}Help"), 13, "NomiInk2"));
@@ -495,7 +495,7 @@ public sealed partial class MainWindow
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
             row.Children.Add(new FontIcon { Glyph = "\uE73E", FontSize = 13, Foreground = Palette("NomiAccent") });
-            row.Children.Add(Text(T(key), 13.5, "NomiInk2"));
+            row.Children.Add(Text(T(key), 14, "NomiInk2"));
             points.Children.Add(row);
         }
         onboardingBody!.Children.Add(points);
@@ -560,7 +560,7 @@ public sealed partial class MainWindow
         var finish = new KeyboardAccelerator { Key = VirtualKey.Enter, Modifiers = VirtualKeyModifiers.Control };
         finish.Invoked += (_, args) => { args.Handled = true; onboardingTasks = box.Text; CompleteOnboarding(); };
         box.KeyboardAccelerators.Add(finish);
-        var count = Text("", 12.5, "NomiInk3");
+        var count = Text("", 13, "NomiInk3");
         AutomationProperties.SetLiveSetting(count, AutomationLiveSetting.Polite);
         void Count()
         {
@@ -571,7 +571,7 @@ public sealed partial class MainWindow
         Count();
         onboardingBody!.Children.Add(box);
         onboardingBody.Children.Add(count);
-        onboardingBody.Children.Add(Text(T("oobeTasksHelp"), 12.5, "NomiInk3"));
+        onboardingBody.Children.Add(Text(T("oobeTasksHelp"), 13, "NomiInk3"));
     }
 
     private void ShowTour()

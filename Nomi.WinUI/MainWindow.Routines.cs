@@ -89,11 +89,11 @@ public sealed partial class MainWindow
     private StackPanel RoutineReadyContent(Routine routine)
     {
         var stack = new StackPanel { Spacing = 8 };
-        var name = Text(routine.Name, 13.5);
+        var name = Text(routine.Name, 14);
         name.FontWeight = FontWeights.SemiBold;
         stack.Children.Add(name);
         stack.Children.Add(Text(RoutineSentence(routine), 12, "NomiInk3"));
-        foreach (var step in routine.Steps.Take(4)) stack.Children.Add(Text($"• {step.Title} — {Minutes(step.Minutes)}", 12.5, "NomiInk2"));
+        foreach (var step in routine.Steps.Take(4)) stack.Children.Add(Text($"• {step.Title} — {Minutes(step.Minutes)}", 13, "NomiInk2"));
         if (routine.Document is { } document) stack.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("routineDocumentReady"), Path.GetFileName(document)), 12, "NomiInk3"));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         var start = Primary(T("routineStart"), "RoutineStart");
@@ -106,7 +106,7 @@ public sealed partial class MainWindow
         buttons.Children.Add(later);
         buttons.Children.Add(skip);
         stack.Children.Add(buttons);
-        stack.Children.Add(Text(T("routineReadyNote"), 11.5, "NomiInk3"));
+        stack.Children.Add(Text(T("routineReadyNote"), 12, "NomiInk3"));
         return stack;
     }
 
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         var titles = new StackPanel { Spacing = 4 };
         titles.Children.Add(Eyebrow(T("routinesEyebrow")));
         titles.Children.Add(Heading(T("routines"), 28));
-        titles.Children.Add(Text(T("routinesIntro"), 13.5, "NomiInk2"));
+        titles.Children.Add(Text(T("routinesIntro"), 14, "NomiInk2"));
         RoutinesBody.Children.Add(titles);
 
         var compose = new StackPanel { Spacing = 10 };
@@ -212,10 +212,10 @@ public sealed partial class MainWindow
     {
         var routine = draft.Routine;
         var stack = new StackPanel { Spacing = 10, Padding = new Thickness(14, 12, 14, 12) };
-        var title = Text(T(draft.Understood ? "routineUnderstood" : "routineNotUnderstood"), 13.5);
+        var title = Text(T(draft.Understood ? "routineUnderstood" : "routineNotUnderstood"), 14);
         title.FontWeight = FontWeights.SemiBold;
         stack.Children.Add(title);
-        if (!draft.Understood) stack.Children.Add(Text(T(draft.HasName ? "routineNeedMoment" : "routineNeedAction"), 12.5, "NomiInk2"));
+        if (!draft.Understood) stack.Children.Add(Text(T(draft.HasName ? "routineNeedMoment" : "routineNeedAction"), 13, "NomiInk2"));
         var trigger = new ComboBox
         {
             ItemsSource = Triggers.All.Select(TriggerName).ToArray(),
@@ -253,7 +253,7 @@ public sealed partial class MainWindow
         {
             var steps = new StackPanel { Spacing = 3 };
             for (var index = 0; index < routine.Steps.Count; index++)
-                steps.Children.Add(Text($"{index + 1}. {routine.Steps[index].Title} — {Minutes(routine.Steps[index].Minutes)}", 12.5, "NomiInk2"));
+                steps.Children.Add(Text($"{index + 1}. {routine.Steps[index].Title} — {Minutes(routine.Steps[index].Minutes)}", 13, "NomiInk2"));
             stack.Children.Add(Field(T("routineSteps"), steps));
         }
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
@@ -290,10 +290,10 @@ public sealed partial class MainWindow
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var titles = new StackPanel { Spacing = 2 };
-        var name = Text(routine.Name, 14.5);
+        var name = Text(routine.Name, 15);
         name.FontWeight = FontWeights.SemiBold;
         titles.Children.Add(name);
-        titles.Children.Add(Text(RoutineSentence(routine), 12.5, "NomiInk2"));
+        titles.Children.Add(Text(RoutineSentence(routine), 13, "NomiInk2"));
         head.Children.Add(titles);
         var toggle = new ToggleSwitch { IsOn = routine.Enabled, OnContent = T("on"), OffContent = T("off"), MinWidth = 0 };
         AutomationProperties.SetName(toggle, string.Format(CultureInfo.CurrentCulture, T("routineEnabled"), routine.Name));
@@ -302,12 +302,12 @@ public sealed partial class MainWindow
         Grid.SetColumn(toggle, 1);
         head.Children.Add(toggle);
         stack.Children.Add(head);
-        foreach (var step in routine.Steps.Take(6)) stack.Children.Add(Text($"• {step.Title} — {Minutes(step.Minutes)}", 12.5, "NomiInk2"));
+        foreach (var step in routine.Steps.Take(6)) stack.Children.Add(Text($"• {step.Title} — {Minutes(step.Minutes)}", 13, "NomiInk2"));
         if (routine.Document is { } document) stack.Children.Add(Text(string.Format(CultureInfo.CurrentCulture, T("routineDocumentReady"), Path.GetFileName(document)), 12, "NomiInk3"));
         var culture = CultureInfo.GetCultureInfo(Current.Locale);
         stack.Children.Add(Text(routine.LastRun is { } last
             ? string.Format(CultureInfo.CurrentCulture, T("routineLast"), last.Date == Now.Date ? At(last) : last.ToString("dddd d MMMM", culture))
-            : T("routineNever"), 11.5, "NomiInk3"));
+            : T("routineNever"), 12, "NomiInk3"));
         stack.Children.Add(RoutineButtons(routine));
         var card = Glass(stack, 18);
         Mark(card, "RoutineCard", routine.Name);

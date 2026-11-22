@@ -151,15 +151,15 @@ public sealed partial class MainWindow
         AutomationProperties.SetLiveSetting(callActivityText, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
         activity.Children.Add(callActivityText);
         row.Children.Add(activity);
-        var rate = Text(T("callRate"), 12.5, "NomiInk3");
+        var rate = Text(T("callRate"), 13, "NomiInk3");
         rate.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(rate, 1);
         row.Children.Add(rate);
-        callSeen = Text(SeenLabel(), 12.5, "NomiInk3");
+        callSeen = Text(SeenLabel(), 13, "NomiInk3");
         callSeen.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(callSeen, 2);
         row.Children.Add(callSeen);
-        callMessage = Text(focusMessage, 12.5, "NomiAccent");
+        callMessage = Text(focusMessage, 13, "NomiAccent");
         callMessage.Visibility = focusMessage.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         AutomationProperties.SetAutomationId(callMessage, "FocusMessage");
         AutomationProperties.SetLiveSetting(callMessage, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);

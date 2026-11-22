@@ -56,7 +56,7 @@ public sealed partial class MainWindow
         {
             var waiting = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
             waiting.Children.Add(new ProgressRing { IsActive = true, Width = 16, Height = 16 });
-            var checking = Text(T("oobeHwChecking"), 13.5, "NomiInk2");
+            var checking = Text(T("oobeHwChecking"), 14, "NomiInk2");
             AutomationProperties.SetAutomationId(checking, "OnboardingHardwareChecking");
             waiting.Children.Add(checking);
             panel.Children.Add(waiting);
@@ -80,7 +80,7 @@ public sealed partial class MainWindow
         {
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var label = Text(rows[i].Label, 13, "NomiInk3");
-            var value = Text(rows[i].Value, 13.5);
+            var value = Text(rows[i].Value, 14);
             value.TextWrapping = TextWrapping.Wrap;
             AutomationProperties.SetAutomationId(value, $"OnboardingHardware_{rows[i].Id}");
             AutomationProperties.SetName(value, $"{rows[i].Label} : {rows[i].Value}");
@@ -113,9 +113,10 @@ public sealed partial class MainWindow
             FontSize = 14,
             Foreground = Palette(verdict is "npu" or "cpu" ? "NomiOk" : "NomiAccent")
         });
-        var text = Text(message, 13.5);
+        var text = Text(message, 14);
         text.TextWrapping = TextWrapping.Wrap;
         text.MaxWidth = 460;
+        text.HorizontalAlignment = HorizontalAlignment.Left;
         Grid.SetColumn(text, 1);
         AutomationProperties.SetAutomationId(text, "OnboardingHardwareVerdict");
         AutomationProperties.SetLiveSetting(text, AutomationLiveSetting.Polite);

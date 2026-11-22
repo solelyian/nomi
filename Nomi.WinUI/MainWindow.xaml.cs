@@ -247,10 +247,13 @@ public sealed partial class MainWindow : Window
 
     private bool Dark => Root.ActualTheme == ElementTheme.Dark;
 
+    private ResourceDictionary? lightTheme, darkTheme;
+
     private Brush Palette(string key)
     {
-        var nomi = Application.Current.Resources.MergedDictionaries.Last(dictionary => dictionary.ThemeDictionaries.Count > 0);
-        var theme = (ResourceDictionary)nomi.ThemeDictionaries[Dark ? "Default" : "Light"];
+        ResourceDictionary Theme(string name) =>
+            (ResourceDictionary)Application.Current.Resources.MergedDictionaries.Last(dictionary => dictionary.ThemeDictionaries.Count > 0).ThemeDictionaries[name];
+        var theme = Dark ? darkTheme ??= Theme("Default") : lightTheme ??= Theme("Light");
         return (Brush)theme[key];
     }
 
@@ -461,7 +464,7 @@ public sealed partial class MainWindow : Window
         var text = new TextBlock
         {
             Text = label,
-            FontSize = primary ? 13.5 : 12.5,
+            FontSize = primary ? 14 : 13,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
             FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal
@@ -881,18 +884,18 @@ public sealed partial class MainWindow : Window
             title.TextWrapping = TextWrapping.NoWrap;
             details.Children.Add(title);
             var count = document.Text.Length.ToString("N0", new CultureInfo(Current.Locale));
-            details.Children.Add(Text(document.Truncated ? $"{count} car. · {T("documentPartialShort")}" : $"{count} car.", 11.5, "NomiInk3"));
+            details.Children.Add(Text(document.Truncated ? $"{count} car. · {T("documentPartialShort")}" : $"{count} car.", 12, "NomiInk3"));
             var preview = new TextBlock
             {
                 Text = document.Text,
-                FontSize = 11.5,
+                FontSize = 12,
                 TextWrapping = TextWrapping.Wrap,
                 IsTextSelectionEnabled = true,
                 Foreground = Palette("NomiInk2")
             };
             details.Children.Add(new Expander
             {
-                Header = new TextBlock { Text = T("documentPreview"), FontSize = 11.5 },
+                Header = new TextBlock { Text = T("documentPreview"), FontSize = 12 },
                 Content = new ScrollViewer { Content = preview, MaxHeight = 200 },
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0, 4, 0, 0)
@@ -926,7 +929,7 @@ public sealed partial class MainWindow : Window
 
     private void RefreshAside()
     {
-        EngineTitle.Text = T("engineTitle");
+        EngineTitle.Text = T("engineTitle").ToUpper(CultureInfo.CurrentCulture);
         EngineDetail.Text = EngineLabel();
         AutomationProperties.SetLiveSetting(EngineStatus, AutomationLiveSetting.Polite);
         AutomationProperties.SetLiveSetting(DocumentStatus, AutomationLiveSetting.Polite);
@@ -940,7 +943,7 @@ public sealed partial class MainWindow : Window
         ExampleList.Children.Clear();
         var prompt = new Button
         {
-            Content = Text(Action.Prompt, 12.5),
+            Content = Text(Action.Prompt, 13),
             Style = (Style)Application.Current.Resources["NomiExample"]
         };
         AutomationProperties.SetName(prompt, $"{T("loadExample")} : {Action.Prompt}");
@@ -950,7 +953,7 @@ public sealed partial class MainWindow : Window
         {
             var card = new Button
             {
-                Content = Text($"{context.Title} — {context.Description}", 12.5, "NomiInk2"),
+                Content = Text($"{context.Title} — {context.Description}", 13, "NomiInk2"),
                 Style = (Style)Application.Current.Resources["NomiExample"]
             };
             AutomationProperties.SetName(card, $"{T("context")} : {context.Title}");
@@ -990,7 +993,11 @@ public sealed partial class MainWindow : Window
         UpdateControls();
     }
 
-    private string EngineLabel() => inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
+    private string EngineLabel()
+    {
+        if (!inference.HasModel) return ReasoningDefinition()?.Name ?? inference.Model;
+        return inference.Accelerator.Length > 0 ? $"{inference.Model} · {inference.Accelerator}" : inference.Model;
+    }
 
     private string ShortModel() => inference.Model.StartsWith("DeepSeek", StringComparison.Ordinal) ? "DeepSeek R1 7B" : "Qwen3 8B";
 
@@ -1229,7 +1236,7 @@ public sealed partial class MainWindow : Window
         heading.FontWeight = FontWeights.SemiBold;
         AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
         SpacesBody.Children.Add(heading);
-        SpacesBody.Children.Add(Text(T("spacesIntro"), 13.5, "NomiInk2"));
+        SpacesBody.Children.Add(Text(T("spacesIntro"), 14, "NomiInk2"));
         var grid = new Grid { ColumnSpacing = 12, RowSpacing = 12, Margin = new Thickness(0, 8, 0, 0) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1250,10 +1257,10 @@ public sealed partial class MainWindow : Window
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(8, 2, 8, 2),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Child = Text(action.Title, 11.5, "NomiAccent")
+                Child = Text(action.Title, 12, "NomiAccent")
             };
             footer.Children.Add(chip);
-            var open = Text($"{T("openSpace")} →", 12.5, "NomiInk2");
+            var open = Text($"{T("openSpace")} →", 13, "NomiInk2");
             open.HorizontalAlignment = HorizontalAlignment.Right;
             footer.Children.Add(open);
             content.Children.Add(footer);
@@ -1285,7 +1292,7 @@ public sealed partial class MainWindow : Window
         heading.FontWeight = FontWeights.SemiBold;
         AutomationProperties.SetHeadingLevel(heading, AutomationHeadingLevel.Level1);
         SettingsBody.Children.Add(heading);
-        SettingsBody.Children.Add(Text(T("preferencesIntro"), 13.5, "NomiInk2"));
+        SettingsBody.Children.Add(Text(T("preferencesIntro"), 14, "NomiInk2"));
         AddSetting(T("language"), T("languageHelp"), ["Français", "English"], language == "fr" ? 0 : 1, value =>
         {
             CancelGeneration();
@@ -1321,7 +1328,7 @@ public sealed partial class MainWindow : Window
         })
         {
             var row = new Grid();
-            row.Children.Add(Text(label, 12.5, "NomiInk2"));
+            row.Children.Add(Text(label, 13, "NomiInk2"));
             row.Children.Add(new Border
             {
                 Style = (Style)Application.Current.Resources["NomiKbd"],
@@ -1494,7 +1501,7 @@ public sealed partial class MainWindow : Window
     {
         if (onboarding is not null) return;
         var index = (int)sender.Key - (int)VirtualKey.Number1;
-        string[] views = ["today", "board", "focus", "nomi", "routines"];
+        string[] views = ["today", "board", "focus", "nomi", "routines", "transcript"];
         if (index < 0 || index >= views.Length) return;
         args.Handled = true;
         CloseSheet();
@@ -1621,7 +1628,7 @@ public sealed partial class MainWindow : Window
             var content = new Grid { RowSpacing = 2 };
             content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            content.Children.Add(new TextBlock { Text = title, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = Palette("NomiInk2") });
+            content.Children.Add(new TextBlock { Text = title, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Palette("NomiInk2") });
             content.Children.Add(new TextBlock
             {
                 Text = time,
@@ -1633,7 +1640,7 @@ public sealed partial class MainWindow : Window
             var prompt = new TextBlock
             {
                 Text = label,
-                FontSize = 12.5,
+                FontSize = 13,
                 Foreground = Palette("NomiInk"),
                 TextWrapping = TextWrapping.Wrap,
                 MaxLines = 2,

@@ -24,7 +24,7 @@ public sealed partial class MainWindow
         DispatcherQueue.TryEnqueue(() => nomiScroll?.ChangeView(null, nomiScroll.ScrollableHeight, null, true));
         var bottom = new StackPanel { Padding = new Thickness(20, 0, 20, 4) };
         bottom.Children.Add(NomiComposer());
-        var hint = Text(T("nomiHint"), 11.5, "NomiInk3");
+        var hint = Text(T("nomiHint"), 12, "NomiInk3");
         hint.TextAlignment = TextAlignment.Center;
         hint.Margin = new Thickness(0, 7, 0, 0);
         bottom.Children.Add(hint);
@@ -43,7 +43,7 @@ public sealed partial class MainWindow
             file.Children.Add(Text(name, 13, "NomiInk2"));
             stack.Children.Add(new Border { Child = file, Background = Palette("NomiSurface2"), CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 7, 10, 7) });
         }
-        var body = Text(entry.Text, 15.5);
+        var body = Text(entry.Text, 16);
         body.TextWrapping = TextWrapping.Wrap;
         body.IsTextSelectionEnabled = true;
         stack.Children.Add(body);
@@ -94,7 +94,7 @@ public sealed partial class MainWindow
     private UIElement PosedView(ChatEntry entry)
     {
         var panel = new StackPanel { Spacing = 4, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12), Background = Palette("NomiSurface2"), HorizontalAlignment = HorizontalAlignment.Left };
-        panel.Children.Add(Text(T("nomiPosed"), 12.5, "NomiInk3"));
+        panel.Children.Add(Text(T("nomiPosed"), 13, "NomiInk3"));
         foreach (var line in entry.Calculation)
         {
             var row = Text(line, 14, "NomiInk2");
@@ -114,7 +114,7 @@ public sealed partial class MainWindow
             var current = live && index == liveStep;
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             row.Children.Add(current ? new ProgressRing { Width = 12, Height = 12, IsActive = true } : new FontIcon { Glyph = done ? "\uE73E" : "\uE91F", FontSize = done ? 11 : 6, Foreground = Palette(done ? "NomiAccent" : "NomiInk3") });
-            row.Children.Add(Text(T($"nomiStep_{entry.Steps[index]}"), 13.5, current ? "NomiInk" : "NomiInk2"));
+            row.Children.Add(Text(T($"nomiStep_{entry.Steps[index]}"), 14, current ? "NomiInk" : "NomiInk2"));
             steps.Children.Add(row);
         }
         if (live)

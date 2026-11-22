@@ -234,7 +234,7 @@
                 <Setter Property="MinHeight" Value="36" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="FontSize" Value="13.5" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk2}" />
             </Style>
 
@@ -273,7 +273,7 @@
                 <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="12,6" />
                 <Setter Property="MinHeight" Value="32" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
@@ -326,7 +326,7 @@
                 <Setter Property="CornerRadius" Value="15" />
                 <Setter Property="Padding" Value="11,5" />
                 <Setter Property="MinHeight" Value="30" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
 
@@ -338,7 +338,7 @@
                 <Setter Property="Padding" Value="12,9" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
-                <Setter Property="FontSize" Value="12.5" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{ThemeResource NomiInk}" />
             </Style>
         </ResourceDictionary>
