@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -81,6 +81,7 @@ public sealed partial class MainWindow : Window
         profile = profileStore.Load();
         ApplyReading();
         InitializeComponent();
+        WireLayout();
         language = profile.Language;
         summary = profile.Response == "summary";
         StepsToggle.IsChecked = !summary;
@@ -355,8 +356,6 @@ public sealed partial class MainWindow : Window
         else if (view == "routines") BuildRoutines();
         else if (view == "nomi") BuildNomi();
         else if (view == "transcript") BuildTranscript();
-        AsideColumn.Width = new GridLength(view is "nomi" or "today" ? 0 : 300);
-        Aside.Visibility = view is "nomi" or "today" ? Visibility.Collapsed : Visibility.Visible;
         CommandBar.Visibility = view == "nomi" ? Visibility.Collapsed : Visibility.Visible;
         Views.Margin = new Thickness(0, 6, 0, view == "nomi" ? 0 : 76);
         RefreshWorkspace();
@@ -374,6 +373,7 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(PaletteSearch, T("search"));
         AutomationProperties.SetName(PaletteResults, T("search"));
         if (presence is not null && presenceLanguage != language) ApplyPresence();
+        LayOut();
         updating = false;
     }
 
@@ -498,6 +498,15 @@ public sealed partial class MainWindow : Window
         };
         AutomationProperties.SetName(button, label);
         if (selected) AutomationProperties.SetItemStatus(button, T("current"));
+        if (!tier.RailLabels)
+        {
+            foreach (var part in grid.Children.Skip(1)) part.Visibility = Visibility.Collapsed;
+            grid.ColumnSpacing = 0;
+            grid.HorizontalAlignment = HorizontalAlignment.Center;
+            button.HorizontalContentAlignment = HorizontalAlignment.Center;
+            button.Padding = new Thickness(0, 8, 0, 8);
+            ToolTipService.SetToolTip(button, new ToolTip { Content = label, Placement = Microsoft.UI.Xaml.Controls.Primitives.PlacementMode.Right });
+        }
         Springy(button, 1.02f);
         return button;
     }

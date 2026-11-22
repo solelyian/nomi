@@ -794,6 +794,7 @@
     "agendaFirst": "Première réunion aujourd’hui : {0}, jusqu’à {1}",
     "agendaNoMeeting": "Aucune réunion aujourd’hui.",
     "agendaPrivacy": "L’adresse et une copie de l’agenda restent chiffrées sur cet appareil. Nomi ne l’envoie nulle part et ne modifie jamais votre agenda.",
+    "panel": "Panneau",
     "rescue": "Ma journée déraille",
     "rescueHelp": "Nomi propose quoi garder, alléger ou reporter. Rien ne change avant votre confirmation.",
     "rescueTitle": "Remettre la journée d’aplomb",

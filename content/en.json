@@ -794,6 +794,7 @@
     "agendaFirst": "First meeting today: {0}, until {1}",
     "agendaNoMeeting": "No meetings today.",
     "agendaPrivacy": "The address and a copy of the calendar stay encrypted on this device. Nomi sends it nowhere and never changes your calendar.",
+    "panel": "Panel",
     "rescue": "My day is off track",
     "rescueHelp": "Nomi suggests what to keep, lighten or postpone. Nothing changes until you confirm.",
     "rescueTitle": "Getting the day back on track",

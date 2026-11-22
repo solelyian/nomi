@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Numerics;
 using Microsoft.UI;
 using Microsoft.UI.Input;
@@ -140,19 +140,6 @@ public sealed partial class MainWindow
             }
             drift.Begin();
         }
-    }
-
-    private void Springy(UIElement element, float scale)
-    {
-        if (!motion) return;
-        element.ScaleTransition = new Vector3Transition { Duration = TimeSpan.FromMilliseconds(180) };
-        if (element is FrameworkElement framework)
-            framework.SizeChanged += (_, _) => element.CenterPoint = new Vector3((float)framework.ActualWidth / 2, (float)framework.ActualHeight / 2, 0);
-        element.PointerEntered += (_, _) => element.Scale = new Vector3(scale, scale, 1);
-        element.PointerExited += (_, _) => element.Scale = Vector3.One;
-        element.PointerCanceled += (_, _) => element.Scale = Vector3.One;
-        element.PointerPressed += (_, _) => element.Scale = new Vector3(1 - (scale - 1), 1 - (scale - 1), 1);
-        element.PointerReleased += (_, _) => element.Scale = new Vector3(scale, scale, 1);
     }
 
     private static void Capsule(FrameworkElement element)
@@ -364,6 +351,7 @@ public sealed partial class MainWindow
         var button = Primary(T("addTask"), "BoardAdd");
         button.Click += (_, _) => { if (box.Text.Trim().Length > 0) AddTask(box.Text); else box.Focus(FocusState.Programmatic); };
         add.Children.Add(button);
+        if (AsideButton() is { } panel) add.Children.Add(panel);
         Grid.SetColumn(add, 1);
         BoardHeader.Children.Add(add);
         var preview = PhrasePreview();
@@ -706,6 +694,7 @@ public sealed partial class MainWindow
             derail.Click += (_, _) => { rescue = DayRescue.Propose(board.Plan(Now), Now, profile.Day, board.Pace().Ratio); Refresh(); };
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Bottom };
             actions.Children.Add(derail);
+            if (AsideButton() is { } panel) actions.Children.Add(panel);
             Grid.SetColumn(actions, 2);
             header.Children.Add(actions);
         }
