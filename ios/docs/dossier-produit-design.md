@@ -169,7 +169,7 @@ Aucune clé API n'est embarquée et aucun mock n'effectue d'appel réseau. Une f
 Vérifié dans cette itération :
 
 - compilation iOS Debug réussie ;
-- 18 tests unitaires NomiCore réussis ;
+- 30 tests unitaires NomiCore réussis ;
 - tests du parseur de tâches, du parseur de routines, de l'échéance des routines et du vérificateur de calculs.
 
 Non vérifié ou insuffisant :

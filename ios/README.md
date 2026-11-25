@@ -56,7 +56,7 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Vérification effectuée dans cette session : 18 tests unitaires, 18 réussites, couvrant le vérificateur de calculs, le parseur de tâches, le parseur de routines et les échéances de routines. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
+Vérification effectuée dans cette session : 30 tests unitaires, 18 réussites, couvrant le vérificateur de calculs, le parseur de tâches, le parseur de routines et les échéances de routines. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
 
 ## Permissions
 
