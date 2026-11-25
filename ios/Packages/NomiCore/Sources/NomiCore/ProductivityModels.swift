@@ -252,12 +252,14 @@ public enum RoutinePhraseParser {
         } else if lower.contains("chaque jour") || lower.contains("tous les jours") || lower.contains("quotidien") {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
             trigger = .time
-        } else if lower.contains("matin") {
+        } else if lower.contains("matin") || lower.contains("soir") {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
+            trigger = .time
+        }
+        if lower.contains("matin") {
             hour = 8
             trigger = .time
         } else if lower.contains("soir") {
-            weekdays = [1, 2, 3, 4, 5, 6, 7]
             hour = 18
             trigger = .time
         }
