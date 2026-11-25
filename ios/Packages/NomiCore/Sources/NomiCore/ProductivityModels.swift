@@ -224,11 +224,13 @@ public enum TaskPhraseParser {
             title = title.replacingOccurrences(of: "aujourd'hui", with: "", options: .caseInsensitive)
             title = title.replacingOccurrences(of: "ce soir", with: "", options: .caseInsensitive)
         }
-        if let range = title.range(of: #"\b(\d+)\s*(min|minutes|h|heure|heures)\b"#, options: [.regularExpression, .caseInsensitive]) {
+        if let range = title.range(of: #"\b(\d+(?:[,.]\d+)?)\s*(min|minutes|h|heure|heures)\b"#, options: [.regularExpression, .caseInsensitive]) {
             let token = String(title[range])
-            let digits = token.filter { $0.isNumber }
-            if let value = Int(digits) {
-                estimate = token.lowercased().contains("h") ? value * 60 : value
+            let normalized = token.replacingOccurrences(of: ",", with: ".")
+            if let numberRange = normalized.range(of: #"\d+(?:\.\d+)?"#, options: .regularExpression),
+               let value = Double(normalized[numberRange]) {
+                let isHour = token.lowercased().range(of: #"h|heure"#, options: .regularExpression) != nil
+                estimate = Int((isHour ? value * 60 : value).rounded())
             }
             title.removeSubrange(range)
         }

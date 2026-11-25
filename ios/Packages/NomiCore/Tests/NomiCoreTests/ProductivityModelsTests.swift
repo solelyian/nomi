@@ -2,6 +2,14 @@ import XCTest
 @testable import NomiCore
 
 final class ProductivityModelsTests: XCTestCase {
+
+    func testParsesFractionalHourEstimate() {
+        let task = TaskPhraseParser.parse("Préparer le dossier 1,5 h")
+        XCTAssertEqual(task.estimateMinutes, 90)
+        XCTAssertFalse(task.title.contains("1"))
+        XCTAssertFalse(task.title.contains("5"))
+    }
+
     func testParsesFrenchTaskPhrase() {
         let task = TaskPhraseParser.parse("Envoyer le compte rendu demain 30 min important")
         XCTAssertEqual(task.priority, .high)
