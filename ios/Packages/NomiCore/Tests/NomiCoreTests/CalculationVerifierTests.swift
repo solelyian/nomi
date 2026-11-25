@@ -56,6 +56,11 @@ final class CalculationVerifierTests: XCTestCase {
         XCTAssertEqual(result.status, .unsupported)
     }
 
+    func testAcceptsSignedCurrencyAmounts() {
+        let result = CalculationVerifier().verify("$10 - $20 = $-10")
+        XCTAssertEqual(result.status, .verified)
+    }
+
     func testSentenceSplitKeepsDecimalNumbersIntact() {
         let parts = MockRevisionService.splitSentences("Le taux est 0.05 dans cet exemple. Il faut le retenir.")
         XCTAssertEqual(parts.count, 2)
