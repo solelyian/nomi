@@ -28,6 +28,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
     private var startedAt: Date?
     private var realTranscriber = AppleSpeechTranscriber()
     private var interruptionObserver: NSObjectProtocol?
+    private var activeMode: Mode?
 
     init(demoService: any LiveTranscriptionService, languageProvider: @escaping () -> String = { "fr-FR" }) {
         self.demoService = demoService
@@ -51,6 +52,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
         observeInterruptions()
         startClock()
         streamTask?.cancel()
+        activeMode = mode
         if mode == .demo {
             streamTask = Task { [weak self] in
                 guard let self else { return }
@@ -82,7 +84,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
         guard state == .recording else { return }
         state = .paused
         clockTask?.cancel()
-        if mode == .real {
+        if activeMode == .real {
             realTranscriber.stop()
         } else {
             streamTask?.cancel()
@@ -97,7 +99,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
     }
 
     func stop() {
-        if mode == .demo {
+        if activeMode == .demo {
             streamTask?.cancel()
         }
         clockTask?.cancel()
@@ -107,12 +109,14 @@ final class LiveTranscriptionViewModel: ObservableObject {
             interruptionObserver = nil
         }
         state = .idle
+        activeMode = nil
     }
 
     private func finishStream() {
         clockTask?.cancel()
-        if state == .recording || state == .paused {
+        if state == .recording {
             state = .idle
+            activeMode = nil
         }
     }
 

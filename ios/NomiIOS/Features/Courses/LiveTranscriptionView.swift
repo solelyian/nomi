@@ -30,6 +30,7 @@ private struct LiveTranscriptionContent: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .disabled(model.state == .recording || model.state == .paused)
 
                     Toggle("J'ai vérifié que l'enregistrement de ce cours est autorisé", isOn: Binding(get: { model.consentAcknowledged }, set: { model.consentAcknowledged = $0 }))
                         .font(.subheadline)
