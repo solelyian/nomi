@@ -1,13 +1,21 @@
 # Nomi iOS — prototype SwiftUI
 
-Prototype iPhone/iPad de la refonte Nomi. Le dossier produit et design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
+Prototype iPhone/iPad de la refonte Nomi, recentré sur la parité avec les fonctions productivité de la version Windows. La relecture de code a été abandonnée dans cette itération. Le dossier produit/design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
 
-## État réel
+## Structure
 
-- **Réel** : compilation SwiftUI, navigation, injection par protocoles, vérification locale de calculs, cours de démonstration, export de fiche, tests unitaires du moteur de calcul.
-- **Semi-réel** : microphone + Apple Speech (`SFSpeechRecognizer`) ; compile, mais doit être validé sur iPhone physique avec permissions réelles.
-- **Simulé** : diagnostics IA de code, génération de fiche, réponses conversationnelles, correction automatique.
-- **Non implémenté** : persistance SwiftData, extension de partage, iCloud, Live Activity, widgets, diarisation fiable, exécution de code.
+- **iPhone** : cinq onglets — Aujourd'hui, Tableau, Focus, Nomi, Plus.
+- **Plus** : Routines, Transcription, Fiches et révisions, Réglages.
+- **iPad** : barre latérale complète avec toutes les sections.
+
+## État réel / simulé / non implémenté
+
+| État | Fonctions |
+|---|---|
+| **Réel** | compilation SwiftUI, onboarding de première ouverture, navigation iPhone/iPad, tableau de tâches, édition, division et progression des tâches, minuteur Focus avec pause/reprise/fin, fils de conversation, vérification locale de calculs simples, parseur local simple de tâches et routines, activation/édition des routines, persistance locale JSON protégée, flashcards/quiz, export de fiche, tests unitaires |
+| **Semi-réel** | microphone + Apple Speech (`SFSpeechRecognizer`) : compile, mais doit être validé sur iPhone physique avec permissions réelles |
+| **Simulé** | réponses IA génératives, génération de fiches par extraction/gabarits locaux, documents liés par simple titre, données d'agenda de démonstration |
+| **Non implémenté** | observation des autres apps en Focus, notifications locales, App Intents, Document Picker, extension de partage, SwiftData, iCloud, Live Activity, widgets, Spotlight, diarisation fiable |
 
 ## Prérequis
 
@@ -24,7 +32,7 @@ cd ios
 open Nomi.xcodeproj
 ```
 
-Dans Xcode : choisir le schéma **Nomi**, un simulateur iPhone, puis Run. Sur appareil physique, configurer votre équipe de signature dans Signing & Capabilities.
+Dans Xcode : choisir le schéma **Nomi**, un simulateur iPhone ou iPad, puis Run. Sur appareil physique, configurer votre équipe de signature dans Signing & Capabilities.
 
 En ligne de commande :
 
@@ -48,7 +56,7 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Vérification effectuée dans cette session : 4 tests unitaires, 4 réussites. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
+Vérification effectuée dans cette session : 18 tests unitaires, 18 réussites, couvrant le vérificateur de calculs, le parseur de tâches, le parseur de routines et les échéances de routines. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
 
 ## Permissions
 
@@ -59,20 +67,22 @@ Vérification effectuée dans cette session : 4 tests unitaires, 4 réussites. L
 - `ITSAppUsesNonExemptEncryption=false` ;
 - orientations iPhone/iPad.
 
-Le prototype ne demande aucun mode arrière-plan. Une transcription longue en production doit être reconçue avec fichier audio segmenté, Live Activity et validation App Review.
+Le prototype ne demande aucun mode arrière-plan. Les routines temporisées ne peuvent donc pas être garanties quand l'app est fermée. Une production doit utiliser notifications locales, App Intents et une conception validée App Review.
 
 ## Architecture
 
 ```text
-Packages/NomiCore       domaine, protocoles, mocks, vérificateur de calcul, tests
-NomiIOS/App             composition et injection
+Packages/NomiCore       domaine, protocoles, mocks, parseurs, vérificateur, tests
+NomiIOS/App             composition, navigation adaptative et injection
 NomiIOS/DesignSystem    jetons et composants visuels
-NomiIOS/Features        écrans par fonctionnalité
+NomiIOS/Features        espaces produit par fonctionnalité
 NomiIOS/Services        intégration Apple Speech
 ```
 
-Remplacer un mock : créer une implémentation du protocole (`CodeReviewService`, `RevisionService`, `LiveTranscriptionService`), puis l'injecter dans `AppState`. Ne pas embarquer de clé API dans l'app ; préférer un serveur intermédiaire.
+Remplacer un mock : créer une implémentation du protocole (`RevisionService`, `LiveTranscriptionService`), puis l'injecter dans `AppState`. Ne pas embarquer de clé API dans l'app ; préférer un serveur intermédiaire.
 
 ## Données et confidentialité
 
-Aucun appel réseau n'est effectué par les mocks. La bibliothèque est volatile. La production doit utiliser Data Protection, Keychain pour les jetons et demander consentement avant tout envoi de code, document ou audio vers un service externe.
+Les tâches, routines, sessions Focus, conversations et fiches sont persistées dans un fichier JSON local du répertoire Application Support, écrit avec l'option de protection complète des fichiers iOS. Cette persistance est une base de prototype, pas le modèle final : SwiftData, migration, export/effacement utilisateur et éventuel chiffrement restent à concevoir.
+
+Aucun appel réseau n'est effectué par les mocks. La production doit utiliser Data Protection, Keychain pour les jetons et demander consentement avant tout envoi de document, audio ou conversation vers un service externe.

@@ -9,15 +9,18 @@
 /* Begin PBXBuildFile section */
 		0181CA7280F883CFDEB63072 /* LiveTranscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */; };
 		0E3B9D12CC66628FDB8B5573 /* LiveTranscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */; };
-		0F0B5E85FB0F5A70ADE76A06 /* CodeReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873834CC2A53E8E2145CC8D1 /* CodeReviewViewModel.swift */; };
+		12E65184E7B782F96FF7F533 /* FocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C80D96754E86221C2E5F5D /* FocusView.swift */; };
+		196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */; };
+		2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF73F3880DCB25695E3BFEF4 /* BoardView.swift */; };
 		2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */; };
-		3C1302AB6A07AF87766EFE2A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676F0455684FBB88073983A4 /* CodeReviewView.swift */; };
 		422B3AA8E484EDAFD16BB8E5 /* NomiCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDDE39AC951D9B0D69E70DC3 /* NomiCore */; };
 		4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E958D41F2C193E270060A927 /* NomiApp.swift */; };
 		56A4DC127636B19C238A8716 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2AB5800E2427860CDF6562 /* AppState.swift */; };
+		7D9400AA2888DEFAD15A72AB /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */; };
 		8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93D0B7E0E1C835F46D7811E /* SettingsView.swift */; };
 		B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4686E95F33FC49354ECAB971 /* NomiTheme.swift */; };
 		C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */; };
+		D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */; };
 		F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C7C4694181A6764B0893C0 /* HomeView.swift */; };
 		F36C5CA064941CCB9A2BA2E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC1264985F627D3D8DB8AA54 /* Assets.xcassets */; };
 		F98D54D91EC939E8B4698201 /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */; };
@@ -31,13 +34,16 @@
 		41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
 		4686E95F33FC49354ECAB971 /* NomiTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiTheme.swift; sourceTree = "<group>"; };
 		5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisionSheetView.swift; sourceTree = "<group>"; };
-		676F0455684FBB88073983A4 /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
-		873834CC2A53E8E2145CC8D1 /* CodeReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewViewModel.swift; sourceTree = "<group>"; };
 		89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionViewModel.swift; sourceTree = "<group>"; };
+		8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 		92C7C4694181A6764B0893C0 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AC1264985F627D3D8DB8AA54 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AF73F3880DCB25695E3BFEF4 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
+		B0C80D96754E86221C2E5F5D /* FocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusView.swift; sourceTree = "<group>"; };
 		B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
 		E309461932F89F5AF71FE5D8 /* Nomi.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Nomi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
 		E93D0B7E0E1C835F46D7811E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E958D41F2C193E270060A927 /* NomiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -79,12 +85,36 @@
 			path = DesignSystem;
 			sourceTree = "<group>";
 		};
+		1E70B63D9D417F04718D98D2 /* Board */ = {
+			isa = PBXGroup;
+			children = (
+				AF73F3880DCB25695E3BFEF4 /* BoardView.swift */,
+			);
+			path = Board;
+			sourceTree = "<group>";
+		};
+		2873E9E704DA198ACE6FA7D3 /* Routines */ = {
+			isa = PBXGroup;
+			children = (
+				DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */,
+			);
+			path = Routines;
+			sourceTree = "<group>";
+		};
 		47FA842CEFBAC3F9966BE24A /* Packages */ = {
 			isa = PBXGroup;
 			children = (
 				2251A5C2D66244DBF77F8769 /* NomiCore */,
 			);
 			path = Packages;
+			sourceTree = "<group>";
+		};
+		83759B4CC458D371AEDDE12D /* More */ = {
+			isa = PBXGroup;
+			children = (
+				8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */,
+			);
+			path = More;
 			sourceTree = "<group>";
 		};
 		8B17BD5D4AE544DB06C01B93 /* Courses */ = {
@@ -96,13 +126,12 @@
 			path = Courses;
 			sourceTree = "<group>";
 		};
-		8CB8B8185E56531CDBF23482 /* CodeReview */ = {
+		8C699752C2CBE01E623E404F /* Conversation */ = {
 			isa = PBXGroup;
 			children = (
-				676F0455684FBB88073983A4 /* CodeReviewView.swift */,
-				873834CC2A53E8E2145CC8D1 /* CodeReviewViewModel.swift */,
+				E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */,
 			);
-			path = CodeReview;
+			path = Conversation;
 			sourceTree = "<group>";
 		};
 		9C5F8A1081DF2528C6D7645E /* Settings */ = {
@@ -133,6 +162,14 @@
 			path = NomiIOS;
 			sourceTree = "<group>";
 		};
+		BB1959C31FECAED95505381D /* Focus */ = {
+			isa = PBXGroup;
+			children = (
+				B0C80D96754E86221C2E5F5D /* FocusView.swift */,
+			);
+			path = Focus;
+			sourceTree = "<group>";
+		};
 		BE6AFC3C75A94DD31CA20AF2 /* Revision */ = {
 			isa = PBXGroup;
 			children = (
@@ -153,11 +190,15 @@
 		C6409D12EFD7CEFEE911A029 /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				8CB8B8185E56531CDBF23482 /* CodeReview */,
+				1E70B63D9D417F04718D98D2 /* Board */,
+				8C699752C2CBE01E623E404F /* Conversation */,
 				8B17BD5D4AE544DB06C01B93 /* Courses */,
+				BB1959C31FECAED95505381D /* Focus */,
 				A80D3C9C6DCD21666E79F5B4 /* Home */,
 				E35879E2E2ECD438D7E315EC /* Library */,
+				83759B4CC458D371AEDDE12D /* More */,
 				BE6AFC3C75A94DD31CA20AF2 /* Revision */,
+				2873E9E704DA198ACE6FA7D3 /* Routines */,
 				9C5F8A1081DF2528C6D7645E /* Settings */,
 			);
 			path = Features;
@@ -265,15 +306,18 @@
 			files = (
 				56A4DC127636B19C238A8716 /* AppState.swift in Sources */,
 				F98D54D91EC939E8B4698201 /* AppleSpeechTranscriber.swift in Sources */,
-				3C1302AB6A07AF87766EFE2A /* CodeReviewView.swift in Sources */,
-				0F0B5E85FB0F5A70ADE76A06 /* CodeReviewViewModel.swift in Sources */,
+				2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */,
+				D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */,
+				12E65184E7B782F96FF7F533 /* FocusView.swift in Sources */,
 				F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */,
 				C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */,
 				0181CA7280F883CFDEB63072 /* LiveTranscriptionView.swift in Sources */,
 				0E3B9D12CC66628FDB8B5573 /* LiveTranscriptionViewModel.swift in Sources */,
+				196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */,
 				4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */,
 				B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */,
 				2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */,
+				7D9400AA2888DEFAD15A72AB /* RoutinesView.swift in Sources */,
 				8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

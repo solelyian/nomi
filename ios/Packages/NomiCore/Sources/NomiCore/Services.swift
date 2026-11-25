@@ -1,10 +1,5 @@
 import Foundation
 
-public protocol CodeReviewService: Sendable {
-    func review(code: String, language: String, focus: String?) async throws -> [CodeDiagnostic]
-    func answerQuestion(_ question: String, about code: String) async throws -> String
-}
-
 public protocol RevisionService: Sendable {
     func makeRevision(from source: String, sourceTitle: String, level: RevisionDetailLevel, format: RevisionFormat) async throws -> RevisionSheet
 }

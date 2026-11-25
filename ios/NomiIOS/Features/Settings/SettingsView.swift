@@ -25,18 +25,18 @@ struct SettingsView: View {
             }
 
             Section("Intégrations iOS classées") {
-                integrationRow("1", "Extension de partage", "code, PDF et transcriptions")
-                integrationRow("2", "Live Activity", "transcription en cours et pause")
-                integrationRow("3", "App Intents / Raccourcis", "démarrer un cours ou créer une fiche")
+                integrationRow("1", "Notifications locales", "routines et rappels de focus")
+                integrationRow("2", "Document Picker / Fichiers", "documents liés aux routines et pièces jointes")
+                integrationRow("3", "App Intents / Raccourcis", "ajouter une tâche, démarrer un focus ou une transcription")
                 integrationRow("4", "Widgets", "révision du jour et tâches courtes")
                 integrationRow("5", "Spotlight", "fiches et cours indexés localement")
             }
 
             Section("État réel du prototype") {
-                Label("Calculs : moteur local réel", systemImage: "checkmark.circle")
+                Label("Tâches, Focus, calculs et persistance locale : réels", systemImage: "checkmark.circle")
                 Label("Reconnaissance vocale Apple : semi-réelle sur appareil", systemImage: "checkmark.circle")
-                Label("Relecture IA et fiches : mocks structurés", systemImage: "circle.dashed")
-                Label("Persistance, iCloud, Live Activities : non implémentés", systemImage: "xmark.circle")
+                Label("Réponses IA et génération de fiches : simulées", systemImage: "circle.dashed")
+                Label("Notifications, iCloud, Documents et extension de partage : non implémentés", systemImage: "xmark.circle")
             }
         }
         .scrollContentBackground(.hidden)
