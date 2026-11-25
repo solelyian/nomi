@@ -83,6 +83,17 @@ final class ProductivityModelsTests: XCTestCase {
         XCTAssertEqual(routine.hour, 8)
     }
 
+
+    func testLeadingEveningCueWinsOverMorningObject() {
+        let routine = RoutinePhraseParser.parse("Chaque soir planifier mes matins")
+        XCTAssertEqual(routine.hour, 18)
+    }
+
+    func testLeadingMorningCueWinsOverEveningObject() {
+        let routine = RoutinePhraseParser.parse("Chaque matin préparer le soir")
+        XCTAssertEqual(routine.hour, 8)
+    }
+
     func testParsesSpecificRoutineTime() {
         let routine = RoutinePhraseParser.parse("Le lundi à 17h30 réviser la fiche")
         XCTAssertEqual(routine.trigger, .time)

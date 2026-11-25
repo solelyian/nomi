@@ -251,21 +251,33 @@ public enum RoutinePhraseParser {
         var minute = 0
         var trigger: RoutineTrigger = .manual
 
+        func timeCueRange(_ word: String) -> Range<String.Index>? {
+            lower.range(of: #"\b(?:chaque|tous\s+les|le)\s+"# + word + #"s?\b"#, options: .regularExpression)
+        }
+        let morningCue = timeCueRange("matin")
+        let eveningCue = timeCueRange("soir")
+        let useEvening: Bool
+        if let eveningCue, let morningCue {
+            useEvening = eveningCue.lowerBound < morningCue.lowerBound
+        } else {
+            useEvening = eveningCue != nil
+        }
+
         if lower.contains("week-end") || lower.contains("weekend") {
             weekdays = [1, 7]
             trigger = .time
         } else if lower.contains("chaque jour") || lower.contains("tous les jours") || lower.contains("quotidien") {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
             trigger = .time
-        } else if lower.range(of: #"\bmatins?\b"#, options: .regularExpression) != nil || lower.range(of: #"\bsoirs?\b"#, options: .regularExpression) != nil {
+        } else if morningCue != nil || eveningCue != nil {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
             trigger = .time
         }
-        if lower.range(of: #"\bmatins?\b"#, options: .regularExpression) != nil {
-            hour = 8
-            trigger = .time
-        } else if lower.range(of: #"\bsoirs?\b"#, options: .regularExpression) != nil {
+        if useEvening {
             hour = 18
+            trigger = .time
+        } else if morningCue != nil {
+            hour = 8
             trigger = .time
         }
 
