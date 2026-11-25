@@ -93,8 +93,7 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
 
     public func makeRevision(from source: String, sourceTitle: String, level: RevisionDetailLevel, format: RevisionFormat) async throws -> RevisionSheet {
         try await Task.sleep(nanoseconds: 450_000_000)
-        let sentences = source
-            .components(separatedBy: CharacterSet(charactersIn: ".!?\n"))
+        let sentences = Self.splitSentences(source)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { $0.count > 20 }
         let keyIdeas = Array(sentences.prefix(level == .condensed ? 2 : level == .standard ? 4 : 7))
@@ -126,6 +125,26 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
             flashcards: Array(cards),
             quiz: Array(quiz)
         )
+    }
+
+    /// Splits after sentence punctuation only when whitespace follows it, so
+    /// decimal numbers such as 0.05 stay intact in source-labelled extracts.
+    static func splitSentences(_ source: String) -> [String] {
+        let pattern = #"(?<=[.!?])\s+|\n+"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [source] }
+        let nsSource = source as NSString
+        let matches = regex.matches(in: source, range: NSRange(location: 0, length: nsSource.length))
+        var parts: [String] = []
+        var cursor = 0
+        for match in matches {
+            guard match.range.location >= cursor else { continue }
+            parts.append(nsSource.substring(with: NSRange(location: cursor, length: match.range.location - cursor)))
+            cursor = match.range.location + match.range.length
+        }
+        if cursor < nsSource.length {
+            parts.append(nsSource.substring(from: cursor))
+        }
+        return parts.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 }
 
