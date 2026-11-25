@@ -7,11 +7,17 @@ public struct CalculationVerifier: Sendable {
     public init() {}
 
     public func verify(_ source: String) -> CalculationVerification {
-        guard let equals = source.lastIndex(of: "=") else {
+        let currencySymbols = source.filter { "€$£".contains($0) }
+        let distinctCurrencies = Set(currencySymbols)
+        guard distinctCurrencies.count <= 1 else {
+            return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Plusieurs monnaies sont mélangées ; conversion et vérification sont refusées.")
+        }
+        let cleanedSource = distinctCurrencies.count == 1 ? source.replacingOccurrences(of: String(distinctCurrencies.first!), with: "") : source
+        guard let equals = cleanedSource.lastIndex(of: "=") else {
             return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Aucun signe égal détecté.")
         }
-        let left = String(source[..<equals]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let rightText = String(source[source.index(after: equals)...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let left = String(cleanedSource[..<equals]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let rightText = String(cleanedSource[cleanedSource.index(after: equals)...]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard let expected = Self.parseNumber(rightText) else {
             return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Le résultat affiché n'est pas un nombre simple.")
         }
@@ -35,11 +41,8 @@ public struct CalculationVerifier: Sendable {
 
     static func parseNumber(_ input: String) -> Decimal? {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "€", with: "")
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: "£", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
+        let strictNumberPattern = #"^[+-]?[0-9]+(?:[.,][0-9]+)?$"#
+        guard trimmed.range(of: strictNumberPattern, options: .regularExpression) != nil else { return nil }
         let normalized = decimalNormalized(trimmed)
         return Decimal(string: normalized, locale: Locale(identifier: "en_US_POSIX"))
     }
@@ -63,7 +66,7 @@ public struct CalculationVerifier: Sendable {
         var isAtEnd: Bool { index >= scalars.count }
 
         mutating func skipIgnored() {
-            while index < scalars.count, scalars[index].isWhitespace || scalars[index] == "€" || scalars[index] == "$" || scalars[index] == "£" {
+            while index < scalars.count, scalars[index].isWhitespace {
                 index += 1
             }
         }

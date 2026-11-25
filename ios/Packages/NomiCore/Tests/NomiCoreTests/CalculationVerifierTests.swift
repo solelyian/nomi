@@ -25,4 +25,20 @@ final class CalculationVerifierTests: XCTestCase {
         let result = CalculationVerifier().verify("2 heures + 30 minutes = 2,5")
         XCTAssertNotEqual(result.status, .verified)
     }
+
+    func testRejectsNonSimpleRightHandSide() {
+        let result = CalculationVerifier().verify("2 + 2 = 4 + 1")
+        XCTAssertEqual(result.status, .invalid)
+    }
+
+    func testRejectsMixedCurrencies() {
+        let result = CalculationVerifier().verify("10 € + 10 $ = 20 €")
+        XCTAssertEqual(result.status, .invalid)
+    }
+
+    func testSentenceSplitKeepsDecimalNumbersIntact() {
+        let parts = MockRevisionService.splitSentences("Le taux est 0.05 dans cet exemple. Il faut le retenir.")
+        XCTAssertEqual(parts.count, 2)
+        XCTAssertTrue(parts[0].contains("0.05"))
+    }
 }
