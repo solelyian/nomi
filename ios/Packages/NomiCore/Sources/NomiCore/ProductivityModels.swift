@@ -219,9 +219,9 @@ public enum TaskPhraseParser {
         if lower.contains("demain") {
             dueDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
             title = title.replacingOccurrences(of: "demain", with: "", options: .caseInsensitive)
-        } else if lower.contains("aujourd'hui") || lower.contains("ce soir") {
+        } else if lower.range(of: "aujourd['’]hui", options: .regularExpression) != nil || lower.contains("ce soir") {
             dueDate = calendar.startOfDay(for: now)
-            title = title.replacingOccurrences(of: "aujourd'hui", with: "", options: .caseInsensitive)
+            title = title.replacingOccurrences(of: "aujourd['’]hui", with: "", options: [.regularExpression, .caseInsensitive])
             title = title.replacingOccurrences(of: "ce soir", with: "", options: .caseInsensitive)
         }
         if let range = title.range(of: #"\b(\d+(?:[,.]\d+)?)\s*(min|minutes|h|heure|heures)\b"#, options: [.regularExpression, .caseInsensitive]) {

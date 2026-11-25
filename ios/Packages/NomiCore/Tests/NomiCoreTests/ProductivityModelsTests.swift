@@ -10,6 +10,13 @@ final class ProductivityModelsTests: XCTestCase {
         XCTAssertFalse(task.title.contains("5"))
     }
 
+
+    func testParsesTodayWithCurlyApostrophe() {
+        let task = TaskPhraseParser.parse("Relire aujourd’hui")
+        XCTAssertNotNil(task.dueDate)
+        XCTAssertFalse(task.title.lowercased().contains("aujourd"))
+    }
+
     func testParsesFrenchTaskPhrase() {
         let task = TaskPhraseParser.parse("Envoyer le compte rendu demain 30 min important")
         XCTAssertEqual(task.priority, .high)
