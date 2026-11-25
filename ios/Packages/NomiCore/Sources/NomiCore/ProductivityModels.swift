@@ -252,7 +252,7 @@ public enum RoutinePhraseParser {
         var trigger: RoutineTrigger = .manual
 
         func timeCueRange(_ word: String) -> Range<String.Index>? {
-            lower.range(of: #"\b(?:chaque|tous\s+les|le)\s+"# + word + #"s?\b"#, options: .regularExpression)
+            lower.range(of: #"\b(?:chaque|tous\s+les|le|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|week-end|weekend)\s+"# + word + #"s?\b"#, options: .regularExpression)
         }
         let morningCue = timeCueRange("matin")
         let eveningCue = timeCueRange("soir")
