@@ -12,6 +12,8 @@ struct RevisionSheetView: View {
     @State private var showingSource = false
     @State private var flippedCards: Set<UUID> = []
     @State private var savedSheetIDs: Set<UUID> = []
+    @State private var quizAnswers: [UUID: Int] = [:]
+    @State private var submittedQuizIDs: Set<UUID> = []
 
     var body: some View {
         ScrollView {
@@ -165,16 +167,45 @@ struct RevisionSheetView: View {
                 Text(question.question)
                     .font(.headline)
                 ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
-                    HStack {
-                        Image(systemName: index == question.correctIndex ? "checkmark.circle" : "circle")
-                            .foregroundStyle(index == question.correctIndex ? NomiTheme.success : NomiTheme.ink3)
-                        Text(choice)
-                            .font(.subheadline)
+                    Button {
+                        if !submittedQuizIDs.contains(question.id) {
+                            quizAnswers[question.id] = index
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: quizAnswers[question.id] == index ? "largecircle.fill.circle" : "circle")
+                                .foregroundStyle(quizAnswers[question.id] == index ? NomiTheme.code : NomiTheme.ink3)
+                            Text(choice)
+                                .font(.subheadline)
+                                .foregroundStyle(NomiTheme.ink)
+                                .multilineTextAlignment(.leading)
+                            Spacer()
+                            if submittedQuizIDs.contains(question.id), index == question.correctIndex {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(NomiTheme.success)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
-                Text(question.explanation)
-                    .font(.footnote)
-                    .foregroundStyle(NomiTheme.ink2)
+                if submittedQuizIDs.contains(question.id) {
+                    Text(quizAnswers[question.id] == question.correctIndex ? "Bonne réponse." : "Réponse à revoir.")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(quizAnswers[question.id] == question.correctIndex ? NomiTheme.success : .orange)
+                    Text(question.explanation)
+                        .font(.footnote)
+                        .foregroundStyle(NomiTheme.ink2)
+                } else {
+                    Button("Valider ma réponse") {
+                        if quizAnswers[question.id] != nil {
+                            submittedQuizIDs.insert(question.id)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(quizAnswers[question.id] == nil)
+                }
             }
             .padding(12)
             .background(NomiTheme.surface2, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -212,6 +243,23 @@ struct RevisionSheetView: View {
         var output = "# \(sheet.title)\n\nSource : \(sheet.sourceTitle)\n\n"
         for section in sheet.sections {
             output += "## \(section.title) [\(section.fidelity.frenchTitle)]\n\(section.body)\n\n"
+        }
+        if sheet.format == .flashcards || !sheet.flashcards.isEmpty {
+            output += "## Flashcards\n"
+            for card in sheet.flashcards {
+                output += "- Q : \(card.front)\n  R : \(card.back)\n"
+            }
+            output += "\n"
+        }
+        if sheet.format == .quiz || !sheet.quiz.isEmpty {
+            output += "## Quiz\n"
+            for question in sheet.quiz {
+                output += "- \(question.question)\n"
+                for (index, choice) in question.choices.enumerated() {
+                    output += "  \(index + 1). \(choice)\n"
+                }
+                output += "  Réponse : \(question.correctIndex + 1). \(question.explanation)\n"
+            }
         }
         return output
     }

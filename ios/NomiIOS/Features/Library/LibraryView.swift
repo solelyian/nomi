@@ -66,6 +66,34 @@ private struct StoredSheetDetail: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            if !sheet.flashcards.isEmpty {
+                Section("Flashcards") {
+                    ForEach(sheet.flashcards) { card in
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(card.front).font(.headline)
+                            Text(card.back).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 3)
+                    }
+                }
+            }
+            if !sheet.quiz.isEmpty {
+                Section("Quiz") {
+                    ForEach(sheet.quiz) { question in
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(question.question).font(.headline)
+                            ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
+                                Text("\(index + 1). \(choice)")
+                                    .font(.subheadline)
+                            }
+                            Text("Réponse \(question.correctIndex + 1) — \(question.explanation)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 3)
+                    }
+                }
+            }
         }
         .navigationTitle(sheet.title)
         .navigationBarTitleDisplayMode(.inline)
