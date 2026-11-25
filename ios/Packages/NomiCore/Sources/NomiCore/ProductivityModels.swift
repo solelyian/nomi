@@ -257,14 +257,14 @@ public enum RoutinePhraseParser {
         } else if lower.contains("chaque jour") || lower.contains("tous les jours") || lower.contains("quotidien") {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
             trigger = .time
-        } else if lower.contains("matin") || lower.contains("soir") {
+        } else if lower.range(of: #"\bmatin\b"#, options: .regularExpression) != nil || lower.range(of: #"\bsoir\b"#, options: .regularExpression) != nil {
             weekdays = [1, 2, 3, 4, 5, 6, 7]
             trigger = .time
         }
-        if lower.contains("matin") {
+        if lower.range(of: #"\bmatin\b"#, options: .regularExpression) != nil {
             hour = 8
             trigger = .time
-        } else if lower.contains("soir") {
+        } else if lower.range(of: #"\bsoir\b"#, options: .regularExpression) != nil {
             hour = 18
             trigger = .time
         }

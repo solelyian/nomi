@@ -62,6 +62,12 @@ final class ProductivityModelsTests: XCTestCase {
         XCTAssertEqual(daily.hour, 18)
     }
 
+
+    func testDoesNotTreatSoirInsideRasoirAsEvening() {
+        let routine = RoutinePhraseParser.parse("Chaque jour nettoyer le rasoir")
+        XCTAssertEqual(routine.hour, 9)
+    }
+
     func testParsesSpecificRoutineTime() {
         let routine = RoutinePhraseParser.parse("Le lundi à 17h30 réviser la fiche")
         XCTAssertEqual(routine.trigger, .time)
