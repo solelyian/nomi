@@ -12,6 +12,12 @@ public struct CalculationVerifier: Sendable {
         guard distinctCurrencies.count <= 1 else {
             return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Plusieurs monnaies sont mélangées ; conversion et vérification sont refusées.")
         }
+        if let currency = distinctCurrencies.first {
+            let internalCurrencyPattern = #"[0-9]"# + NSRegularExpression.escapedPattern(for: String(currency)) + #"[0-9]"#
+            if source.range(of: internalCurrencyPattern, options: .regularExpression) != nil {
+                return CalculationVerification(expression: source, expected: nil, computed: nil, status: .unsupported, message: "La notation monétaire avec centimes n'est pas prise en charge ; utilisez un séparateur décimal explicite.")
+            }
+        }
         let cleanedSource = distinctCurrencies.count == 1 ? source.replacingOccurrences(of: String(distinctCurrencies.first!), with: "") : source
         guard let equals = cleanedSource.lastIndex(of: "=") else {
             return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Aucun signe égal détecté.")
@@ -41,7 +47,7 @@ public struct CalculationVerifier: Sendable {
 
     static func parseNumber(_ input: String) -> Decimal? {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        let strictNumberPattern = #"^[+-]?[0-9]+(?:[.,][0-9]+)?$"#
+        let strictNumberPattern = #"^[+-]?(?:[0-9]+|[0-9]{1,3}(?: [0-9]{3})+)(?:[.,][0-9]+)?$"#
         guard trimmed.range(of: strictNumberPattern, options: .regularExpression) != nil else { return nil }
         let normalized = decimalNormalized(trimmed)
         return Decimal(string: normalized, locale: Locale(identifier: "en_US_POSIX"))

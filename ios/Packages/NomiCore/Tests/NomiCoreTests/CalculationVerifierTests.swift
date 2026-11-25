@@ -36,6 +36,16 @@ final class CalculationVerifierTests: XCTestCase {
         XCTAssertEqual(result.status, .invalid)
     }
 
+    func testRejectsEuroCentNotationInsteadOfFalseVerifying() {
+        let result = CalculationVerifier().verify("12€50 + 2€50 = 1500€")
+        XCTAssertEqual(result.status, .unsupported)
+    }
+
+    func testAcceptsGroupedThousandsInDisplayedResult() {
+        let result = CalculationVerifier().verify("800 + 400 = 1 200 €")
+        XCTAssertEqual(result.status, .verified)
+    }
+
     func testSentenceSplitKeepsDecimalNumbersIntact() {
         let parts = MockRevisionService.splitSentences("Le taux est 0.05 dans cet exemple. Il faut le retenir.")
         XCTAssertEqual(parts.count, 2)
