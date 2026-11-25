@@ -177,7 +177,7 @@ final class AppState: ObservableObject {
     }
 
     func startFocus(objective: String) {
-        guard focusSession?.status != .running else { return }
+        guard focusSession == nil else { return }
         focusSession = FocusSession(objective: objective.isEmpty ? "Focus sans objectif" : objective)
     }
 
