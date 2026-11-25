@@ -12,11 +12,8 @@ public struct CalculationVerifier: Sendable {
         guard distinctCurrencies.count <= 1 else {
             return CalculationVerification(expression: source, expected: nil, computed: nil, status: .invalid, message: "Plusieurs monnaies sont mélangées ; conversion et vérification sont refusées.")
         }
-        if let currency = distinctCurrencies.first {
-            let internalCurrencyPattern = #"[0-9]"# + NSRegularExpression.escapedPattern(for: String(currency)) + #"[0-9]"#
-            if source.range(of: internalCurrencyPattern, options: .regularExpression) != nil {
-                return CalculationVerification(expression: source, expected: nil, computed: nil, status: .unsupported, message: "La notation monétaire avec centimes n'est pas prise en charge ; utilisez un séparateur décimal explicite.")
-            }
+        if Self.hasMalformedCurrencyPlacement(source) {
+            return CalculationVerification(expression: source, expected: nil, computed: nil, status: .unsupported, message: "Le symbole monétaire est placé à l'intérieur d'un nombre ; utilisez un séparateur décimal explicite.")
         }
         let cleanedSource = distinctCurrencies.count == 1 ? source.replacingOccurrences(of: String(distinctCurrencies.first!), with: "") : source
         guard let equals = cleanedSource.lastIndex(of: "=") else {
@@ -43,6 +40,20 @@ public struct CalculationVerifier: Sendable {
         } catch {
             return CalculationVerification(expression: source, expected: expected, computed: nil, status: .unsupported, message: "Expression non prise en charge : parenthèses, unités ou notation ambiguë.")
         }
+    }
+
+    static func hasMalformedCurrencyPlacement(_ source: String) -> Bool {
+        let characters = Array(source)
+        for (index, character) in characters.enumerated() where "€$£".contains(character) {
+            var before = index - 1
+            while before >= 0, characters[before].isWhitespace { before -= 1 }
+            var after = index + 1
+            while after < characters.count, characters[after].isWhitespace { after += 1 }
+            let hasDigitBefore = before >= 0 && characters[before].isNumber
+            let hasDigitAfter = after < characters.count && characters[after].isNumber
+            if hasDigitBefore == hasDigitAfter { return true }
+        }
+        return false
     }
 
     static func parseNumber(_ input: String) -> Decimal? {
@@ -144,6 +155,23 @@ public struct CalculationVerifier: Sendable {
                 } else {
                     break
                 }
+            }
+            while index < scalars.count {
+                var probe = index
+                var whitespaceCount = 0
+                while probe < scalars.count, scalars[probe].isWhitespace {
+                    whitespaceCount += 1
+                    probe += 1
+                }
+                var groupEnd = probe
+                var groupedDigits = 0
+                while groupEnd < scalars.count, scalars[groupEnd].isNumber {
+                    groupedDigits += 1
+                    groupEnd += 1
+                }
+                guard whitespaceCount > 0, groupedDigits == 3 else { break }
+                if groupEnd < scalars.count, scalars[groupEnd].isNumber || scalars[groupEnd] == "." || scalars[groupEnd] == "," { break }
+                index = groupEnd
             }
             guard sawDigit else { throw ParserError.unsupported }
             let token = String(scalars[start..<index])
