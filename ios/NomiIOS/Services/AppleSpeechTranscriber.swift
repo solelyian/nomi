@@ -11,6 +11,7 @@ final class AppleSpeechTranscriber: NSObject {
         case speechDenied
         case microphoneDenied
         case recognizerUnavailable
+        case onDeviceUnavailable
         case alreadyRunning
 
         var errorDescription: String? {
@@ -18,6 +19,7 @@ final class AppleSpeechTranscriber: NSObject {
             case .speechDenied: return "La reconnaissance vocale est refusée ou indisponible."
             case .microphoneDenied: return "Le microphone est refusé. La démonstration reste disponible."
             case .recognizerUnavailable: return "Le recognizer Apple n'est pas disponible pour cette langue sur cet appareil."
+            case .onDeviceUnavailable: return "La reconnaissance sur appareil n'est pas disponible pour cette langue. Nomi n'envoie pas le cours vers un service distant sans activation explicite de l'IA distante."
             case .alreadyRunning: return "Une transcription est déjà en cours."
             }
         }
@@ -56,6 +58,9 @@ final class AppleSpeechTranscriber: NSObject {
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeIdentifier)), recognizer.isAvailable else {
             throw TranscriberError.recognizerUnavailable
         }
+        guard recognizer.supportsOnDeviceRecognition else {
+            throw TranscriberError.onDeviceUnavailable
+        }
 
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
@@ -64,6 +69,7 @@ final class AppleSpeechTranscriber: NSObject {
         let engine = AVAudioEngine()
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = true
         if #available(iOS 16, *) {
             request.addsPunctuation = true
         }
@@ -86,6 +92,10 @@ final class AppleSpeechTranscriber: NSObject {
                 }
                 if error != nil || result?.isFinal == true {
                     continuation.finish()
+                    Task { @MainActor in
+                        self.task = nil
+                        self.request = nil
+                    }
                 }
             }
             continuation.onTermination = { [weak self] _ in
@@ -107,8 +117,9 @@ final class AppleSpeechTranscriber: NSObject {
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         request?.endAudio()
-        task?.cancel()
-        task = nil
+        // `finish` lets Apple Speech produce its final transcript instead of
+        // cancelling the recognition and persisting a partial sentence forever.
+        task?.finish()
         request = nil
         audioEngine = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)

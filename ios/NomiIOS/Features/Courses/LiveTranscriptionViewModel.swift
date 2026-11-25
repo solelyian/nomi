@@ -22,14 +22,16 @@ final class LiveTranscriptionViewModel: ObservableObject {
     @Published var interruptionMessage: String?
 
     private let demoService: any LiveTranscriptionService
+    private let languageProvider: () -> String
     private var streamTask: Task<Void, Never>?
     private var clockTask: Task<Void, Never>?
     private var startedAt: Date?
     private var realTranscriber = AppleSpeechTranscriber()
     private var interruptionObserver: NSObjectProtocol?
 
-    init(demoService: any LiveTranscriptionService) {
+    init(demoService: any LiveTranscriptionService, languageProvider: @escaping () -> String = { "fr-FR" }) {
         self.demoService = demoService
+        self.languageProvider = languageProvider
     }
 
     var transcript: CourseTranscript {
@@ -56,17 +58,20 @@ final class LiveTranscriptionViewModel: ObservableObject {
                     if Task.isCancelled { break }
                     self.segments.append(segment)
                 }
+                if !Task.isCancelled { self.finishStream() }
             }
         } else {
             streamTask = Task { [weak self] in
                 guard let self else { return }
                 do {
-                    let stream = try await self.realTranscriber.start(localeIdentifier: "fr-FR")
+                    let stream = try await self.realTranscriber.start(localeIdentifier: self.languageProvider())
                     for await box in stream {
                         if Task.isCancelled { break }
                         self.upsert(TranscriptSegment(start: box.start, end: box.end, speaker: "Locuteur", text: box.text, isFinal: box.isFinal))
                     }
+                    if !Task.isCancelled { self.finishStream() }
                 } catch {
+                    self.clockTask?.cancel()
                     self.state = .error(error.localizedDescription)
                 }
             }
@@ -92,7 +97,9 @@ final class LiveTranscriptionViewModel: ObservableObject {
     }
 
     func stop() {
-        streamTask?.cancel()
+        if mode == .demo {
+            streamTask?.cancel()
+        }
         clockTask?.cancel()
         realTranscriber.stop()
         if let observer = interruptionObserver {
@@ -100,6 +107,13 @@ final class LiveTranscriptionViewModel: ObservableObject {
             interruptionObserver = nil
         }
         state = .idle
+    }
+
+    private func finishStream() {
+        clockTask?.cancel()
+        if state == .recording || state == .paused {
+            state = .idle
+        }
     }
 
     private func upsert(_ segment: TranscriptSegment) {

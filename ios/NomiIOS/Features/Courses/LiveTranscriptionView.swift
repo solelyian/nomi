@@ -5,15 +5,17 @@ struct LiveTranscriptionView: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        LiveTranscriptionContent(demoService: state.demoTranscriptionService)
+        LiveTranscriptionContent(demoService: state.demoTranscriptionService) {
+            state.transcriptionLanguage
+        }
     }
 }
 
 private struct LiveTranscriptionContent: View {
     @StateObject private var model: LiveTranscriptionViewModel
 
-    init(demoService: any LiveTranscriptionService) {
-        _model = StateObject(wrappedValue: LiveTranscriptionViewModel(demoService: demoService))
+    init(demoService: any LiveTranscriptionService, languageProvider: @escaping () -> String) {
+        _model = StateObject(wrappedValue: LiveTranscriptionViewModel(demoService: demoService, languageProvider: languageProvider))
     }
 
     var body: some View {
@@ -141,6 +143,9 @@ private struct LiveTranscriptionContent: View {
         }
         .nomiScreenBackground()
         .navigationTitle("Cours")
+        .onDisappear {
+            model.stop()
+        }
     }
 
     private func formatDuration(_ value: TimeInterval) -> String {
