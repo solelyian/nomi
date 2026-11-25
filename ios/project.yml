@@ -1,0 +1,46 @@
+name: Nomi
+options:
+  bundleIdPrefix: com.nyne
+  createIntermediateGroups: true
+packages:
+  NomiCore:
+    path: Packages/NomiCore
+targets:
+  Nomi:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: NomiIOS
+        excludes:
+          - "**/*.md"
+    dependencies:
+      - package: NomiCore
+        product: NomiCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nyne.Nomi
+        PRODUCT_NAME: Nomi
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        INFOPLIST_FILE: NomiIOS/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: minimal
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: YES
+        CODE_SIGN_STYLE: Automatic
+schemes:
+  Nomi:
+    build:
+      targets:
+        Nomi: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug

@@ -1,0 +1,37 @@
+name: ios
+
+on:
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+      - name: List simulators
+        run: xcrun simctl list devices available
+      - name: Build app
+        working-directory: ios
+        run: >-
+          xcodebuild -project Nomi.xcodeproj -scheme Nomi
+          -destination 'generic/platform=iOS Simulator'
+          -configuration Debug build CODE_SIGNING_ALLOWED=NO
+      - name: Test NomiCore
+        working-directory: ios/Packages/NomiCore
+        run: >-
+          xcodebuild test -scheme NomiCore
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO

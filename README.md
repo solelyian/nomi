@@ -12,6 +12,9 @@ vérifier, convertir, planifier, communiquer et apprendre. L’architecture rest
   le petit serveur Node de `server/`.
 - **`content/`** : catalogue français–anglais partagé. Le sélecteur change les
   textes rédigés localement ; les nouvelles réponses sont générées dans la langue choisie.
+- **`ios/`** : prototype SwiftUI iPhone/iPad de la refonte mobile, avec dossier
+  produit/design, protocoles IA remplaçables, transcription de démonstration et
+  vérification locale de calculs. Voir [ios/README.md](ios/README.md).
 - **`content/inference.json`** : modèle et consignes partagés par les deux clients.
 - **`content/response-policy.json`** : règles déterministes appliquées à la réponse
   après génération, avant affichage, dans les deux clients.
