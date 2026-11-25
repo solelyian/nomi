@@ -131,9 +131,13 @@ final class AppState: ObservableObject {
         var deferred = 0
         for index in tasks.indices where tasks[index].column != .done {
             let priority = tasks[index].priority
-            if priority <= .normal {
+            let dueDate = tasks[index].dueDate
+            let occupiesToday = dueDate.map { $0 < tomorrow } ?? true
+            if priority <= .normal && occupiesToday {
                 tasks[index].dueDate = tomorrow
-                tasks[index].notes += "\nReporté par Sauver ma journée."
+                if !tasks[index].notes.contains("Reporté par Sauver ma journée.") {
+                    tasks[index].notes += "\nReporté par Sauver ma journée."
+                }
                 deferred += 1
             }
         }
