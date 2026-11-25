@@ -2,6 +2,9 @@ name: Nomi
 options:
   bundleIdPrefix: com.nyne
   createIntermediateGroups: true
+  # XcodeGen 2.48 writes objectVersion 77, which Xcode versions before 26 cannot read.
+  # Keep the generated project openable by the Xcode versions used on GitHub-hosted runners.
+  postGenCommand: sed -i '' 's/objectVersion = [0-9][0-9]*;/objectVersion = 60;/' Nomi.xcodeproj/project.pbxproj
 packages:
   NomiCore:
     path: Packages/NomiCore
