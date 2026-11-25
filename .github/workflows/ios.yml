@@ -24,10 +24,10 @@ jobs:
       - name: Create test simulator
         id: simulator
         run: |
-          sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
-          runtime_suffix="$(echo "$sdk_version" | tr '.' '-')"
-          runtime="com.apple.CoreSimulator.SimRuntime.iOS-$runtime_suffix"
-          udid="$(xcrun simctl create "Nomi CI iPhone" com.apple.CoreSimulator.SimDeviceType.iPhone-17 "$runtime")"
+          runtime_json="$(xcrun simctl list runtimes -j)"
+          runtime="$(printf '%s' "$runtime_json" | python3 -c 'import json,sys; rs=[r for r in json.load(sys.stdin)["runtimes"] if r.get("platform") == "iOS" and r.get("isAvailable")]; print(rs[-1]["identifier"])')"
+          device_type="$(printf '%s' "$runtime_json" | python3 -c 'import json,sys; rs=[r for r in json.load(sys.stdin)["runtimes"] if r.get("platform") == "iOS" and r.get("isAvailable")]; r=rs[-1]; print(next(d["identifier"] for d in r["supportedDeviceTypes"] if d.get("productFamily") == "iPhone"))')"
+          udid="$(xcrun simctl create "Nomi CI iPhone" "$device_type" "$runtime")"
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
       - name: Build app
         working-directory: ios
