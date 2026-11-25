@@ -157,7 +157,11 @@ struct TaskDetailView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Enregistrer") {
-                        if !hasDueDate { task.dueDate = nil }
+                        if hasDueDate && task.dueDate == nil {
+                            task.dueDate = Calendar.current.startOfDay(for: .now)
+                        } else if !hasDueDate {
+                            task.dueDate = nil
+                        }
                         onSave(task)
                         dismiss()
                     }
