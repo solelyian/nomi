@@ -76,6 +76,13 @@ final class ProductivityModelsTests: XCTestCase {
         XCTAssertFalse(routine.action.contains("30"))
     }
 
+
+    func testParsesPluralMorningRoutine() {
+        let routine = RoutinePhraseParser.parse("Tous les matins préparer le café")
+        XCTAssertEqual(routine.trigger, .time)
+        XCTAssertEqual(routine.hour, 8)
+    }
+
     func testParsesSpecificRoutineTime() {
         let routine = RoutinePhraseParser.parse("Le lundi à 17h30 réviser la fiche")
         XCTAssertEqual(routine.trigger, .time)
