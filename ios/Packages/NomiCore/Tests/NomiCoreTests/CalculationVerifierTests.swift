@@ -61,6 +61,11 @@ final class CalculationVerifierTests: XCTestCase {
         XCTAssertEqual(result.status, .verified)
     }
 
+    func testAcceptsCompactSuffixCurrencyOperations() {
+        XCTAssertEqual(CalculationVerifier().verify("10€+5€ = 15€").status, .verified)
+        XCTAssertEqual(CalculationVerifier().verify("10€-5€ = 5€").status, .verified)
+    }
+
     func testSentenceSplitKeepsDecimalNumbersIntact() {
         let parts = MockRevisionService.splitSentences("Le taux est 0.05 dans cet exemple. Il faut le retenir.")
         XCTAssertEqual(parts.count, 2)

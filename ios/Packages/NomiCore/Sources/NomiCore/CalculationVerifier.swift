@@ -50,12 +50,16 @@ public struct CalculationVerifier: Sendable {
             var after = index + 1
             while after < characters.count, characters[after].isWhitespace { after += 1 }
             let hasDigitBefore = before >= 0 && characters[before].isNumber
-            var valueStart = after
-            if valueStart < characters.count, characters[valueStart] == "+" || characters[valueStart] == "-" {
-                valueStart += 1
+            let hasDigitAfter = after < characters.count && characters[after].isNumber
+            if hasDigitBefore {
+                if hasDigitAfter { return true }
+            } else {
+                var valueStart = after
+                if valueStart < characters.count, characters[valueStart] == "+" || characters[valueStart] == "-" {
+                    valueStart += 1
+                }
+                if valueStart >= characters.count || !characters[valueStart].isNumber { return true }
             }
-            let hasDigitAfter = valueStart < characters.count && characters[valueStart].isNumber
-            if hasDigitBefore == hasDigitAfter { return true }
         }
         return false
     }
