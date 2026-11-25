@@ -280,9 +280,12 @@ public enum RoutinePhraseParser {
                 trigger = .time
             }
             text.removeSubrange(match)
-        } else if trigger == .time, let match = text.range(of: #"(?:à|a)\s+(\d{1,2})h"#, options: [.regularExpression, .caseInsensitive]) {
+        } else if let match = text.range(of: #"(?:à|a)\s+(\d{1,2})h"#, options: [.regularExpression, .caseInsensitive]) {
             let digits = String(text[match]).filter(\.isNumber)
-            if let value = Int(digits) { hour = min(23, max(0, value)) }
+            if let value = Int(digits) {
+                hour = min(23, max(0, value))
+                trigger = .time
+            }
             text.removeSubrange(match)
         }
 
