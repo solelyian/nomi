@@ -21,17 +21,23 @@ jobs:
       - name: Generate project
         working-directory: ios
         run: xcodegen generate
-      - name: List simulators
-        run: xcrun simctl list devices available
+      - name: Create test simulator
+        id: simulator
+        run: |
+          sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+          runtime_suffix="$(echo "$sdk_version" | tr '.' '-')"
+          runtime="com.apple.CoreSimulator.SimRuntime.iOS-$runtime_suffix"
+          udid="$(xcrun simctl create "Nomi CI iPhone" com.apple.CoreSimulator.SimDeviceType.iPhone-17 "$runtime")"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
       - name: Build app
         working-directory: ios
         run: >-
           xcodebuild -project Nomi.xcodeproj -scheme Nomi
-          -destination 'generic/platform=iOS Simulator'
+          -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}'
           -configuration Debug build CODE_SIGNING_ALLOWED=NO
       - name: Test NomiCore
         working-directory: ios/Packages/NomiCore
         run: >-
           xcodebuild test -scheme NomiCore
-          -destination 'generic/platform=iOS Simulator'
+          -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}'
           CODE_SIGNING_ALLOWED=NO
