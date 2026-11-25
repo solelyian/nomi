@@ -154,9 +154,16 @@ final class AppState: ObservableObject {
 
     func moveTask(_ task: WorkTask, to column: WorkColumn) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        let wasDone = tasks[index].column == .done
         tasks[index].column = column
-        tasks[index].completedAt = column == .done ? .now : nil
-        if column == .done { runEventRoutines(.taskDone) }
+        if column == .done {
+            if !wasDone {
+                tasks[index].completedAt = .now
+                runEventRoutines(.taskDone)
+            }
+        } else {
+            tasks[index].completedAt = nil
+        }
     }
 
     func updateTask(_ task: WorkTask) {
