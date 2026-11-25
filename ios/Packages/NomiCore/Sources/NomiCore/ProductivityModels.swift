@@ -230,7 +230,10 @@ public enum TaskPhraseParser {
             if let numberRange = normalized.range(of: #"\d+(?:\.\d+)?"#, options: .regularExpression),
                let value = Double(normalized[numberRange]) {
                 let isHour = token.lowercased().range(of: #"h|heure"#, options: .regularExpression) != nil
-                estimate = Int((isHour ? value * 60 : value).rounded())
+                let minutes = (isHour ? value * 60 : value).rounded()
+                if minutes.isFinite && minutes >= 0 && minutes <= 1_000_000 {
+                    estimate = Int(minutes)
+                }
             }
             title.removeSubrange(range)
         }

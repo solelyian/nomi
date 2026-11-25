@@ -17,6 +17,12 @@ final class ProductivityModelsTests: XCTestCase {
         XCTAssertFalse(task.title.lowercased().contains("aujourd"))
     }
 
+
+    func testRejectsOversizedEstimateWithoutCrashing() {
+        let task = TaskPhraseParser.parse("Préparer le dossier 999999999999999999999 h")
+        XCTAssertNil(task.estimateMinutes)
+    }
+
     func testParsesFrenchTaskPhrase() {
         let task = TaskPhraseParser.parse("Envoyer le compte rendu demain 30 min important")
         XCTAssertEqual(task.priority, .high)
