@@ -278,7 +278,7 @@ public enum RoutinePhraseParser {
             trigger = .time
         }
 
-        if let match = text.range(of: #"(?:à|a)\s+(\d{1,2})[h:](\d{2})"#, options: [.regularExpression, .caseInsensitive]) {
+        if let match = text.range(of: #"(?:à|a)\s+(\d{1,2})[h:]\s*(\d{2})"#, options: [.regularExpression, .caseInsensitive]) {
             let token = String(text[match])
             let numbers = token.split { !$0.isNumber }.compactMap { Int($0) }
             if numbers.count >= 2 {
