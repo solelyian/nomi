@@ -1,4 +1,5 @@
 import Combine
+import CryptoKit
 import Foundation
 
 struct GemmaModelDescriptor: Identifiable, Hashable, Sendable {
@@ -8,6 +9,7 @@ struct GemmaModelDescriptor: Identifiable, Hashable, Sendable {
     let fileName: String
     let downloadURL: URL
     let expectedBytes: Int64
+    let expectedSHA256: String
 
     static let e2b = GemmaModelDescriptor(
         id: "gemma-4-e2b-it",
@@ -15,7 +17,8 @@ struct GemmaModelDescriptor: Identifiable, Hashable, Sendable {
         subtitle: "Recommandé pour iPhone — équilibre mémoire/qualité",
         fileName: "gemma-4-E2B-it.litertlm",
         downloadURL: URL(string: "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm")!,
-        expectedBytes: 2_588_147_712
+        expectedBytes: 2_588_147_712,
+        expectedSHA256: "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
     )
 
     static let e4b = GemmaModelDescriptor(
@@ -24,7 +27,8 @@ struct GemmaModelDescriptor: Identifiable, Hashable, Sendable {
         subtitle: "Meilleure qualité, réservé aux appareils récents avec mémoire suffisante",
         fileName: "gemma-4-E4B-it.litertlm",
         downloadURL: URL(string: "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm")!,
-        expectedBytes: 3_659_530_240
+        expectedBytes: 3_659_530_240,
+        expectedSHA256: "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
     )
 
     static let all: [GemmaModelDescriptor] = [.e2b, .e4b]
@@ -61,13 +65,31 @@ enum GemmaDownloadState: Equatable, Sendable {
     }
 }
 
+private enum GemmaDownloadValidationError: LocalizedError {
+    case httpStatus(Int)
+    case unexpectedSize(expected: Int64, actual: Int64)
+    case digestMismatch
+
+    var errorDescription: String? {
+        switch self {
+        case .httpStatus(let status): "Le serveur du modèle a répondu avec l'erreur HTTP \(status)."
+        case .unexpectedSize(let expected, let actual): "Le fichier téléchargé ne correspond pas à la taille signée (\(actual) octets au lieu de \(expected))."
+        case .digestMismatch: "L'empreinte SHA-256 du modèle ne correspond pas à la version épinglée. Le fichier a été supprimé par sécurité."
+        }
+    }
+}
+
 private final class GemmaDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     let destination: URL
+    let expectedBytes: Int64
+    let expectedSHA256: String
     let onProgress: @Sendable (Int64, Int64) -> Void
     let onFinish: @Sendable (Result<URL, Error>) -> Void
 
-    init(destination: URL, onProgress: @escaping @Sendable (Int64, Int64) -> Void, onFinish: @escaping @Sendable (Result<URL, Error>) -> Void) {
+    init(destination: URL, expectedBytes: Int64, expectedSHA256: String, onProgress: @escaping @Sendable (Int64, Int64) -> Void, onFinish: @escaping @Sendable (Result<URL, Error>) -> Void) {
         self.destination = destination
+        self.expectedBytes = expectedBytes
+        self.expectedSHA256 = expectedSHA256
         self.onProgress = onProgress
         self.onFinish = onFinish
     }
@@ -78,15 +100,40 @@ private final class GemmaDownloadDelegate: NSObject, URLSessionDownloadDelegate,
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         do {
+            if let response = downloadTask.response as? HTTPURLResponse, !(200...299).contains(response.statusCode) {
+                throw GemmaDownloadValidationError.httpStatus(response.statusCode)
+            }
             try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.removeItem(at: destination)
             }
             try FileManager.default.moveItem(at: location, to: destination)
+            let attributes = try FileManager.default.attributesOfItem(atPath: destination.path)
+            let actualBytes = (attributes[.size] as? NSNumber)?.int64Value ?? -1
+            guard actualBytes == expectedBytes else {
+                try? FileManager.default.removeItem(at: destination)
+                throw GemmaDownloadValidationError.unexpectedSize(expected: expectedBytes, actual: actualBytes)
+            }
+            guard try Self.sha256Hex(of: destination) == expectedSHA256 else {
+                try? FileManager.default.removeItem(at: destination)
+                throw GemmaDownloadValidationError.digestMismatch
+            }
             onFinish(.success(destination))
         } catch {
             onFinish(.failure(error))
         }
+    }
+
+    private static func sha256Hex(of url: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while true {
+            let data = try handle.read(upToCount: 1024 * 1024) ?? Data()
+            if data.isEmpty { break }
+            hasher.update(data: data)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -224,7 +271,7 @@ final class GemmaModelManager: NSObject, ObservableObject {
         states[model.id] = .downloading(data == nil ? 0 : lastProgress)
         downloadingModelID = model.id
 
-        let delegate = GemmaDownloadDelegate(destination: destination) { [weak self] written, expected in
+        let delegate = GemmaDownloadDelegate(destination: destination, expectedBytes: model.expectedBytes, expectedSHA256: model.expectedSHA256) { [weak self] written, expected in
             Task { @MainActor in
                 guard let self else { return }
                 let total = expected > 0 ? expected : model.expectedBytes
