@@ -35,6 +35,16 @@ struct NomiCommandPalette: View {
                         .focused($focused)
                         .submitLabel(.go)
                         .onSubmit(startRelevantFocus)
+                    Button { isPresented = false } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(NomiTheme.ink3)
+                            .frame(width: 28, height: 28)
+                            .background(NomiTheme.surface2.opacity(0.5), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.escape, modifiers: [])
+                    .accessibilityLabel("Fermer la commande")
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 52)

@@ -116,6 +116,7 @@ struct HomeView: View {
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.88), lineWidth: 0.8))
         }
         .buttonStyle(.plain)
+        .keyboardShortcut("k", modifiers: [.command])
         .accessibilityHint("Ouvre la commande universelle")
     }
 
