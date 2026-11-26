@@ -46,6 +46,7 @@ final class AppState: ObservableObject {
     @Published var dayStartHour = 8
     @Published var dayEndHour = 18
     @Published var isGeneratingReply = false
+    @Published var commandPalettePresented = false
 
     let revisionService: any RevisionService
     let demoTranscriptionService: any LiveTranscriptionService

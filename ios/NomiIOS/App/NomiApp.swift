@@ -119,6 +119,23 @@ struct RootView: View {
             }
         }
         .nomiTopEdgeProtection()
+        .background {
+            Button("Ouvrir la commande") { state.commandPalettePresented = true }
+                .keyboardShortcut("k", modifiers: [.command])
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
+        .overlay {
+            if state.commandPalettePresented {
+                NomiCommandPalette(isPresented: Binding(
+                    get: { state.commandPalettePresented },
+                    set: { state.commandPalettePresented = $0 }
+                ))
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(10)
+            }
+        }
+        .animation(.spring(response: 0.24, dampingFraction: 0.86), value: state.commandPalettePresented)
         .onReceive(NotificationCenter.default.publisher(for: .nomiOpenConversation)) { _ in
             section = .conversation
         }

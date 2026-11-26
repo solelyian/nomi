@@ -3,7 +3,6 @@ import NomiCore
 
 struct HomeView: View {
     @EnvironmentObject private var state: AppState
-    @State private var commandPresented = false
     @State private var showRescueConfirmation = false
     @State private var rescueSummary = ""
 
@@ -37,15 +36,8 @@ struct HomeView: View {
                     .padding(.top, 12)
                     .padding(.bottom, 34)
                 }
-                .disabled(commandPresented)
-
-                if commandPresented {
-                    NomiCommandPalette(isPresented: $commandPresented)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                        .zIndex(2)
-                }
             }
-            .animation(.spring(response: 0.24, dampingFraction: 0.86), value: commandPresented)
+            .animation(.spring(response: 0.24, dampingFraction: 0.86), value: state.commandPalettePresented)
         }
         .confirmationDialog("Sauver ma journée ?", isPresented: $showRescueConfirmation, titleVisibility: .visible) {
             Button("Reporter les tâches normales", role: .destructive) {
@@ -93,7 +85,7 @@ struct HomeView: View {
     }
 
     private var commandBar: some View {
-        Button { commandPresented = true } label: {
+        Button { state.commandPalettePresented = true } label: {
             HStack(spacing: 9) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 14, weight: .medium))
