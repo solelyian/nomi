@@ -87,13 +87,12 @@ struct GemmaRevisionService {
             var addedAtDepth = false
             for segment in segments where depth < segment.count {
                 let fact = segment[depth]
-                let cost = fact.count + 4
-                guard usedCharacters + cost <= limit else { return selected }
-                if seen.insert(fact).inserted {
-                    selected.append(fact)
-                    usedCharacters += cost
-                }
                 addedAtDepth = true
+                guard seen.insert(fact).inserted else { continue }
+                let cost = fact.count + 4
+                guard usedCharacters + cost <= limit else { continue }
+                selected.append(fact)
+                usedCharacters += cost
             }
             guard addedAtDepth else { return selected }
             depth += 1
