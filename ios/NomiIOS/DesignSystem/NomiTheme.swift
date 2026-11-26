@@ -90,11 +90,25 @@ public struct NomiLiquidGlassModifier: ViewModifier {
             switch shape {
             case .capsule:
                 content
-                    .background(.thinMaterial, in: Capsule())
+                    .background {
+                        ZStack {
+                            Capsule().fill(.thinMaterial)
+                            if let tint {
+                                Capsule().fill(tint.opacity(tintStrength))
+                            }
+                        }
+                    }
                     .overlay(Capsule().strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
             case .circle:
                 content
-                    .background(.thinMaterial, in: Circle())
+                    .background {
+                        ZStack {
+                            Circle().fill(.thinMaterial)
+                            if let tint {
+                                Circle().fill(tint.opacity(tintStrength))
+                            }
+                        }
+                    }
                     .overlay(Circle().strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
             case .rounded(let radius):
                 content
@@ -102,6 +116,9 @@ public struct NomiLiquidGlassModifier: ViewModifier {
                         ZStack {
                             RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.thinMaterial)
                             RoundedRectangle(cornerRadius: radius, style: .continuous).fill(NomiTheme.surface.opacity(0.46))
+                            if let tint {
+                                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(tint.opacity(tintStrength))
+                            }
                         }
                     }
                     .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
