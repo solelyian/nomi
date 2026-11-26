@@ -66,12 +66,13 @@ enum AppSection: String, CaseIterable, Identifiable {
 struct RootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var section: AppSection? = .today
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @AppStorage("nomi.didCompleteOnboarding") private var didCompleteOnboarding = false
 
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Nomi")
@@ -112,6 +113,18 @@ struct RootView: View {
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
                             .toolbarBackground(.visible, for: .navigationBar)
+                            .toolbar {
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button {
+                                        withAnimation(NomiTheme.morphAnimation) {
+                                            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+                                        }
+                                    } label: {
+                                        Image(systemName: "sidebar.left")
+                                    }
+                                    .accessibilityLabel(columnVisibility == .detailOnly ? "Afficher la barre latérale" : "Masquer la barre latérale")
+                                }
+                            }
                             .id(section ?? .today)
                     }
                 }
