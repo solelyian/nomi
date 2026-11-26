@@ -17,37 +17,65 @@ enum GemmaRuntimeError: LocalizedError {
 actor GemmaRuntime {
     private var engine: Engine?
     private var loadedModelPath: String?
+    private var preparation: (modelPath: String, task: Task<Engine, Error>)?
 
     func prepare(modelURL: URL) async throws {
-        if loadedModelPath == modelURL.path, let engine, await engine.isInitialized() { return }
+        let modelPath = modelURL.path
+        if loadedModelPath == modelPath, let engine, await engine.isInitialized() { return }
+
+        if let preparation {
+            if preparation.modelPath == modelPath {
+                let preparedEngine = try await preparation.task.value
+                if loadedModelPath != modelPath {
+                    engine = preparedEngine
+                    loadedModelPath = modelPath
+                }
+                return
+            }
+            _ = try? await preparation.task.value
+        }
+        if loadedModelPath == modelPath, let engine, await engine.isInitialized() { return }
+
         engine = nil
         loadedModelPath = nil
-
         let cacheURL = URL.applicationSupportDirectory.appendingPathComponent("Nomi/GemmaCache", isDirectory: true)
-        try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
-        var lastError: Error?
-        for backend in [Backend.gpu, .cpu()] {
-            do {
-                let config = try EngineConfig(
-                    modelPath: modelURL.path,
-                    backend: backend,
-                    maxNumTokens: 6144,
-                    cacheDir: cacheURL.path,
-                    activationDataType: backend == .gpu ? .float16 : nil
-                )
-                let engine = Engine(engineConfig: config)
-                try await engine.initialize()
-                self.engine = engine
-                self.loadedModelPath = modelURL.path
-                return
-            } catch {
-                lastError = error
+        let task = Task<Engine, Error> {
+            try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
+            var lastError: Error?
+            for backend in [Backend.gpu, .cpu()] {
+                try Task.checkCancellation()
+                do {
+                    let config = try EngineConfig(
+                        modelPath: modelPath,
+                        backend: backend,
+                        maxNumTokens: 6144,
+                        cacheDir: cacheURL.path,
+                        activationDataType: backend == .gpu ? .float16 : nil
+                    )
+                    let engine = Engine(engineConfig: config)
+                    try await engine.initialize()
+                    return engine
+                } catch {
+                    lastError = error
+                }
             }
+            throw lastError ?? GemmaRuntimeError.emptyResponse
         }
-        throw lastError ?? GemmaRuntimeError.emptyResponse
+        preparation = (modelPath: modelPath, task: task)
+        do {
+            let preparedEngine = try await task.value
+            if preparation?.modelPath == modelPath { preparation = nil }
+            engine = preparedEngine
+            loadedModelPath = modelPath
+        } catch {
+            if preparation?.modelPath == modelPath { preparation = nil }
+            throw error
+        }
     }
 
     func unload() {
+        preparation?.task.cancel()
+        preparation = nil
         engine = nil
         loadedModelPath = nil
     }
