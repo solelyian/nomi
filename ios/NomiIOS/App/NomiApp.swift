@@ -165,14 +165,21 @@ struct RootTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            NavigationStack {
-                selection.view
-                    .navigationTitle("")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbarBackground(.thinMaterial, for: .navigationBar)
-                    .toolbarBackground(.visible, for: .navigationBar)
+            ZStack {
+                ForEach(CompactTab.allCases) { tab in
+                    NavigationStack {
+                        tab.view
+                            .navigationTitle("")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbarBackground(.thinMaterial, for: .navigationBar)
+                            .toolbarBackground(.visible, for: .navigationBar)
+                    }
+                    .opacity(selection == tab ? 1 : 0)
+                    .allowsHitTesting(selection == tab)
+                    .accessibilityHidden(selection != tab)
+                    .zIndex(selection == tab ? 1 : 0)
+                }
             }
-            .id(selection)
             NomiTabBar(selection: $selection)
         }
         .background(NomiAmbientBackground())
