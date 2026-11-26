@@ -44,9 +44,9 @@ struct NomiCommandPalette: View {
                 commandRow(
                     icon: "timer",
                     title: "Démarrer un focus",
-                    detail: focusDetail,
+                    detail: state.focusSession == nil ? focusDetail : "Un focus est déjà actif",
                     key: "↵",
-                    enabled: focusObjective != nil,
+                    enabled: focusObjective != nil && state.focusSession == nil,
                     selected: true,
                     action: startRelevantFocus
                 )
@@ -62,9 +62,9 @@ struct NomiCommandPalette: View {
                 commandRow(
                     icon: "bubble.left.and.bubble.right",
                     title: "Demander à Nomi",
-                    detail: state.gemmaManager.selectedModelURL == nil ? "Gemma non installé · repli local limité" : "Gemma 4 local · aucun envoi réseau",
+                    detail: state.isGeneratingReply ? "Une réponse est déjà en cours" : (state.gemmaManager.selectedModelURL == nil ? "Gemma non installé · repli local limité" : "Gemma 4 local · aucun envoi réseau"),
                     key: "N",
-                    enabled: !trimmedQuery.isEmpty,
+                    enabled: !trimmedQuery.isEmpty && !state.isGeneratingReply,
                     selected: false,
                     action: askNomi
                 )
@@ -126,7 +126,7 @@ struct NomiCommandPalette: View {
     private var resultCount: Int { 3 + matchingTasks.count }
 
     private func startRelevantFocus() {
-        guard let objective = focusObjective else { return }
+        guard let objective = focusObjective, state.focusSession == nil else { return }
         state.startFocus(objective: objective)
         isPresented = false
     }
@@ -138,7 +138,7 @@ struct NomiCommandPalette: View {
     }
 
     private func askNomi() {
-        guard !trimmedQuery.isEmpty else { return }
+        guard !trimmedQuery.isEmpty, !state.isGeneratingReply else { return }
         state.sendMessage(trimmedQuery)
         NotificationCenter.default.post(name: .nomiOpenConversation, object: nil)
         isPresented = false
