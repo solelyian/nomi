@@ -14,143 +14,211 @@ private struct LiveTranscriptionContent: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                NomiScreenTitle("Transcription", subtitle: "Interface discrète, consentement explicite et reprise après interruption.")
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Picker("Mode", selection: Binding(get: { model.mode }, set: { model.mode = $0 })) {
-                        ForEach(LiveTranscriptionViewModel.Mode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .disabled(model.state == .recording || model.state == .paused)
-
-                    Toggle("J'ai vérifié que l'enregistrement de ce cours est autorisé", isOn: Binding(get: { model.consentAcknowledged }, set: { model.consentAcknowledged = $0 }))
-                        .font(.subheadline)
-                        .tint(NomiTheme.course)
-
-                    Text("La diarisation des locuteurs n'est pas exposée nativement par Apple Speech. Le prototype regroupe sous « Enseignant/Locuteur » ; une stratégie future devra combiner segmentation audio et validation humaine.")
-                        .font(.footnote)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-                .nomiCard(tint: NomiTheme.course)
-
-                VStack(spacing: 16) {
-                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                        Text(formatDuration(model.elapsed))
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(model.state == .recording ? NomiTheme.course : NomiTheme.ink)
-                    }
-                    HStack(spacing: 6) {
-                        ForEach(0..<18, id: \.self) { index in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(model.state == .recording ? NomiTheme.course : NomiTheme.line)
-                                .frame(width: 5, height: CGFloat(10 + ((index * 7) % 28)))
-                        }
-                    }
-                    .frame(height: 42)
-                    .accessibilityHidden(true)
-
-                    HStack(spacing: 10) {
-                        if model.state == .recording {
-                            Button("Pause", systemImage: "pause.fill") { model.pause() }
-                                .buttonStyle(.nomiSecondary)
-                            Button("Arrêter", systemImage: "stop.fill") { model.stop() }
-                                .buttonStyle(.nomiPrimary)
-                        } else if model.state == .paused {
-                            Button("Reprendre", systemImage: "play.fill") { Task { await model.resume() } }
-                                .buttonStyle(.nomiPrimary)
-                            Button("Arrêter", systemImage: "stop.fill") { model.stop() }
-                                .buttonStyle(.nomiSecondary)
-                        } else {
-                            Button("Démarrer", systemImage: "record.circle") {
-                                Task { await model.start() }
-                            }
-                            .buttonStyle(.nomiPrimary)
-                            .controlSize(.large)
-                        }
-                    }
-                    .frame(minHeight: 44)
-
-                    if case .error(let message) = model.state {
-                        Label(message, systemImage: "exclamationmark.triangle")
-                            .font(.footnote)
-                            .foregroundStyle(.orange)
-                    }
-                    if let interruption = model.interruptionMessage {
-                        Label(interruption, systemImage: "bell.slash")
-                            .font(.footnote)
-                            .foregroundStyle(NomiTheme.warning)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .nomiCard(tint: NomiTheme.course)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        NomiSectionTitle("Transcription", subtitle: "\(model.segments.count) segment(s), horodatés.")
-                        Spacer()
-                        if !model.segments.isEmpty {
-                            NavigationLink("Fiche") {
-                                RevisionSheetView(sourceText: model.transcript.plainText, sourceTitle: model.transcript.title)
-                            }
-                            .buttonStyle(.nomiPrimary)
-                        }
-                    }
-                    if model.segments.isEmpty {
-                        ContentUnavailableView("Aucun segment", systemImage: "waveform", description: Text("Choisissez la démonstration sur simulateur ou le microphone réel sur appareil."))
-                    } else {
-                        ForEach(model.segments) { segment in
-                            VStack(alignment: .leading, spacing: 5) {
-                                HStack {
-                                    Text(formatDuration(segment.start))
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(NomiTheme.course)
-                                    Text(segment.speaker ?? "Locuteur")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(NomiTheme.ink2)
-                                    if !segment.isFinal { NomiBadge("en cours", tint: NomiTheme.warning) }
-                                }
-                                Text(segment.text)
-                                    .font(.body)
-                                    .foregroundStyle(NomiTheme.ink)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(11)
-                            .background(NomiTheme.surface.opacity(0.42), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.48), lineWidth: 1))
-                            .accessibilityElement(children: .combine)
-                        }
-                    }
-                }
-                .nomiCard(tint: NomiTheme.course)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Résumé en direct", systemImage: "sparkles")
-                        .font(.headline)
-                    Text("Points clés, définitions et actions seront produits par le même service IA que les fiches. Dans ce prototype, le résumé est généré après arrêt plutôt qu'en continu pour limiter batterie et coûts.")
-                        .font(.subheadline)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-                .nomiCard(tint: NomiTheme.accent)
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                recorder
+                consentPanel
+                transcriptList
+                summaryNote
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
             .padding(.bottom, 34)
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
         .navigationTitle("")
-        .onDisappear {
-            model.stop()
-        }
+        .onDisappear { model.stop() }
         .onReceive(NotificationCenter.default.publisher(for: .nomiCompactTabDidChange)) { notification in
-            if (notification.object as? CompactTab) != .more {
-                model.stop()
+            if (notification.object as? CompactTab) != .more { model.stop() }
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Transcription")
+                .font(.system(size: 32, weight: .semibold, design: .serif))
+                .tracking(-0.7)
+                .foregroundStyle(NomiTheme.ink)
+            Text("Enregistrement explicite · horodatage local")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+        }
+    }
+
+    private var recorder: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ENREGISTREMENT")
+                        .font(.caption2.weight(.bold))
+                        .tracking(1.1)
+                        .foregroundStyle(NomiTheme.ink3)
+                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                        Text(formatDuration(model.elapsed))
+                            .font(.system(size: 42, weight: .light, design: .monospaced))
+                            .tracking(-1.6)
+                            .foregroundStyle(NomiTheme.ink)
+                    }
+                }
+                Spacer()
+                Circle()
+                    .fill(model.state == .recording ? NomiTheme.accent : NomiTheme.ink3.opacity(0.35))
+                    .frame(width: 9, height: 9)
+                    .overlay(Circle().stroke(NomiTheme.accent.opacity(model.state == .recording ? 0.26 : 0), lineWidth: 5))
+                    .accessibilityHidden(true)
+            }
+
+            Picker("Mode", selection: Binding(get: { model.mode }, set: { model.mode = $0 })) {
+                ForEach(LiveTranscriptionViewModel.Mode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(model.state == .recording || model.state == .paused)
+
+            HStack(spacing: 7) {
+                if model.state == .recording {
+                    Button("Pause", systemImage: "pause.fill") { model.pause() }
+                        .buttonStyle(.nomiSecondary)
+                    Button("Arrêter", systemImage: "stop.fill") { model.stop() }
+                        .buttonStyle(.nomiPrimary)
+                } else if model.state == .paused {
+                    Button("Reprendre", systemImage: "play.fill") { Task { await model.resume() } }
+                        .buttonStyle(.nomiPrimary)
+                    Button("Arrêter", systemImage: "stop.fill") { model.stop() }
+                        .buttonStyle(.nomiSecondary)
+                } else {
+                    Button("Démarrer", systemImage: "record.circle") { Task { await model.start() } }
+                        .buttonStyle(.nomiPrimary)
+                        .disabled(!model.consentAcknowledged)
+                }
+            }
+
+            if !model.consentAcknowledged, model.state != .recording, model.state != .paused {
+                Text("Confirmez le consentement avant de démarrer.")
+                    .font(.caption2)
+                    .foregroundStyle(NomiTheme.ink3)
+            }
+            if case .error(let message) = model.state {
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+            if let interruption = model.interruptionMessage {
+                Label(interruption, systemImage: "bell.slash")
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.warning)
             }
         }
+        .padding(13)
+        .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+    }
+
+    private var consentPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle("Enregistrement autorisé", isOn: Binding(get: { model.consentAcknowledged }, set: { model.consentAcknowledged = $0 }))
+                .font(.subheadline.weight(.medium))
+                .tint(NomiTheme.accent)
+            Text("Apple Speech n’expose pas de diarisation fiable ; les segments restent regroupés sous « Enseignant/Locuteur ».")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .background(NomiTheme.surface.opacity(0.72), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.68), lineWidth: 0.7))
+    }
+
+    private var transcriptList: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("SEGMENTS")
+                    .font(.caption2.weight(.bold))
+                    .tracking(1.1)
+                    .foregroundStyle(NomiTheme.ink3)
+                Spacer()
+                Text("\(model.segments.count)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(NomiTheme.ink3)
+                if !model.segments.isEmpty {
+                    NavigationLink("Fiche") {
+                        RevisionSheetView(sourceText: model.transcript.plainText, sourceTitle: model.transcript.title)
+                    }
+                    .font(.caption.weight(.semibold))
+                }
+            }
+            .padding(.horizontal, 1)
+
+            VStack(spacing: 0) {
+                ForEach(Array(model.segments.enumerated()), id: \.element.id) { index, segment in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 64) }
+                    segmentRow(segment)
+                }
+                if model.segments.isEmpty {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Aucun segment")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(NomiTheme.ink)
+                        Text("Démarrez une démonstration sur simulateur ou le microphone sur appareil.")
+                            .font(.caption)
+                            .foregroundStyle(NomiTheme.ink3)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private func segmentRow(_ segment: TranscriptSegment) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(formatDuration(segment.start))
+                .font(.caption2.monospaced())
+                .foregroundStyle(NomiTheme.accent)
+                .frame(width: 43, alignment: .leading)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(segment.speaker ?? "Locuteur")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(NomiTheme.ink2)
+                    if !segment.isFinal {
+                        Text("EN COURS")
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .tracking(0.5)
+                            .foregroundStyle(NomiTheme.warning)
+                    }
+                }
+                Text(segment.text)
+                    .font(.subheadline)
+                    .foregroundStyle(NomiTheme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var summaryNote: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(NomiTheme.accent)
+                .frame(width: 23, height: 23)
+                .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            Text("Le résumé est généré après arrêt, plutôt qu’en continu, pour limiter batterie et traitement local.")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .background(NomiTheme.surface.opacity(0.64), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func formatDuration(_ value: TimeInterval) -> String {
