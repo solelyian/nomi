@@ -8,68 +8,70 @@ struct BoardView: View {
     @State private var selectedColumn: WorkColumn = .todo
     @State private var editingTask: WorkTask?
 
+    private var visibleTasks: [WorkTask] {
+        state.tasks.filter { $0.column == selectedColumn }
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                NomiScreenTitle("Tableau", subtitle: "Ajoutez une intention, puis faites-la progresser sans perdre le contexte.")
+            VStack(alignment: .leading, spacing: 14) {
+                header
                 composer
                 columnPicker
-                let visibleTasks = state.tasks.filter { $0.column == selectedColumn }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 400), spacing: 14)], spacing: 14) {
-                    ForEach(visibleTasks) { task in
-                        taskCard(task)
-                    }
-                }
-                if visibleTasks.isEmpty {
-                    ContentUnavailableView("Aucune tâche", systemImage: "checklist", description: Text("Les tâches \(selectedColumn.frenchTitle.lowercased()) apparaîtront ici."))
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 36)
-                }
+                taskList
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
             .padding(.bottom, 34)
         }
         .nomiScreenBackground()
         .sheet(item: $editingTask) { task in
-            TaskDetailView(task: task) { updated in
-                state.updateTask(updated)
+            TaskDetailView(task: task) { updated in state.updateTask(updated) }
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Tableau")
+                    .font(.system(size: 32, weight: .semibold, design: .serif))
+                    .tracking(-0.7)
+                    .foregroundStyle(NomiTheme.ink)
+                Text("\(state.openTasks.count) ouverte(s) · tri par colonne")
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.ink2)
             }
+            Spacer()
+            Button { add() } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(NomiTheme.canvas)
+                    .frame(width: 34, height: 34)
+                    .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .opacity(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
+            .accessibilityLabel("Ajouter la tâche")
         }
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Nouvelle intention", systemImage: "plus.circle.fill")
-                .font(.headline)
-                .foregroundStyle(NomiTheme.accent)
-            TextField(dynamicTypeSize.isAccessibilitySize ? "Nouvelle tâche…" : "Ex. Envoyer le compte rendu demain 30 min important", text: $phrase, axis: .vertical)
+        HStack(spacing: 9) {
+            Image(systemName: "plus")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(NomiTheme.ink3)
+            TextField(dynamicTypeSize.isAccessibilitySize ? "Nouvelle tâche…" : "Ex. Envoyer le compte rendu demain 30 min important", text: $phrase)
                 .textFieldStyle(.plain)
-                .nomiInput()
+                .font(.subheadline)
+                .foregroundStyle(NomiTheme.ink)
                 .submitLabel(.done)
-                .onSubmit { add() }
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 10) {
-                    Button("Ajouter", systemImage: "plus") { add() }
-                        .buttonStyle(.nomiPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Text("Comprend demain, aujourd'hui, urgent/important et une durée simple.")
-                        .font(.caption)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-            } else {
-                HStack(alignment: .center, spacing: 12) {
-                    Button("Ajouter", systemImage: "plus") { add() }
-                        .buttonStyle(.nomiPrimary)
-                        .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Text("Comprend demain, aujourd'hui, urgent/important et une durée simple.")
-                        .font(.caption)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-            }
+                .onSubmit(add)
         }
-        .nomiCard(tint: NomiTheme.accent)
+        .padding(.horizontal, 11)
+        .frame(height: 44)
+        .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
     }
 
     private var columnPicker: some View {
@@ -82,74 +84,130 @@ struct BoardView: View {
         .accessibilityLabel("Colonne du tableau")
     }
 
+    private var taskList: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(selectedColumn.frenchTitle.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .tracking(1.1)
+                    .foregroundStyle(NomiTheme.ink3)
+                Spacer()
+                Text("\(visibleTasks.count)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(NomiTheme.ink3)
+            }
+            .padding(.horizontal, 1)
+
+            VStack(spacing: 0) {
+                ForEach(Array(visibleTasks.enumerated()), id: \.element.id) { index, task in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }
+                    BoardTaskRow(
+                        task: task,
+                        toggle: { toggle(task) },
+                        focus: { state.startFocus(objective: task.title) },
+                        edit: { editingTask = task },
+                        move: { column in state.moveTask(task, to: column) },
+                        split: { state.splitTask(task) },
+                        delete: { state.deleteTask(task) }
+                    )
+                }
+                if visibleTasks.isEmpty {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Aucune tâche")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(NomiTheme.ink)
+                        Text("Les tâches \(selectedColumn.frenchTitle.lowercased()) apparaîtront ici.")
+                            .font(.caption)
+                            .foregroundStyle(NomiTheme.ink3)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(13)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
     private func add() {
-        state.addTask(from: phrase)
+        let cleaned = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        state.addTask(from: cleaned)
         phrase = ""
     }
 
-    private func taskCard(_ task: WorkTask) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(task.title)
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 7) {
-                        NomiBadge(task.priority.frenchTitle, tint: task.priority >= .high ? NomiTheme.warning : NomiTheme.focus)
-                        if let estimate = task.estimateMinutes {
-                            Label("\(estimate) min", systemImage: "clock")
-                        }
-                        if let dueDate = task.dueDate {
-                            Label(dueDate.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(NomiTheme.ink2)
-                }
-                Spacer(minLength: 4)
-                Menu {
-                    Button("Modifier") { editingTask = task }
-                    ForEach(WorkColumn.allCases, id: \.self) { column in
-                        Button("Déplacer vers \(column.frenchTitle)") { state.moveTask(task, to: column) }
-                    }
-                    Button("Diviser en étapes") { state.splitTask(task) }
-                    Button("Démarrer un focus") { state.startFocus(objective: task.title) }
-                    Button("Supprimer", role: .destructive) { state.deleteTask(task) }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.headline)
-                        .foregroundStyle(NomiTheme.ink2)
-                        .frame(width: 40, height: 40)
-                        .nomiLiquidGlass(shape: .circle, interactive: true)
-                }
-                .accessibilityLabel("Actions pour \(task.title)")
-            }
-            if !task.notes.isEmpty {
-                Text(task.notes)
-                    .font(.footnote)
-                    .foregroundStyle(NomiTheme.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            HStack(spacing: 10) {
-                if task.column != .done {
-                    Button(task.column == .todo ? "Commencer" : "Terminer") {
-                        state.moveTask(task, to: task.column == .todo ? .doing : .done)
-                    }
-                    .buttonStyle(.nomiPrimary)
-                } else {
-                    Button("Rouvrir") { state.moveTask(task, to: .todo) }
-                        .buttonStyle(.nomiSecondary)
-                }
-                if task.column != .done {
-                    Button("Focus") { state.startFocus(objective: task.title) }
-                        .buttonStyle(.nomiSecondary)
-                }
-            }
+    private func toggle(_ task: WorkTask) {
+        if task.column == .done {
+            state.moveTask(task, to: .todo)
+        } else {
+            state.moveTask(task, to: .done)
         }
-        .nomiCard(tint: task.priority >= .high ? NomiTheme.warning : NomiTheme.accent)
     }
 }
 
+private struct BoardTaskRow: View {
+    let task: WorkTask
+    let toggle: () -> Void
+    let focus: () -> Void
+    let edit: () -> Void
+    let move: (WorkColumn) -> Void
+    let split: () -> Void
+    let delete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Button(action: toggle) {
+                Image(systemName: task.column == .done ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(task.priority >= .high ? NomiTheme.accent : NomiTheme.ink2)
+                    .frame(width: 24, height: 24)
+                    .background((task.priority >= .high ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(task.column == .done ? "Rouvrir \(task.title)" : "Terminer \(task.title)")
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(NomiTheme.ink)
+                    .lineLimit(1)
+                Text(metadata)
+                    .font(.caption2)
+                    .foregroundStyle(NomiTheme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text(task.priority >= .high ? "P1" : "P2")
+                .font(.caption2.monospaced().weight(task.priority >= .high ? .bold : .regular))
+                .foregroundStyle(task.priority >= .high ? NomiTheme.accent : NomiTheme.ink3)
+            Menu {
+                Button("Modifier", systemImage: "pencil", action: edit)
+                Button("Démarrer un focus", systemImage: "timer", action: focus)
+                Button("Diviser en étapes", systemImage: "arrow.branch", action: split)
+                ForEach(WorkColumn.allCases, id: \.self) { column in
+                    Button("Déplacer vers \(column.frenchTitle)") { move(column) }
+                }
+                Button("Supprimer", systemImage: "trash", role: .destructive, action: delete)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(NomiTheme.ink2)
+                    .frame(width: 30, height: 30)
+            }
+            .accessibilityLabel("Actions pour \(task.title)")
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: 46)
+    }
+
+    private var metadata: String {
+        var parts: [String] = []
+        if let estimate = task.estimateMinutes { parts.append("\(estimate) min") }
+        if let dueDate = task.dueDate { parts.append(dueDate.formatted(date: .abbreviated, time: .omitted)) }
+        if !task.notes.isEmpty { parts.append("notes") }
+        return parts.isEmpty ? task.priority.frenchTitle : parts.joined(separator: " · ")
+    }
+}
 
 struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -195,9 +253,7 @@ struct TaskDetailView: View {
             .navigationTitle("Détail")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuler") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Enregistrer") {
                         if hasDueDate && task.dueDate == nil {
