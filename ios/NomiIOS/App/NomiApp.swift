@@ -38,14 +38,14 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .today: "sun.max.fill"
+        case .today: "sun.max"
         case .board: "checklist"
         case .focus: "timer"
-        case .conversation: "bubble.left.and.bubble.right.fill"
+        case .conversation: "bubble.left.and.bubble.right"
         case .routines: "repeat"
         case .transcript: "waveform.and.mic"
-        case .library: "rectangle.stack.fill"
-        case .settings: "gearshape.fill"
+        case .library: "rectangle.stack"
+        case .settings: "gearshape"
         }
     }
 
@@ -87,10 +87,11 @@ struct RootView: View {
                             .tag(item)
                     }
                     .listStyle(.sidebar)
-                    .navigationTitle("Nomi")
+                    .navigationTitle("n.")
                 } detail: {
                     NavigationStack(path: $detailPath) {
                         (section ?? .today).view
+                            .frame(maxWidth: 920)
                             .navigationTitle("")
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationDestination(for: NomiDetailDestination.self) { destination in
@@ -174,10 +175,10 @@ enum CompactTab: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .today: "sun.max.fill"
+        case .today: "sun.max"
         case .board: "checklist"
         case .focus: "timer"
-        case .conversation: "bubble.left.and.bubble.right.fill"
+        case .conversation: "bubble.left.and.bubble.right"
         case .more: "ellipsis"
         }
     }

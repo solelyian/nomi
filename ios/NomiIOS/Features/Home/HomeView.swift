@@ -76,11 +76,6 @@ struct HomeView: View {
                     .foregroundStyle(NomiTheme.ink2)
             }
             Spacer()
-            Text("n.")
-                .font(.system(size: 18, weight: .bold, design: .serif))
-                .foregroundStyle(.white)
-                .frame(width: 31, height: 31)
-                .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
     }
 
