@@ -27,7 +27,7 @@ struct FocusView: View {
                     focusOrb(session: session, date: context.date)
                 }
                 Text(session.objective)
-                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .font(.headline.weight(.semibold))
                     .multilineTextAlignment(.center)
                 NomiBadge(session.status.frenchTitle, tint: session.status == .running ? NomiTheme.success : NomiTheme.warning)
                 TextField("Notes de contexte à conserver", text: $notes, axis: .vertical)
@@ -70,29 +70,28 @@ struct FocusView: View {
     }
 
     private func focusOrb(session: FocusSession, date: Date) -> some View {
-        let rotation = session.status == .running ? date.timeIntervalSince1970.truncatingRemainder(dividingBy: 45) / 45 * 360 : 0
-        return ZStack {
-            Circle()
-                .stroke(NomiTheme.ink.opacity(0.08), lineWidth: 18)
-            Circle()
-                .stroke(NomiTheme.focusGradient, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                .rotationEffect(.degrees(rotation))
-                .shadow(color: NomiTheme.focus.opacity(0.24), radius: 18)
-            Circle()
-                .fill(Color.clear)
-                .padding(24)
-                .nomiLiquidGlass(shape: .circle, tint: NomiTheme.focus, tintStrength: 0.06)
-            VStack(spacing: 6) {
-                Text(duration(session, at: date))
-                    .font(.system(size: 45, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(NomiTheme.ink)
-                Text(session.status == .running ? "respiration calme" : "en pause")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(session.status == .running ? NomiTheme.focus : NomiTheme.warning)
-            }
+        VStack(spacing: 10) {
+            Text(duration(session, at: date))
+                .font(.system(size: 54, weight: .light, design: .monospaced))
+                .tracking(-2.4)
+                .foregroundStyle(NomiTheme.ink)
+            Text(session.status == .running ? "en cours" : "en pause")
+                .font(.caption2.monospaced().weight(.bold))
+                .foregroundStyle(session.status == .running ? NomiTheme.accent : NomiTheme.warning)
+            Rectangle()
+                .fill(NomiTheme.ink.opacity(0.08))
+                .frame(height: 3)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(NomiTheme.accent)
+                        .frame(width: 116)
+                }
+                .clipShape(Capsule())
         }
-        .frame(width: 252, height: 252)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(NomiTheme.surface2.opacity(0.42), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(NomiTheme.line.opacity(0.65), lineWidth: 0.7))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Minuteur de focus")
         .accessibilityValue(duration(session, at: date))

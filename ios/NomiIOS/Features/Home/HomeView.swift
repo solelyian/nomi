@@ -3,51 +3,57 @@ import NomiCore
 
 struct HomeView: View {
     @EnvironmentObject private var state: AppState
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var commandPresented = false
     @State private var showRescueConfirmation = false
     @State private var rescueSummary = ""
 
     var body: some View {
         GeometryReader { geometry in
-            let useTwoColumns = geometry.size.width >= 680
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    NomiScreenTitle(greeting, kicker: Date.now.formatted(date: .complete, time: .omitted), subtitle: "\(state.openTasks.count) tâche(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
-                    if useTwoColumns {
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
-                            dayHero.gridCellColumns(2)
-                            nextAction.gridCellColumns(2)
-                            agendaCard
-                            focusCard
-                            priorities
-                            if let routine = state.readyRoutine {
-                                routineCard(routine)
+            ZStack {
+                NomiAmbientBackground()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header
+                        commandBar
+                            .padding(.top, 14)
+                        if geometry.size.width >= 680 {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                                nextAction.gridCellColumns(2)
+                                prioritySection
+                                trajectorySection
+                                focusSection.gridCellColumns(2)
                             }
+                            .padding(.top, 18)
+                        } else {
+                            nextAction.padding(.top, 18)
+                            prioritySection.padding(.top, 18)
+                            trajectorySection.padding(.top, 16)
+                            focusSection.padding(.top, 16)
                         }
-                    } else {
-                        dayHero
-                        nextAction
-                        agendaCard
-                        priorities
-                        if let routine = state.readyRoutine { routineCard(routine) }
-                        focusCard
                     }
+                    .frame(maxWidth: geometry.size.width >= 680 ? 1040 : .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, geometry.size.width >= 680 ? 24 : 18)
+                    .padding(.top, 12)
+                    .padding(.bottom, 34)
                 }
-                .frame(maxWidth: useTwoColumns ? 1040 : .infinity)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, geometry.size.width >= 680 ? 58 : 34)
+                .disabled(commandPresented)
+
+                if commandPresented {
+                    NomiCommandPalette(isPresented: $commandPresented)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .zIndex(2)
+                }
             }
+            .animation(.spring(response: 0.24, dampingFraction: 0.86), value: commandPresented)
         }
-        .nomiScreenBackground()
         .confirmationDialog("Sauver ma journée ?", isPresented: $showRescueConfirmation, titleVisibility: .visible) {
             Button("Reporter les tâches normales", role: .destructive) {
                 rescueSummary = state.rescueDay()
             }
             Button("Annuler", role: .cancel) {}
         } message: {
-            Text("Action déterministe : les tâches normales sont reportées à demain, les priorités hautes et urgentes restent visibles. Vous pouvez modifier chaque tâche ensuite.")
+            Text("Les tâches normales sont reportées à demain ; les priorités hautes restent visibles.")
         }
     }
 
@@ -58,169 +64,262 @@ struct HomeView: View {
         return "Bonsoir."
     }
 
-    private var dayProgress: Double {
-        let total = max(1, state.dayEndHour - state.dayStartHour)
-        let elapsed = min(max(0, Calendar.current.component(.hour, from: .now) - state.dayStartHour), total)
-        return Double(elapsed) / Double(total)
+    private var rankedTasks: [WorkTask] {
+        state.openTasks.sorted(by: { $0.priority > $1.priority })
     }
 
-    private var dayHero: some View {
-        HStack(spacing: 18) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Votre journée avance")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(NomiTheme.ink2)
-                Text(dayProgress < 1 ? "en douceur" : "presque terminée")
-                    .font(.system(.title2, design: .rounded).weight(.bold))
+    private var header: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(Date.now.formatted(date: .complete, time: .omitted).uppercased())
+                    .font(.caption2.weight(.bold))
+                    .tracking(1.1)
+                    .foregroundStyle(NomiTheme.ink3)
+                Text(greeting)
+                    .font(.system(size: 34, weight: .semibold, design: .serif))
+                    .tracking(-0.8)
                     .foregroundStyle(NomiTheme.ink)
-                Text("Le rythme reste une indication, pas une injonction.")
-                    .font(.footnote)
+                Text("\(state.openTasks.count) intention(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
+                    .font(.caption)
                     .foregroundStyle(NomiTheme.ink2)
             }
-            Spacer(minLength: 8)
-            NomiProgressRing(progress: dayProgress, tint: NomiTheme.accent, size: 82)
+            Spacer()
+            Text("n.")
+                .font(.system(size: 18, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .frame(width: 31, height: 31)
+                .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
-        .nomiCard(tint: NomiTheme.accent)
+    }
+
+    private var commandBar: some View {
+        Button { commandPresented = true } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(NomiTheme.ink2)
+                Text("Créer, chercher ou demander…")
+                    .font(.subheadline)
+                    .foregroundStyle(NomiTheme.ink3)
+                Spacer()
+                Text("⌘K")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(NomiTheme.ink2)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background(NomiTheme.surface2.opacity(0.62), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(NomiTheme.line.opacity(0.7), lineWidth: 0.7))
+            }
+            .padding(.horizontal, 11)
+            .frame(height: 46)
+            .background(NomiTheme.surface.opacity(0.96), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.88), lineWidth: 0.8))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Ouvre la commande universelle")
     }
 
     private var nextAction: some View {
-        VStack(alignment: .leading, spacing: 13) {
-            HStack {
-                NomiBadge("Prochaine action", tint: NomiTheme.accent)
-                Spacer()
-                Image(systemName: "sparkles")
-                    .foregroundStyle(NomiTheme.accent)
-            }
-            if let task = state.openTasks.sorted(by: { $0.priority > $1.priority }).first {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("PROCHAINE ACTION")
+                .font(.caption2.weight(.bold))
+                .tracking(1.0)
+                .foregroundStyle(NomiTheme.accent)
+            if let task = rankedTasks.first {
                 Text(task.title)
-                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(NomiTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Priorité \(task.priority.frenchTitle.lowercased()) · \(task.estimateMinutes.map { "\($0) min" } ?? "durée libre")")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(NomiTheme.ink2)
-                HStack(spacing: 10) {
-                    Button("Démarrer un focus") { state.startFocus(objective: task.title) }
+                HStack(spacing: 7) {
+                    Button("Démarrer") { state.startFocus(objective: task.title) }
                         .buttonStyle(.nomiPrimary)
                     Button("Terminer") { state.moveTask(task, to: .done) }
                         .buttonStyle(.nomiSecondary)
+                    Button("Sauver") { showRescueConfirmation = true }
+                        .buttonStyle(.nomiSecondary)
                 }
-                Button("Sauver ma journée", systemImage: "lifepreserver") { showRescueConfirmation = true }
-                    .buttonStyle(.nomiSecondary)
                 if !rescueSummary.isEmpty {
                     Text(rescueSummary)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(NomiTheme.ink2)
                 }
             } else {
-                Text("Aucune tâche ouverte. Ajoutez une intention dans le tableau.")
+                Text("Aucune tâche ouverte")
+                    .font(.subheadline.weight(.semibold))
+                Text("Utilisez la commande ou le tableau pour créer une intention concrète.")
+                    .font(.caption)
                     .foregroundStyle(NomiTheme.ink2)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .nomiCard(tint: NomiTheme.accent)
     }
 
-    private var agendaCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Moment suivant", systemImage: "calendar")
-                    .font(.headline)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(NomiTheme.ink3)
-            }
-            if let event = state.nextAgendaEvent {
-                HStack(alignment: .center, spacing: 12) {
-                    Text(event.start.formatted(date: .omitted, time: .shortened))
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(NomiTheme.course)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(NomiTheme.course.opacity(0.12), in: Capsule())
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(event.title).font(.body.weight(.semibold))
-                        Text("\(event.end.formatted(date: .omitted, time: .shortened)) · \(event.location ?? "sans lieu")")
-                            .font(.subheadline)
-                            .foregroundStyle(NomiTheme.ink2)
+    private var prioritySection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionHeader("Priorités", detail: "\(min(3, rankedTasks.count)) visibles")
+            VStack(spacing: 0) {
+                ForEach(Array(rankedTasks.prefix(3).enumerated()), id: \.element.id) { index, task in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }
+                    HomeTaskRow(task: task) {
+                        state.moveTask(task, to: .done)
                     }
+                }
+                if rankedTasks.isEmpty {
+                    Text("Aucune priorité ouverte.")
+                        .font(.caption)
+                        .foregroundStyle(NomiTheme.ink3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private var trajectorySection: some View {
+        let events = state.agenda.filter { $0.end > .now }.sorted { $0.start < $1.start }.prefix(2)
+        return VStack(alignment: .leading, spacing: 6) {
+            sectionHeader("Trajectoire", detail: "\(events.count) événement(s)")
+            VStack(spacing: 0) {
+                ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }
+                    HStack(spacing: 9) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(NomiTheme.ink2)
+                            .frame(width: 23, height: 23)
+                            .background(NomiTheme.surface2.opacity(0.55), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(event.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                            Text("\(event.start.formatted(date: .omitted, time: .shortened))–\(event.end.formatted(date: .omitted, time: .shortened)) · \(event.location ?? "sans lieu")")
+                                .font(.caption2)
+                                .foregroundStyle(NomiTheme.ink3)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        Text(event.start.formatted(date: .omitted, time: .shortened))
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(NomiTheme.ink3)
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(minHeight: 40)
+                }
+                if events.isEmpty {
+                    Text("Aucun événement à venir aujourd’hui.")
+                        .font(.caption)
+                        .foregroundStyle(NomiTheme.ink3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private var focusSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionHeader("Focus actif", detail: state.focusSession?.status.frenchTitle.uppercased() ?? "INACTIF")
+            if let session = state.focusSession {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    HStack(spacing: 13) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(duration(session, at: context.date))
+                                .font(.system(size: 29, weight: .light, design: .monospaced))
+                                .tracking(-1.2)
+                                .foregroundStyle(NomiTheme.ink)
+                            Text(session.objective)
+                                .font(.caption)
+                                .foregroundStyle(NomiTheme.ink2)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Button {
+                            session.status == .running ? state.pauseFocus() : state.resumeFocus()
+                        } label: {
+                            Image(systemName: session.status == .running ? "pause.fill" : "play.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(NomiTheme.ink)
+                                .frame(width: 38, height: 38)
+                                .background(NomiTheme.surface2.opacity(0.65), in: Circle())
+                                .overlay(Circle().stroke(NomiTheme.line.opacity(0.75), lineWidth: 0.8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(12)
+                    .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
                 }
             } else {
-                Text("Aucun événement à venir aujourd'hui.")
-                    .foregroundStyle(NomiTheme.ink2)
-            }
-        }
-        .nomiCard(tint: NomiTheme.course)
-    }
-
-    private var priorities: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            NomiSectionTitle("Priorités", subtitle: "Les trois tâches importantes qui méritent votre attention.")
-            ForEach(Array(state.openTasks.sorted(by: { $0.priority > $1.priority }).prefix(3).enumerated()), id: \.element.id) { index, task in
-                HStack(spacing: 12) {
-                    Text("\(index + 1)")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(task.priority >= .high ? NomiTheme.accent : NomiTheme.ink3)
-                        .frame(width: 34, height: 34)
-                        .background((task.priority >= .high ? NomiTheme.accent : NomiTheme.ink3).opacity(0.11), in: Circle())
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(task.title).font(.body.weight(.semibold))
-                        Text(task.estimateMinutes.map { "\($0) min" } ?? "Durée libre")
-                            .font(.caption)
-                            .foregroundStyle(NomiTheme.ink2)
-                    }
-                    Spacer()
-                    NomiBadge(task.priority.frenchTitle, tint: task.priority >= .high ? NomiTheme.warning : NomiTheme.focus)
-                }
-                .padding(13)
-                .background(NomiTheme.surface.opacity(0.46), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.52), lineWidth: 1))
+                Text("Aucun focus actif. Démarrez depuis la prochaine action ou la commande.")
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.ink3)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(NomiTheme.surface.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.68), lineWidth: 0.7))
             }
         }
     }
 
-    private func routineCard(_ routine: NomiRoutine) -> some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                Label("Routine prête", systemImage: "repeat.circle.fill")
-                    .font(.headline)
-                Spacer()
-                NomiBadge("maintenant", tint: NomiTheme.success)
-            }
-            Text(routine.name).font(.title3.weight(.bold))
-            Text(routine.action).foregroundStyle(NomiTheme.ink2)
-            HStack(spacing: 10) {
-                Button("Démarrer") { state.runRoutine(routine) }.buttonStyle(.nomiPrimary)
-                Button("Plus tard") { state.snoozeRoutine(routine) }.buttonStyle(.nomiSecondary)
-                Button("Ignorer") { state.skipRoutine(routine) }.buttonStyle(.nomiSecondary)
-            }
-        }
-        .nomiCard(tint: NomiTheme.success)
-    }
-
-    private var focusCard: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(NomiTheme.focus.opacity(0.13))
-                    .frame(width: 48, height: 48)
-                Image(systemName: "timer")
-                    .foregroundStyle(NomiTheme.focus)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Focus").font(.headline)
-                if let session = state.focusSession {
-                    Text(session.objective).font(.subheadline.weight(.semibold))
-                    Text("Session \(session.status.frenchTitle.lowercased()) depuis \(session.startedAt.formatted(date: .omitted, time: .shortened))")
-                        .font(.caption)
-                        .foregroundStyle(NomiTheme.ink2)
-                } else {
-                    Text("Aucun focus actif. Choisissez une intention pour créer une bulle de travail.")
-                        .font(.subheadline)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-            }
+    private func sectionHeader(_ title: String, detail: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(NomiTheme.ink3)
             Spacer()
+            Text(detail)
+                .font(.caption2.monospaced())
+                .foregroundStyle(NomiTheme.ink3)
         }
-        .nomiCard(tint: NomiTheme.focus)
+        .padding(.horizontal, 1)
+    }
+
+    private func duration(_ session: FocusSession, at date: Date) -> String {
+        let activePause = session.status == .paused ? date.timeIntervalSince(session.pausedAt ?? date) : 0
+        let seconds = max(0, Int(date.timeIntervalSince(session.startedAt) - session.pausedSeconds - activePause))
+        if seconds < 3600 { return String(format: "%02d:%02d", seconds / 60, seconds % 60) }
+        return String(format: "%02d:%02d:%02d", seconds / 3600, seconds % 3600 / 60, seconds % 60)
+    }
+}
+
+private struct HomeTaskRow: View {
+    let task: WorkTask
+    let complete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Button(action: complete) {
+                Image(systemName: "circle")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(task.priority >= .high ? NomiTheme.accent : NomiTheme.ink2)
+                    .frame(width: 23, height: 23)
+                    .background((task.priority >= .high ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Terminer \(task.title)")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(NomiTheme.ink)
+                    .lineLimit(1)
+                Text(task.estimateMinutes.map { "\($0) min" } ?? "Durée libre")
+                    .font(.caption2)
+                    .foregroundStyle(NomiTheme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text(task.priority >= .high ? "P1" : "P2")
+                .font(.caption2.monospaced().weight(task.priority >= .high ? .bold : .regular))
+                .foregroundStyle(task.priority >= .high ? NomiTheme.accent : NomiTheme.ink3)
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: 42)
     }
 }

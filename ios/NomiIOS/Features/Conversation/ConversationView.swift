@@ -14,6 +14,9 @@ struct ConversationView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 13) {
+                            if (state.activeThread?.messages ?? []).isEmpty {
+                                emptyState
+                            }
                             ForEach(state.activeThread?.messages ?? []) { message in
                                 bubble(message)
                             }
@@ -48,7 +51,7 @@ struct ConversationView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Nomi")
-                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .font(.system(size: 28, weight: .semibold, design: .serif))
                 Menu(state.activeThread?.title ?? "Conversation") {
                     ForEach(state.threads) { thread in
                         Button(thread.title) { state.activeThreadID = thread.id }
@@ -77,7 +80,7 @@ struct ConversationView: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text(message.role == .assistant ? markdownAttributed(message.text) : AttributedString(message.text))
                     .font(.body)
-                    .foregroundStyle(message.role == .user ? .white : NomiTheme.ink)
+                    .foregroundStyle(NomiTheme.ink)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                 if let verification = message.verification {
@@ -85,20 +88,54 @@ struct ConversationView: View {
                 }
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
-                    .foregroundStyle(message.role == .user ? .white.opacity(0.9) : NomiTheme.ink3)
+                    .foregroundStyle(NomiTheme.ink3)
             }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 12)
-            .nomiLiquidGlass(
-                shape: .rounded(23),
-                tint: message.role == .user ? NomiTheme.focus : nil,
-                tintStrength: message.role == .user ? 0.86 : 0
-            )
-            .shadow(color: .black.opacity(0.045), radius: 12, y: 6)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 11)
+            .background(message.role == .user ? NomiTheme.accentSoft : NomiTheme.surface.opacity(0.66), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(NomiTheme.line.opacity(message.role == .user ? 0.55 : 0.75), lineWidth: 0.7))
             if message.role == .assistant { Spacer(minLength: 58) }
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 14) {
+            Text("n.")
+                .font(.system(size: 25, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .frame(width: 43, height: 43)
+                .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .rotationEffect(.degrees(4))
+            Text("Comment puis-je t’aider ?")
+                .font(.system(size: 30, weight: .semibold, design: .serif))
+                .tracking(-0.7)
+                .multilineTextAlignment(.center)
+            Text(state.gemmaManager.selectedModelURL == nil ? "Installe Gemma 4 pour une génération locale complète ; le repli déterministe reste disponible." : "Gemma 4 fonctionne sur cet appareil. Aucune clé API n’est requise.")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 290)
+            HStack(spacing: 7) {
+                suggestion("Planifier ma soirée")
+                suggestion("Créer une fiche")
+                suggestion("Vérifier un calcul")
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 90)
+        .padding(.bottom, 50)
+    }
+
+    private func suggestion(_ text: String) -> some View {
+        Button(text) { input = text }
+            .font(.caption)
+            .foregroundStyle(NomiTheme.ink2)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(NomiTheme.surface.opacity(0.72), in: Capsule())
+            .overlay(Capsule().stroke(NomiTheme.line.opacity(0.75), lineWidth: 0.7))
     }
 
 

@@ -21,6 +21,7 @@
 		8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93D0B7E0E1C835F46D7811E /* SettingsView.swift */; };
 		B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4686E95F33FC49354ECAB971 /* NomiTheme.swift */; };
 		C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */; };
+		C3058BF47A7DC81DF31CAD00 /* NomiCommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */; };
 		C3DBB6850A66B74E34FF33D8 /* GemmaRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */; };
 		D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */; };
 		E6ECB3ED71DD4A7451EF2102 /* GemmaRevisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */; };
@@ -35,6 +36,7 @@
 		05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionView.swift; sourceTree = "<group>"; };
 		093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaRuntime.swift; sourceTree = "<group>"; };
 		0E2AB5800E2427860CDF6562 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiCommandPalette.swift; sourceTree = "<group>"; };
 		174081E4779ECEB047958DEE /* GemmaModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaModelManager.swift; sourceTree = "<group>"; };
 		2251A5C2D66244DBF77F8769 /* NomiCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NomiCore; path = Packages/NomiCore; sourceTree = SOURCE_ROOT; };
 		2DAB9754010E9C28497EBBDA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -93,6 +95,7 @@
 		1BE00BDA5482354D342DB896 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */,
 				4686E95F33FC49354ECAB971 /* NomiTheme.swift */,
 			);
 			path = DesignSystem;
@@ -335,6 +338,7 @@
 				0E3B9D12CC66628FDB8B5573 /* LiveTranscriptionViewModel.swift in Sources */,
 				196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */,
 				4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */,
+				C3058BF47A7DC81DF31CAD00 /* NomiCommandPalette.swift in Sources */,
 				B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */,
 				2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */,
 				7D9400AA2888DEFAD15A72AB /* RoutinesView.swift in Sources */,

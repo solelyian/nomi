@@ -1,39 +1,39 @@
 import SwiftUI
 
-/// Jetons « Nomi Aura » unifiés avec Liquid Glass : porcelaine chaude, matière native
-/// iOS 26 quand elle est disponible, accents organiques et repli translucide sur les versions antérieures.
+/// Jetons « Nomi Command » : porcelaine chaude, encre précise, accent corail rare,
+/// surfaces documentaires opaques et matériaux natifs réservés à la navigation/aux contrôles.
 public enum NomiTheme {
-    public static let canvas = Color.dynamic(light: "F4EEE7", dark: "12100F")
-    public static let surface = Color.dynamic(light: "FFFDFB", dark: "211E1C")
-    public static let surface2 = Color.dynamic(light: "F0E8E0", dark: "292623")
-    public static let ink = Color.dynamic(light: "1B1715", dark: "F4EEE7")
-    public static let ink2 = Color.dynamic(light: "655D55", dark: "CCC3BA")
-    public static let ink3 = Color.dynamic(light: "6F665D", dark: "ADA398")
-    public static let line = Color.dynamic(light: "E4DAD0", dark: "3A3531")
+    public static let canvas = Color.dynamic(light: "F6F1E9", dark: "11100F")
+    public static let surface = Color.dynamic(light: "FFFDFA", dark: "1C1A18")
+    public static let surface2 = Color.dynamic(light: "EEE7DC", dark: "252220")
+    public static let ink = Color.dynamic(light: "191512", dark: "F2EDE4")
+    public static let ink2 = Color.dynamic(light: "716961", dark: "A99E90")
+    public static let ink3 = Color.dynamic(light: "9B938A", dark: "777068")
+    public static let line = Color.dynamic(light: "D9D3CA", dark: "343331")
     public static let glassStroke = Color.dynamic(light: "FFFFFF", dark: "4A4340")
 
-    public static let accent = Color.dynamic(light: "E9653F", dark: "F28A68")
-    public static let accentSoft = Color.dynamic(light: "FBE0D5", dark: "472B24")
-    public static let focus = Color.dynamic(light: "8267EA", dark: "A896FF")
+    public static let accent = Color.dynamic(light: "D95F43", dark: "E47B5D")
+    public static let accentSoft = Color.dynamic(light: "F1DDD6", dark: "3A211D")
+    public static let focus = Color.dynamic(light: "D95F43", dark: "E47B5D")
     public static let focusSoft = Color.dynamic(light: "E9E3FB", dark: "302B4B")
     public static let code = Color.dynamic(light: "8267EA", dark: "A896FF")
     public static let codeSoft = Color.dynamic(light: "E9E3FB", dark: "302B4B")
-    public static let course = Color.dynamic(light: "2C9B9A", dark: "6FCDCB")
+    public static let course = Color.dynamic(light: "557C68", dark: "85AE9A")
     public static let courseSoft = Color.dynamic(light: "DDF0ED", dark: "1D3735")
     public static let success = Color.dynamic(light: "4F9F72", dark: "79C99A")
     public static let successSoft = Color.dynamic(light: "E0EFE3", dark: "23382D")
     public static let warning = Color.dynamic(light: "B7791F", dark: "E4B85F")
     public static let warningSoft = Color.dynamic(light: "F6E7C8", dark: "453620")
 
-    public static let radiusSmall: CGFloat = 14
-    public static let radius: CGFloat = 28
-    public static let padding: CGFloat = 18
+    public static let radiusSmall: CGFloat = 10
+    public static let radius: CGFloat = 15
+    public static let padding: CGFloat = 14
 
     public static let pressAnimation = Animation.spring(response: 0.24, dampingFraction: 0.62)
     public static let morphAnimation = Animation.spring(response: 0.44, dampingFraction: 0.78)
 
     public static var accentGradient: LinearGradient {
-        LinearGradient(colors: [accent, Color.dynamic(light: "D9462F", dark: "E9653F")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [accent, Color.dynamic(light: "D9462F", dark: "D95F43")], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     public static var focusGradient: AngularGradient {
@@ -174,25 +174,13 @@ public struct NomiAmbientBackground: View {
     public init() {}
 
     public var body: some View {
-        ZStack {
-            NomiTheme.canvas
-            Circle()
-                .fill(NomiTheme.accent.opacity(0.18))
-                .frame(width: 300, height: 300)
-                .blur(radius: 70)
-                .offset(x: 150, y: -230)
-            Circle()
-                .fill(NomiTheme.focus.opacity(0.16))
-                .frame(width: 250, height: 250)
-                .blur(radius: 78)
-                .offset(x: -180, y: 20)
-            Circle()
-                .fill(NomiTheme.course.opacity(0.14))
-                .frame(width: 270, height: 270)
-                .blur(radius: 82)
-                .offset(x: 170, y: 330)
-        }
-        .ignoresSafeArea()
+        NomiTheme.canvas
+            .overlay(alignment: .top) {
+                LinearGradient(colors: [NomiTheme.accent.opacity(0.035), .clear], startPoint: .top, endPoint: .center)
+                    .frame(height: 280)
+                    .allowsHitTesting(false)
+            }
+            .ignoresSafeArea()
     }
 }
 
@@ -202,16 +190,9 @@ public struct NomiCardModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .padding(NomiTheme.padding)
-            .nomiLiquidGlass(shape: .rounded(NomiTheme.radius), tint: tint, tintStrength: 0.11)
-            .overlay(alignment: .topLeading) {
-                Capsule()
-                    .fill(LinearGradient(colors: [tint.opacity(0.85), tint.opacity(0.25)], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: 54, height: 5)
-                    .padding([.top, .leading], 11)
-                    .opacity(0.75)
-            }
-            .shadow(color: Color.black.opacity(0.055), radius: 20, y: 9)
-            .shadow(color: tint.opacity(0.045), radius: 16, y: 3)
+            .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: NomiTheme.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: NomiTheme.radius, style: .continuous).strokeBorder(NomiTheme.line.opacity(0.88), lineWidth: 0.8))
+            .shadow(color: Color.black.opacity(0.035), radius: 10, y: 4)
     }
 }
 
@@ -237,34 +218,30 @@ extension View {
 
 public struct NomiPrimaryButtonStyle: ButtonStyle {
     public init() {}
-
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 11)
-            .frame(minHeight: 44)
-            .nomiLiquidGlass(shape: .capsule, tint: NomiTheme.accent, tintStrength: 0.92, interactive: true)
-            .shadow(color: NomiTheme.accent.opacity(0.18), radius: 12, y: 5)
-            .scaleEffect(configuration.isPressed ? 0.965 : 1)
-            .animation(NomiTheme.pressAnimation, value: configuration.isPressed)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(NomiTheme.canvas)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .frame(minHeight: 36)
+            .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
+            .opacity(configuration.isPressed ? 0.76 : 1)
     }
 }
 
 public struct NomiSecondaryButtonStyle: ButtonStyle {
     public init() {}
-
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.bold))
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(NomiTheme.ink)
-            .padding(.horizontal, 15)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
-            .nomiLiquidGlass(shape: .capsule, tintStrength: 0, interactive: true)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(NomiTheme.pressAnimation, value: configuration.isPressed)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 9)
+            .frame(minHeight: 36)
+            .background(NomiTheme.surface2.opacity(0.52), in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous).strokeBorder(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+            .opacity(configuration.isPressed ? 0.68 : 1)
     }
 }
 
@@ -341,7 +318,7 @@ public struct NomiSectionTitle: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.title2.weight(.bold))
+                .font(.headline.weight(.semibold))
                 .foregroundStyle(NomiTheme.ink)
             if let subtitle {
                 Text(subtitle)
@@ -372,7 +349,7 @@ public struct NomiScreenTitle: View {
                     .foregroundStyle(NomiTheme.ink2)
             }
             Text(title)
-                .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                .font(.system(size: 34, weight: .semibold, design: .serif))
                 .foregroundStyle(NomiTheme.ink)
                 .minimumScaleFactor(0.75)
             if let subtitle {

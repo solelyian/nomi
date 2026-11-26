@@ -2,6 +2,7 @@ import SwiftUI
 
 extension Notification.Name {
     static let nomiCompactTabDidChange = Notification.Name("nomi.compactTabDidChange")
+    static let nomiOpenConversation = Notification.Name("nomi.openConversation")
 }
 
 @main
@@ -118,6 +119,9 @@ struct RootView: View {
             }
         }
         .nomiTopEdgeProtection()
+        .onReceive(NotificationCenter.default.publisher(for: .nomiOpenConversation)) { _ in
+            section = .conversation
+        }
         .fullScreenCover(isPresented: Binding(
             get: { !didCompleteOnboarding },
             set: { _ in }
@@ -208,6 +212,9 @@ struct RootTabView: View {
         .background(NomiAmbientBackground())
         .onChange(of: selection) { _, newValue in
             NotificationCenter.default.post(name: .nomiCompactTabDidChange, object: newValue)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .nomiOpenConversation)) { _ in
+            selection = .conversation
         }
     }
 }
