@@ -64,7 +64,7 @@ enum AppSection: String, CaseIterable, Identifiable {
 }
 
 enum NomiDetailDestination: Hashable {
-    case gemma
+    case routines, transcript, library, settings, gemma
 }
 
 struct RootView: View {
@@ -120,8 +120,11 @@ struct RootView: View {
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationDestination(for: NomiDetailDestination.self) { destination in
                                 switch destination {
-                                case .gemma:
-                                    GemmaSettingsView()
+                                case .routines: RoutinesView()
+                                case .transcript: LiveTranscriptionView()
+                                case .library: LibraryView()
+                                case .settings: SettingsView()
+                                case .gemma: GemmaSettingsView()
                                 }
                             }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
@@ -214,12 +217,24 @@ struct RootTabView: View {
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationDestination(for: NomiDetailDestination.self) { destination in
                                 switch destination {
-                                case .gemma:
-                                    GemmaSettingsView()
+                                case .routines: RoutinesView()
+                                case .transcript: LiveTranscriptionView()
+                                case .library: LibraryView()
+                                case .settings: SettingsView()
+                                case .gemma: GemmaSettingsView()
                                 }
                             }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
                             .toolbarBackground(.visible, for: .navigationBar)
+                            .navigationDestination(for: NomiDetailDestination.self) { destination in
+                                switch destination {
+                                case .routines: RoutinesView()
+                                case .transcript: LiveTranscriptionView()
+                                case .library: LibraryView()
+                                case .settings: SettingsView()
+                                case .gemma: GemmaSettingsView()
+                                }
+                            }
                     }
                     .opacity(selection == tab ? 1 : 0)
                     .allowsHitTesting(selection == tab)

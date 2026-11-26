@@ -6,18 +6,10 @@ struct MoreView: View {
             VStack(alignment: .leading, spacing: 20) {
                 NomiScreenTitle("Plus", subtitle: "Les espaces d'apprentissage, d'automatisation et de réglage.")
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: 14)], spacing: 14) {
-                    destination("Routines", subtitle: "Automatisations visibles et contrôlées", icon: "repeat", tint: NomiTheme.success) {
-                        RoutinesView()
-                    }
-                    destination("Transcription", subtitle: "Capturer un cours en direct", icon: "waveform.and.mic", tint: NomiTheme.course) {
-                        LiveTranscriptionView()
-                    }
-                    destination("Fiches et révisions", subtitle: "Flashcards, quiz et exports", icon: "rectangle.stack.fill", tint: NomiTheme.focus) {
-                        LibraryView()
-                    }
-                    destination("Réglages", subtitle: "IA, confidentialité et accessibilité", icon: "gearshape.fill", tint: NomiTheme.accent) {
-                        SettingsView()
-                    }
+                    destination("Routines", subtitle: "Automatisations visibles et contrôlées", icon: "repeat", tint: NomiTheme.success, value: .routines)
+                    destination("Transcription", subtitle: "Capturer un cours en direct", icon: "waveform.and.mic", tint: NomiTheme.course, value: .transcript)
+                    destination("Fiches et révisions", subtitle: "Flashcards, quiz et exports", icon: "rectangle.stack.fill", tint: NomiTheme.focus, value: .library)
+                    destination("Réglages", subtitle: "IA, confidentialité et accessibilité", icon: "gearshape.fill", tint: NomiTheme.accent, value: .settings)
                 }
             }
             .padding(.horizontal, 20)
@@ -27,10 +19,8 @@ struct MoreView: View {
         .nomiScreenBackground()
     }
 
-    private func destination<Content: View>(_ title: String, subtitle: String, icon: String, tint: Color, @ViewBuilder content: @escaping () -> Content) -> some View {
-        NavigationLink {
-            content()
-        } label: {
+    private func destination(_ title: String, subtitle: String, icon: String, tint: Color, value: NomiDetailDestination) -> some View {
+        NavigationLink(value: value) {
             VStack(alignment: .leading, spacing: 14) {
                 Image(systemName: icon)
                     .font(.title3.weight(.semibold))
