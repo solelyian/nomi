@@ -110,6 +110,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
         }
         state = .idle
         activeMode = nil
+        consentAcknowledged = false
     }
 
     private func finishStream() {
