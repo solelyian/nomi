@@ -220,6 +220,7 @@ final class GemmaModelManager: NSObject, ObservableObject {
         refreshStates()
         guard state(for: model) != .downloaded else { return }
 
+        try? FileManager.default.removeItem(at: temporaryURL(for: model))
         let required = model.expectedBytes * 2
         if let capacity = availableCapacity(), capacity < required {
             states[model.id] = .failed("Espace disponible insuffisant. Prévoyez environ \(Self.formattedBytes(required)) pendant l'installation.")
