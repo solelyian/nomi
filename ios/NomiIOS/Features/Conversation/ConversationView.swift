@@ -3,6 +3,8 @@ import NomiCore
 
 struct ConversationView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var input = ""
 
     var body: some View {
@@ -24,6 +26,12 @@ struct ConversationView: View {
                     }
                     .onChange(of: state.activeThread?.messages.count ?? 0) { _ in
                         withAnimation { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                    }
+                    .onAppear {
+                        DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                    }
+                    .onChange(of: state.activeThreadID) { _ in
+                        DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                     .onChange(of: state.activeThread?.messages.last?.text ?? "") { _ in
                         withAnimation(.linear(duration: 0.08)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
@@ -47,16 +55,19 @@ struct ConversationView: View {
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(NomiTheme.ink2)
-                Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
+                if verticalSizeClass != .compact {
+                    Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
+                }
             }
             Spacer()
-            Button("Nouvelle", systemImage: "square.and.pencil") { state.newThread() }
+            Button(dynamicTypeSize.isAccessibilitySize ? "" : "Nouvelle", systemImage: "square.and.pencil") { state.newThread() }
                 .buttonStyle(.nomiSecondary)
+                .accessibilityLabel("Nouvelle conversation")
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.vertical, verticalSizeClass == .compact ? 6 : 12)
         .background(NomiTheme.surface.opacity(0.26))
     }
 
@@ -112,7 +123,7 @@ struct ConversationView: View {
     private var composer: some View {
         VStack(spacing: 7) {
             HStack(alignment: .bottom, spacing: 10) {
-                TextField(state.gemmaManager.selectedModelURL == nil ? "Installer Gemma 4 dans Réglages pour l’IA…" : "Demander, planifier ou vérifier un calcul…", text: $input, axis: .vertical)
+                TextField(state.gemmaManager.selectedModelURL == nil ? "Installer Gemma 4…" : "Demander à Nomi…", text: $input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 12)
@@ -134,14 +145,16 @@ struct ConversationView: View {
                 .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply ? 0.48 : 1)
                 .accessibilityLabel("Envoyer")
             }
-            Text("Génération Gemma 4 locale après installation ; les calculs simples restent vérifiés par le moteur déterministe.")
-                .font(.caption)
-                .foregroundStyle(NomiTheme.ink2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if verticalSizeClass != .compact {
+                Text("Génération Gemma 4 locale après installation ; les calculs simples restent vérifiés par le moteur déterministe.")
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.ink2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .padding(.horizontal, 18)
-        .padding(.top, 9)
-        .padding(.bottom, 8)
+        .padding(.top, verticalSizeClass == .compact ? 5 : 9)
+        .padding(.bottom, verticalSizeClass == .compact ? 4 : 8)
         .background(.thinMaterial)
     }
 }

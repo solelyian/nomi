@@ -35,7 +35,7 @@ struct RoutinesView: View {
             Label("Créer une routine", systemImage: "repeat.circle.fill")
                 .font(.headline)
                 .foregroundStyle(NomiTheme.success)
-            TextField("Ex. Chaque matin préparer mes priorités", text: $phrase)
+            TextField("Ex. Chaque matin, priorités", text: $phrase)
                 .textFieldStyle(.plain)
                 .nomiInput()
             HStack(alignment: .center, spacing: 12) {

@@ -8,34 +8,37 @@ struct HomeView: View {
     @State private var rescueSummary = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                NomiScreenTitle(greeting, kicker: Date.now.formatted(date: .complete, time: .omitted), subtitle: "\(state.openTasks.count) tâche(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
-                if horizontalSizeClass == .regular {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
-                        dayHero.gridCellColumns(2)
-                        nextAction.gridCellColumns(2)
-                        agendaCard
-                        focusCard
-                        priorities
-                        if let routine = state.readyRoutine {
-                            routineCard(routine)
+        GeometryReader { geometry in
+            let useTwoColumns = horizontalSizeClass == .regular && geometry.size.width >= 680
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    NomiScreenTitle(greeting, kicker: Date.now.formatted(date: .complete, time: .omitted), subtitle: "\(state.openTasks.count) tâche(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
+                    if useTwoColumns {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
+                            dayHero.gridCellColumns(2)
+                            nextAction.gridCellColumns(2)
+                            agendaCard
+                            focusCard
+                            priorities
+                            if let routine = state.readyRoutine {
+                                routineCard(routine)
+                            }
                         }
+                    } else {
+                        dayHero
+                        nextAction
+                        agendaCard
+                        priorities
+                        if let routine = state.readyRoutine { routineCard(routine) }
+                        focusCard
                     }
-                } else {
-                    dayHero
-                    nextAction
-                    agendaCard
-                    priorities
-                    if let routine = state.readyRoutine { routineCard(routine) }
-                    focusCard
                 }
+                .frame(maxWidth: useTwoColumns ? 1040 : .infinity)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 34)
             }
-            .frame(maxWidth: horizontalSizeClass == .regular ? 1040 : .infinity)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 34)
         }
         .nomiScreenBackground()
         .confirmationDialog("Sauver ma journée ?", isPresented: $showRescueConfirmation, titleVisibility: .visible) {

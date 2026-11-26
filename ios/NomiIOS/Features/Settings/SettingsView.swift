@@ -7,10 +7,15 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                NomiScreenTitle("Réglages", subtitle: "Modèle local, confidentialité, accessibilité et intégrations.")
+                    .padding(.vertical, 4)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+            }
+
             Section("Gemma 4 local") {
-                NavigationLink {
-                    GemmaSettingsView()
-                } label: {
+                NavigationLink(value: NomiDetailDestination.gemma) {
                     HStack {
                         Label("Modèle IA sur appareil", systemImage: "cpu")
                         Spacer()

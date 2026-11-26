@@ -63,12 +63,17 @@ enum AppSection: String, CaseIterable, Identifiable {
     }
 }
 
+enum NomiDetailDestination: Hashable {
+    case gemma
+}
+
 struct RootView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: AppSection? = .today
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var detailPath = NavigationPath()
     @AppStorage("nomi.didCompleteOnboarding") private var didCompleteOnboarding = false
 
     var body: some View {
@@ -109,10 +114,16 @@ struct RootView: View {
                     .background(NomiAmbientBackground())
                     .toolbar(.hidden, for: .navigationBar)
                 } detail: {
-                    NavigationStack {
+                    NavigationStack(path: $detailPath) {
                         (section ?? .today).view
                             .navigationTitle("")
                             .navigationBarTitleDisplayMode(.inline)
+                            .navigationDestination(for: NomiDetailDestination.self) { destination in
+                                switch destination {
+                                case .gemma:
+                                    GemmaSettingsView()
+                                }
+                            }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
                             .toolbarBackground(.visible, for: .navigationBar)
                             .toolbar {
@@ -127,7 +138,10 @@ struct RootView: View {
                                     .accessibilityLabel(columnVisibility == .detailOnly ? "Afficher la barre latérale" : "Masquer la barre latérale")
                                 }
                             }
-                            .id(section ?? .today)
+                    }
+                    .id(section ?? .today)
+                    .onChange(of: section) { _ in
+                        detailPath = NavigationPath()
                     }
                 }
             } else {
@@ -198,6 +212,12 @@ struct RootTabView: View {
                         tab.view
                             .navigationTitle("")
                             .navigationBarTitleDisplayMode(.inline)
+                            .navigationDestination(for: NomiDetailDestination.self) { destination in
+                                switch destination {
+                                case .gemma:
+                                    GemmaSettingsView()
+                                }
+                            }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
                             .toolbarBackground(.visible, for: .navigationBar)
                     }
@@ -218,6 +238,7 @@ struct RootTabView: View {
 
 struct NomiTabBar: View {
     @Binding var selection: CompactTab
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         HStack(spacing: 0) {
@@ -230,8 +251,12 @@ struct NomiTabBar: View {
                             .font(.system(size: 17, weight: .semibold))
                             .frame(width: 34, height: 27)
                             .background(selection == tab ? NomiTheme.accent.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                        Text(tab.title)
-                            .font(.caption2.weight(selection == tab ? .bold : .medium))
+                        if !dynamicTypeSize.isAccessibilitySize {
+                            Text(tab.title)
+                                .font(.caption2.weight(selection == tab ? .bold : .medium))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                        }
                     }
                     .foregroundStyle(selection == tab ? NomiTheme.accent : NomiTheme.ink2)
                     .frame(maxWidth: .infinity)
@@ -300,13 +325,18 @@ struct OnboardingView: View {
                             .foregroundStyle(NomiTheme.ink2)
                     }
                     .nomiCard(tint: NomiTheme.course)
-
-                    Button("Commencer", systemImage: "arrow.right") { finish() }
-                        .buttonStyle(.nomiPrimary)
-                        .controlSize(.large)
-                        .frame(maxWidth: .infinity)
                 }
                 .padding(24)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Button("Commencer", systemImage: "arrow.right") { finish() }
+                    .buttonStyle(.nomiPrimary)
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
+                    .padding(.bottom, 12)
+                    .background(.thinMaterial)
             }
             .nomiScreenBackground()
         }
