@@ -64,7 +64,7 @@ struct ConversationView: View {
         HStack(alignment: .bottom, spacing: 0) {
             if message.role == .user { Spacer(minLength: 58) }
             VStack(alignment: .leading, spacing: 7) {
-                Text(markdownAttributed(message.text))
+                Text(message.role == .assistant ? markdownAttributed(message.text) : AttributedString(message.text))
                     .font(.body)
                     .foregroundStyle(message.role == .user ? .white : NomiTheme.ink)
                     .textSelection(.enabled)
