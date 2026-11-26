@@ -8,7 +8,7 @@ public enum NomiTheme {
     public static let surface2 = Color.dynamic(light: "F0E8E0", dark: "292623")
     public static let ink = Color.dynamic(light: "1B1715", dark: "F4EEE7")
     public static let ink2 = Color.dynamic(light: "655D55", dark: "CCC3BA")
-    public static let ink3 = Color.dynamic(light: "8A8177", dark: "948B81")
+    public static let ink3 = Color.dynamic(light: "6F665D", dark: "ADA398")
     public static let line = Color.dynamic(light: "E4DAD0", dark: "3A3531")
     public static let glassStroke = Color.dynamic(light: "FFFFFF", dark: "4A4340")
 

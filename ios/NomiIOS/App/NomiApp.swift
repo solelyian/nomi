@@ -65,6 +65,7 @@ enum AppSection: String, CaseIterable, Identifiable {
 
 enum NomiDetailDestination: Hashable {
     case routines, transcript, library, settings, gemma
+    case revisionSheet(UUID)
 }
 
 struct RootView: View {
@@ -125,6 +126,12 @@ struct RootView: View {
                                 case .library: LibraryView()
                                 case .settings: SettingsView()
                                 case .gemma: GemmaSettingsView()
+                                case .revisionSheet(let id):
+                                    if let sheet = state.revisionSheets.first(where: { $0.id == id }) {
+                                        StoredSheetDetail(sheet: sheet)
+                                    } else {
+                                        LibraryView()
+                                    }
                                 }
                             }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
@@ -205,6 +212,7 @@ enum CompactTab: String, CaseIterable, Identifiable {
 }
 
 struct RootTabView: View {
+    @EnvironmentObject private var state: AppState
     @State private var selection: CompactTab = .today
 
     var body: some View {
@@ -222,19 +230,16 @@ struct RootTabView: View {
                                 case .library: LibraryView()
                                 case .settings: SettingsView()
                                 case .gemma: GemmaSettingsView()
+                                case .revisionSheet(let id):
+                                    if let sheet = state.revisionSheets.first(where: { $0.id == id }) {
+                                        StoredSheetDetail(sheet: sheet)
+                                    } else {
+                                        LibraryView()
+                                    }
                                 }
                             }
                             .toolbarBackground(.thinMaterial, for: .navigationBar)
                             .toolbarBackground(.visible, for: .navigationBar)
-                            .navigationDestination(for: NomiDetailDestination.self) { destination in
-                                switch destination {
-                                case .routines: RoutinesView()
-                                case .transcript: LiveTranscriptionView()
-                                case .library: LibraryView()
-                                case .settings: SettingsView()
-                                case .gemma: GemmaSettingsView()
-                                }
-                            }
                     }
                     .opacity(selection == tab ? 1 : 0)
                     .allowsHitTesting(selection == tab)
@@ -305,7 +310,7 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
                         Image(systemName: "sun.max.fill")
                             .font(.system(size: 44))
@@ -316,14 +321,14 @@ struct OnboardingView: View {
                             .foregroundStyle(NomiTheme.ink2)
                     }
 
-                    VStack(alignment: .leading, spacing: 15) {
-                        onboardingRow("checklist", "Organisez vos priorités", "Ajoutez des tâches en langage naturel et faites-les progresser.")
+                    VStack(alignment: .leading, spacing: 12) {
+                        onboardingRow("checklist", "Organisez vos priorités", "Ajoutez des tâches et faites-les progresser.")
                         Divider().overlay(NomiTheme.line)
-                        onboardingRow("timer", "Travaillez en focus", "Minuteur explicite avec pause, notes et historique.")
+                        onboardingRow("timer", "Travaillez en focus", "Minuteur avec pause, notes et historique.")
                         Divider().overlay(NomiTheme.line)
-                        onboardingRow("repeat", "Gardez le contrôle", "Les routines sont visibles, modifiables et jamais exécutées sans action configurée.")
+                        onboardingRow("repeat", "Gardez le contrôle", "Des routines visibles, modifiables et contrôlées.")
                         Divider().overlay(NomiTheme.line)
-                        onboardingRow("lock.shield", "Local d'abord", "Gemma 4 fonctionne sur appareil après installation. Le contenu des conversations n'est pas envoyé vers un service externe.")
+                        onboardingRow("lock.shield", "Local d'abord", "Gemma 4 fonctionne sur appareil ; vos conversations restent locales.")
                     }
                     .nomiCard(tint: NomiTheme.accent)
 
@@ -342,6 +347,7 @@ struct OnboardingView: View {
                     .nomiCard(tint: NomiTheme.course)
                 }
                 .padding(24)
+                .padding(.bottom, 12)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 Button("Commencer", systemImage: "arrow.right") { finish() }
@@ -354,6 +360,7 @@ struct OnboardingView: View {
                     .background(.thinMaterial)
             }
             .nomiScreenBackground()
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 

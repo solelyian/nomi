@@ -85,7 +85,7 @@ struct ConversationView: View {
                 }
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
-                    .foregroundStyle(message.role == .user ? .white.opacity(0.74) : NomiTheme.ink3)
+                    .foregroundStyle(message.role == .user ? .white.opacity(0.9) : NomiTheme.ink3)
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)

@@ -7,7 +7,9 @@ struct GemmaSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 NomiScreenTitle("Gemma 4 local", subtitle: "Moteur IA open model exécuté sur appareil avec LiteRT-LM et Metal quand le matériel le permet.")
-                hero
+                if shouldShowHero {
+                    hero
+                }
                 ForEach(GemmaModelDescriptor.all) { model in
                     modelCard(model)
                 }
@@ -19,6 +21,11 @@ struct GemmaSettingsView: View {
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
+    }
+
+
+    private var shouldShowHero: Bool {
+        state.gemmaManager.state(for: state.gemmaManager.selectedModel) != .downloaded || state.gemmaManager.runtimeNotice != nil
     }
 
     private var hero: some View {
