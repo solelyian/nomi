@@ -3,119 +3,145 @@ import NomiCore
 
 struct LibraryView: View {
     @EnvironmentObject private var state: AppState
-    @State private var showingNewSheet = false
+    @State private var selectedSheet: RevisionSheet?
+    @State private var creatingSheet = false
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack(alignment: .top) {
-                    NomiScreenTitle("Fiches et révisions", subtitle: "Flashcards, quiz et exports générés localement depuis vos cours.")
-                    Spacer()
-                    Button("Nouvelle fiche", systemImage: "plus") { showingNewSheet = true }
-                        .buttonStyle(.nomiSecondary)
-                }
-                if state.revisionSheets.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "books.vertical.fill")
-                            .font(.title2)
-                            .foregroundStyle(NomiTheme.focus)
-                        Text("Bibliothèque vide")
-                            .font(.system(.title3, design: .rounded).weight(.bold))
-                        Text("Créez une fiche depuis une transcription ou un texte collé. Gemma 4 la génère localement lorsqu’il est installé ; sinon un mode extractif hors-ligne prend le relais.")
-                            .foregroundStyle(NomiTheme.ink2)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .nomiCard(tint: NomiTheme.focus)
-                } else {
-                    if state.revisionSheets.count == 1, let sheet = state.revisionSheets.first {
-                        NavigationLink(value: NomiDetailDestination.revisionSheet(sheet.id)) {
-                            sheetCard(sheet)
-                        }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: 560, alignment: .leading)
-                        .contextMenu {
-                            Button("Supprimer", role: .destructive) {
-                                state.revisionSheets.removeAll { $0.id == sheet.id }
-                            }
-                        }
-                    } else {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 300, maximum: 520), spacing: 14)], spacing: 14) {
-                            ForEach(state.revisionSheets) { sheet in
-                                NavigationLink(value: NomiDetailDestination.revisionSheet(sheet.id)) {
-                                    sheetCard(sheet)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button("Supprimer", role: .destructive) {
-                                        state.revisionSheets.removeAll { $0.id == sheet.id }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Imports prévus", systemImage: "folder.fill")
-                        .font(.headline)
-                        .foregroundStyle(NomiTheme.course)
-                    plannedRow("Fichiers, PDF, scans et partage iOS", icon: "doc.fill")
-                    plannedRow("Recherche Spotlight et rappels de révision", icon: "magnifyingglass")
-                    plannedRow("Synchronisation iCloud chiffrée, désactivée par défaut", icon: "icloud.fill")
-                    Text("La version production devra utiliser SwiftData ou fichiers protégés par Data Protection, avec synchronisation opt-in.")
-                        .font(.caption)
-                        .foregroundStyle(NomiTheme.ink2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .nomiCard(tint: NomiTheme.course)
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                creationPanel
+                sheetsList
+                honestyPanel
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
             .padding(.bottom, 34)
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
-        .sheet(isPresented: $showingNewSheet) {
-            NewRevisionSourceView()
-                .environmentObject(state)
+        .navigationTitle("")
+        .sheet(isPresented: $creatingSheet) { NewRevisionSourceView() }
+        .sheet(item: $selectedSheet) { sheet in
+            NavigationStack { StoredSheetDetail(sheet: sheet) }
         }
     }
 
-    private func sheetCard(_ sheet: RevisionSheet) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                Image(systemName: sheet.format == .flashcards ? "rectangle.on.rectangle.fill" : "doc.text.fill")
-                    .font(.title3)
-                    .foregroundStyle(NomiTheme.focus)
-                    .frame(width: 42, height: 42)
-                    .background(NomiTheme.focus.opacity(0.12), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(NomiTheme.focus)
-            }
-            Text(sheet.title)
-                .font(.system(.headline, design: .rounded).weight(.bold))
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Fiches et révisions")
+                .font(.system(size: 32, weight: .semibold, design: .serif))
+                .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 7) {
-                NomiBadge(sheet.format.frenchTitle, tint: NomiTheme.focus)
-                NomiBadge(sheet.level.frenchTitle, tint: NomiTheme.course)
-            }
-            Text(sheet.createdAt.formatted(date: .abbreviated, time: .shortened))
+            Text("Sources transformées en supports révisables")
                 .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+        }
+    }
+
+    private var creationPanel: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(NomiTheme.accent)
+                .frame(width: 25, height: 25)
+                .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Créer une fiche")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(NomiTheme.ink)
+                Text("Collez une source ; Gemma local si installé")
+                    .font(.caption2)
+                    .foregroundStyle(NomiTheme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button("Nouvelle") { creatingSheet = true }
+                .buttonStyle(.nomiPrimary)
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: 54)
+        .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+    }
+
+    private var sheetsList: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("SUPPORTS")
+                    .font(.caption2.weight(.bold))
+                    .tracking(1.1)
+                    .foregroundStyle(NomiTheme.ink3)
+                Spacer()
+                Text("\(state.revisionSheets.count)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(NomiTheme.ink3)
+            }
+            .padding(.horizontal, 1)
+            VStack(spacing: 0) {
+                ForEach(Array(state.revisionSheets.enumerated()), id: \.element.id) { index, sheet in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }
+                    Button { selectedSheet = sheet } label: { sheetRow(sheet) }
+                    .buttonStyle(.plain)
+                }
+                if state.revisionSheets.isEmpty {
+                    Text("Aucune fiche. La première peut être créée depuis une transcription ou un texte source.")
+                        .font(.caption)
+                        .foregroundStyle(NomiTheme.ink3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private func sheetRow(_ sheet: RevisionSheet) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: "rectangle.on.rectangle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(NomiTheme.accent)
+                .frame(width: 24, height: 24)
+                .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(sheet.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(NomiTheme.ink)
+                    .lineLimit(1)
+                Text("\(sheet.format.frenchTitle) · \(sheet.level.frenchTitle) · \(sheet.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.caption2)
+                    .foregroundStyle(NomiTheme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(NomiTheme.ink3)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .nomiCard(tint: NomiTheme.focus)
+        .padding(.horizontal, 10)
+        .frame(minHeight: 48)
     }
 
-    private func plannedRow(_ title: String, icon: String) -> some View {
-        Label(title, systemImage: icon)
-            .font(.subheadline)
-            .foregroundStyle(NomiTheme.ink2)
+    private var honestyPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("ÉTAT DE GÉNÉRATION")
+                .font(.caption2.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(NomiTheme.ink3)
+            Label(state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? "Gemma 4 local actif pour les nouvelles fiches" : "Repli extractif hors ligne tant que Gemma n’est pas installé", systemImage: state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? "checkmark.circle" : "info.circle")
+                .font(.caption)
+                .foregroundStyle(state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? NomiTheme.success : NomiTheme.ink2)
+            Label("Flashcards et quiz consultables hors ligne", systemImage: "checkmark.circle")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(NomiTheme.surface.opacity(0.72), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.68), lineWidth: 0.7))
     }
 }
-
 
 private struct NewRevisionSourceView: View {
     @Environment(\.dismiss) private var dismiss

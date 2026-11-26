@@ -14,11 +14,13 @@ struct ConversationView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 13) {
-                            if (state.activeThread?.messages ?? []).isEmpty {
+                            if !(state.activeThread?.messages.contains { $0.role == .user } ?? false) {
                                 emptyState
-                            }
-                            ForEach(state.activeThread?.messages ?? []) { message in
-                                bubble(message)
+                                    .frame(minHeight: max(420, geometry.size.height - 170))
+                            } else {
+                                ForEach(state.activeThread?.messages ?? []) { message in
+                                    bubble(message)
+                                }
                             }
                             Color.clear.frame(height: 1).id("conversation-bottom")
                         }
@@ -124,8 +126,8 @@ struct ConversationView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 90)
-        .padding(.bottom, 50)
+        .padding(.top, 20)
+        .padding(.bottom, 30)
     }
 
     private func suggestion(_ text: String) -> some View {
@@ -150,7 +152,8 @@ struct ConversationView: View {
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 12)
-                    .nomiLiquidGlass(shape: .rounded(22), tintStrength: 0)
+                    .background(NomiTheme.surface.opacity(0.95), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
                 Button {
                     state.sendMessage(input)
                     input = ""
@@ -166,12 +169,6 @@ struct ConversationView: View {
                 .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply)
                 .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply ? 0.48 : 1)
                 .accessibilityLabel("Envoyer")
-            }
-            if verticalSizeClass != .compact {
-                Text("Génération Gemma 4 locale après installation ; les calculs simples restent vérifiés par le moteur déterministe.")
-                    .font(.caption)
-                    .foregroundStyle(NomiTheme.ink2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 18)
