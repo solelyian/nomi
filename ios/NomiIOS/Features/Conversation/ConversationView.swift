@@ -31,9 +31,6 @@ struct ConversationView: View {
                     .onAppear {
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
-                    .onChange(of: geometry.size.height) { _, _ in
-                        DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
-                    }
                     .onChange(of: state.activeThreadID) { _, _ in
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
