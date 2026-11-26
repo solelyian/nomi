@@ -49,6 +49,7 @@ final class AppState: ObservableObject {
 
     let revisionService: any RevisionService
     let demoTranscriptionService: any LiveTranscriptionService
+    let liveTranscriptionModel: LiveTranscriptionViewModel
     let gemmaManager: GemmaModelManager
     let gemmaRuntime: GemmaRuntime
     private var cancellables: Set<AnyCancellable> = []
@@ -64,6 +65,7 @@ final class AppState: ObservableObject {
         self.demoTranscriptionService = demoTranscriptionService
         self.gemmaManager = gemmaManager ?? GemmaModelManager()
         self.gemmaRuntime = gemmaRuntime
+        self.liveTranscriptionModel = LiveTranscriptionViewModel(demoService: demoTranscriptionService)
         let stored = Self.loadSnapshot()
         self.revisionSheets = stored?.revisionSheets ?? []
 
@@ -97,6 +99,9 @@ final class AppState: ObservableObject {
         self.preferredFormat = stored?.preferredFormat ?? .sheet
         self.allowRemoteAI = stored?.allowRemoteAI ?? false
         self.transcriptionLanguage = stored?.transcriptionLanguage ?? "fr-FR"
+        self.liveTranscriptionModel.languageProvider = { [weak self] in
+            self?.transcriptionLanguage ?? "fr-FR"
+        }
         self.gemmaManager.objectWillChange
             .sink { [weak self] _ in
                 Task { @MainActor in self?.objectWillChange.send() }

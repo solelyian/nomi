@@ -5,18 +5,12 @@ struct LiveTranscriptionView: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        LiveTranscriptionContent(demoService: state.demoTranscriptionService) {
-            state.transcriptionLanguage
-        }
+        LiveTranscriptionContent(model: state.liveTranscriptionModel)
     }
 }
 
 private struct LiveTranscriptionContent: View {
-    @StateObject private var model: LiveTranscriptionViewModel
-
-    init(demoService: any LiveTranscriptionService, languageProvider: @escaping () -> String) {
-        _model = StateObject(wrappedValue: LiveTranscriptionViewModel(demoService: demoService, languageProvider: languageProvider))
-    }
+    @ObservedObject var model: LiveTranscriptionViewModel
 
     var body: some View {
         ScrollView {

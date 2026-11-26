@@ -22,7 +22,7 @@ final class LiveTranscriptionViewModel: ObservableObject {
     @Published var interruptionMessage: String?
 
     private let demoService: any LiveTranscriptionService
-    private let languageProvider: () -> String
+    var languageProvider: () -> String
     private var streamTask: Task<Void, Never>?
     private var clockTask: Task<Void, Never>?
     private var startedAt: Date?
