@@ -71,8 +71,8 @@ struct GemmaRevisionService {
         let payload = try JSONDecoder().decode(Payload.self, from: data)
         let cards = payload.flashcards.prefix(6).map { Flashcard(front: $0.front, back: $0.back) }
         let questions = payload.quiz.prefix(4).compactMap { question -> QuizQuestion? in
-            guard question.choices.count >= 3, question.correctIndex >= 0, question.correctIndex < question.choices.count else { return nil }
-            return QuizQuestion(question: question.question, choices: Array(question.choices.prefix(3)), correctIndex: min(question.correctIndex, 2), explanation: question.explanation)
+            guard question.choices.count == 3, question.correctIndex >= 0, question.correctIndex < 3 else { return nil }
+            return QuizQuestion(question: question.question, choices: question.choices, correctIndex: question.correctIndex, explanation: question.explanation)
         }
         guard !payload.objective.isEmpty, !payload.keyIdeas.isEmpty else { throw GemmaRuntimeError.emptyResponse }
         let sections = [
