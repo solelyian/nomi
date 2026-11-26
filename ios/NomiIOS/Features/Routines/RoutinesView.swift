@@ -8,18 +8,22 @@ struct RoutinesView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                NomiSectionTitle("Routines", subtitle: "Automatisations explicites, jamais silencieuses. La création en langage naturel est simplifiée dans ce prototype.")
+            VStack(alignment: .leading, spacing: 20) {
+                NomiScreenTitle("Routines", subtitle: "Automatisations explicites, jamais silencieuses. Elles restent visibles et modifiables.")
                 composer
                 if let ready = state.readyRoutine { readyCard(ready) }
-                ForEach(state.routines) { routine in
-                    routineCard(routine)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 14)], spacing: 14) {
+                    ForEach(state.routines) { routine in
+                        routineCard(routine)
+                    }
                 }
             }
-            .padding()
-            .padding(.bottom, 72)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 34)
         }
         .nomiScreenBackground()
+        .nomiChildNavigation()
         .navigationTitle("Routines")
         .sheet(item: $editingRoutine) { routine in
             RoutineDetailView(routine: routine) { updated in state.updateRoutine(updated) }
@@ -27,84 +31,105 @@ struct RoutinesView: View {
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Créer une routine", systemImage: "repeat.circle.fill")
+                .font(.headline)
+                .foregroundStyle(NomiTheme.success)
             TextField("Ex. Chaque matin préparer mes priorités", text: $phrase)
-                .textFieldStyle(.roundedBorder)
-            Button("Créer la routine", systemImage: "plus") {
-                state.addRoutine(from: phrase)
-                phrase = ""
+                .textFieldStyle(.plain)
+                .nomiInput()
+            HStack(alignment: .center, spacing: 12) {
+                Button("Créer", systemImage: "plus") {
+                    state.addRoutine(from: phrase)
+                    phrase = ""
+                }
+                .buttonStyle(.nomiPrimary)
+                .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Text("Comprend matin/soir, jours, week-end et heures simples.")
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.ink2)
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Text("Le parseur local comprend matin/soir, chaque jour, week-end, un jour précis et une heure simple ; les déclencheurs contextuels complets de Windows restent à implémenter.")
-                .font(.caption)
-                .foregroundStyle(NomiTheme.ink2)
         }
         .nomiCard(tint: NomiTheme.success)
     }
 
     private func readyCard(_ routine: NomiRoutine) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Routine prête maintenant", systemImage: "bell.badge")
-                .font(.headline)
-            Text(routine.name).font(.title3.weight(.semibold))
+        VStack(alignment: .leading, spacing: 11) {
             HStack {
-                Button("Démarrer") { state.runRoutine(routine) }.buttonStyle(.borderedProminent)
-                Button("Plus tard") { state.snoozeRoutine(routine) }.buttonStyle(.bordered)
-                Button("Ignorer") { state.skipRoutine(routine) }.buttonStyle(.borderless)
+                Label("Prête maintenant", systemImage: "bell.badge.fill")
+                    .font(.headline)
+                Spacer()
+                NomiBadge("à décider", tint: NomiTheme.success)
+            }
+            Text(routine.name).font(.system(.title3, design: .rounded).weight(.bold))
+            HStack(spacing: 10) {
+                Button("Démarrer") { state.runRoutine(routine) }.buttonStyle(.nomiPrimary)
+                Button("Plus tard") { state.snoozeRoutine(routine) }.buttonStyle(.nomiSecondary)
+                Button("Ignorer") { state.skipRoutine(routine) }.buttonStyle(.nomiSecondary)
             }
         }
-        .nomiCard(tint: NomiTheme.accent)
+        .nomiCard(tint: NomiTheme.success)
     }
 
     private func routineCard(_ routine: NomiRoutine) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: routine.trigger == .time ? "clock.fill" : "bolt.fill")
+                    .foregroundStyle(routine.enabled ? NomiTheme.success : NomiTheme.ink3)
+                    .frame(width: 42, height: 42)
+                    .background((routine.enabled ? NomiTheme.success : NomiTheme.ink3).opacity(0.12), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(routine.name).font(.headline)
-                    Text(routine.action).font(.subheadline).foregroundStyle(NomiTheme.ink2)
+                    Text(routine.name)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                    Text(routine.action)
+                        .font(.subheadline)
+                        .foregroundStyle(NomiTheme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text("\(routine.trigger.frenchTitle) · \(String(format: "%02d:%02d", routine.hour, routine.minute))")
                         .font(.caption)
                         .foregroundStyle(NomiTheme.ink3)
                 }
-                Spacer()
+                Spacer(minLength: 4)
                 Toggle("Activer \(routine.name)", isOn: Binding(get: { routine.enabled }, set: { value in
                     if let index = state.routines.firstIndex(where: { $0.id == routine.id }) {
                         state.routines[index].enabled = value
                     }
                 }))
                 .labelsHidden()
+                .tint(NomiTheme.success)
                 .accessibilityLabel("Activer la routine \(routine.name)")
             }
             if let document = routine.documentTitle {
                 Label("Document lié : \(document)", systemImage: "doc.fill")
-                    .font(.caption)
-                    .foregroundStyle(NomiTheme.code)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(NomiTheme.focus)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(NomiTheme.focus.opacity(0.11), in: Capsule())
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 8)], spacing: 8) {
                 Button("Modifier") { editingRoutine = routine }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.nomiSecondary)
                     .frame(maxWidth: .infinity)
                 Button("Exécuter") { state.runRoutine(routine) }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.nomiPrimary)
                     .frame(maxWidth: .infinity)
-                Button(routine.documentTitle == nil ? "Lier" : "Retirer", systemImage: "doc") {
+                Button(routine.documentTitle == nil ? "Lier" : "Retirer") {
                     if let index = state.routines.firstIndex(where: { $0.id == routine.id }) {
                         state.routines[index].documentTitle = routine.documentTitle == nil ? "Document de démonstration" : nil
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.nomiSecondary)
                 .frame(maxWidth: .infinity)
                 Button("Supprimer", role: .destructive) {
                     state.routines.removeAll { $0.id == routine.id }
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.nomiSecondary)
+                .tint(.red)
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(12)
-        .background(NomiTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(NomiTheme.line))
+        .nomiCard(tint: routine.enabled ? NomiTheme.success : NomiTheme.ink3)
     }
 }
 

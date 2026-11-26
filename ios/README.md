@@ -1,6 +1,6 @@
 # Nomi iOS — prototype SwiftUI
 
-Prototype iPhone/iPad de la refonte Nomi, recentré sur la parité avec les fonctions productivité de la version Windows. La relecture de code a été abandonnée dans cette itération. Le dossier produit/design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
+Prototype iPhone/iPad de la refonte Nomi, recentré sur la parité avec les fonctions productivité de la version Windows et refondu visuellement selon la direction **Nomi Aura** (fond porcelaine ambiant, cartes de verre chaud, navigation flottante iPhone et workspace iPad). La relecture de code a été abandonnée dans cette itération. Le dossier produit/design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
 
 ## Structure
 
@@ -56,7 +56,7 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Vérification effectuée dans cette session : 30 tests unitaires, 18 réussites, couvrant le vérificateur de calculs, le parseur de tâches, le parseur de routines et les échéances de routines. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
+Vérification effectuée dans cette session : 30/30 tests unitaires réussis, couvrant le vérificateur de calculs, le parseur de tâches, le parseur de routines et les échéances de routines. Une passe visuelle manuelle iPhone/iPad a aussi été effectuée sur simulateur pour la refonte Nomi Aura. Les tests UI, VoiceOver, interruptions réelles, autonomie et permissions physiques restent à exécuter.
 
 ## Permissions
 

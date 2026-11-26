@@ -1,6 +1,6 @@
 # Nomi iOS — dossier produit et design
 
-Version : 0.2, 25 novembre 2026. Produit de Nyne Technologies.
+Version : 0.3, 25 novembre 2026. Produit de Nyne Technologies.
 
 ## 1. Pivot de périmètre
 
@@ -121,18 +121,23 @@ Le mode démonstration produit des segments horodatés sans permission et foncti
 
 Réel : bibliothèque, affichage des sections, flashcards, quiz interactif, export par feuille de partage, persistance locale du prototype. Simulé : génération de fiche par extraction/gabarits locaux. Les sections affichent leur fidélité (`source`, `explication IA`, `hypothèse`) pour éviter de présenter une invention comme un fait du cours.
 
-## 6. Design system
+## 6. Design system — direction « Nomi Aura »
 
-Les tokens actuels sont dans `NomiTheme` :
+La refonte visuelle validée est **Nomi Aura** : une interface plus chaleureuse, vivante et tactile, tout en restant native SwiftUI et dégradable.
 
-- fond chaud et cartes claires ;
-- accent violet/rose Nomi ;
-- succès vert pour routines et confirmations ;
-- avertissement orange pour priorités fortes ;
-- code bleu pour informations techniques ;
-- coins continus, cartes à faible bordure, contenu hiérarchisé.
+Tokens et composants actuels dans `NomiTheme` :
 
-Règles : Dynamic Type, zones tactiles ≥ 44 pt, contrastes système, pas de signification portée uniquement par la couleur. Une passe visuelle complète reste nécessaire après validation des parcours.
+- fond porcelaine chaud (`#F4EEE7`) avec variations sombres dynamiques ;
+- arrière-plan ambiant organique composé de halos corail, violet et turquoise floutés ;
+- cartes en verre chaud : material natif, gradient translucide, bordure lumineuse, ombre douce et liseré contextuel ;
+- hiérarchie typographique arrondie, grands titres explicites et métadonnées moins contrastées ;
+- accent corail pour l'action principale, violet pour Focus/Nomi, turquoise pour transcription/apprentissage, vert pour routines et réussites ;
+- boutons capsule primaires/secondaires avec ressort tactile et cibles d'au moins 44 pt ;
+- barre d'onglets flottante sur iPhone ; barre latérale en verre sur iPad ;
+- Focus comme objet central vivant : anneau animé en dégradé conique autour du minuteur ;
+- iPad en workspace multi-colonnes au lieu d'une simple colonne iPhone élargie.
+
+Règles : Dynamic Type, zones tactiles ≥ 44 pt, contrastes système, pas de signification portée uniquement par la couleur, effets visuels dégradables par les matériaux natifs. La préférence « Réduire les animations » est exposée dans Réglages, mais son application systématique à toutes les animations reste à auditer.
 
 ## 7. Données et confidentialité
 
@@ -178,7 +183,7 @@ Non vérifié ou insuffisant :
 - VoiceOver/Dynamic Type en audit complet ;
 - XCUITest automatisé ;
 - endurance mémoire/batterie pendant transcription longue ;
-- exactitude visuelle écran par écran sur toutes les tailles iPhone/iPad.
+- exactitude visuelle écran par écran sur toutes les tailles iPhone/iPad ; une passe manuelle iPhone/iPad a été faite sur simulateur, sans audit exhaustif des tailles et orientations.
 
 ## 10. Prochaines étapes recommandées
 

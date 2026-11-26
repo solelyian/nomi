@@ -41,6 +41,7 @@ struct SettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .nomiScreenBackground()
+        .nomiChildNavigation()
         .navigationTitle("Réglages")
     }
 

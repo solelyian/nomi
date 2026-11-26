@@ -21,7 +21,7 @@ private struct LiveTranscriptionContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                NomiSectionTitle("Transcription en direct", subtitle: "Interface discrète, consentement explicite et reprise après interruption.")
+                NomiScreenTitle("Transcription", subtitle: "Interface discrète, consentement explicite et reprise après interruption.")
 
                 VStack(alignment: .leading, spacing: 12) {
                     Picker("Mode", selection: Binding(get: { model.mode }, set: { model.mode = $0 })) {
@@ -62,19 +62,19 @@ private struct LiveTranscriptionContent: View {
                     HStack(spacing: 10) {
                         if model.state == .recording {
                             Button("Pause", systemImage: "pause.fill") { model.pause() }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.nomiSecondary)
                             Button("Arrêter", systemImage: "stop.fill") { model.stop() }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.nomiPrimary)
                         } else if model.state == .paused {
                             Button("Reprendre", systemImage: "play.fill") { Task { await model.resume() } }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.nomiPrimary)
                             Button("Arrêter", systemImage: "stop.fill") { model.stop() }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.nomiSecondary)
                         } else {
                             Button("Démarrer", systemImage: "record.circle") {
                                 Task { await model.start() }
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.nomiPrimary)
                             .controlSize(.large)
                         }
                     }
@@ -102,7 +102,7 @@ private struct LiveTranscriptionContent: View {
                             NavigationLink("Fiche") {
                                 RevisionSheetView(sourceText: model.transcript.plainText, sourceTitle: model.transcript.title)
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.nomiPrimary)
                         }
                     }
                     if model.segments.isEmpty {
@@ -124,7 +124,9 @@ private struct LiveTranscriptionContent: View {
                                     .foregroundStyle(NomiTheme.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.vertical, 7)
+                            .padding(11)
+                            .background(NomiTheme.surface.opacity(0.42), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.48), lineWidth: 1))
                             .accessibilityElement(children: .combine)
                         }
                     }
@@ -140,9 +142,12 @@ private struct LiveTranscriptionContent: View {
                 }
                 .nomiCard(tint: NomiTheme.accent)
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 34)
         }
         .nomiScreenBackground()
+        .nomiChildNavigation()
         .navigationTitle("Cours")
         .onDisappear {
             model.stop()
