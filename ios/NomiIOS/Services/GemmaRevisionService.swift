@@ -75,6 +75,8 @@ struct GemmaRevisionService {
             return QuizQuestion(question: question.question, choices: question.choices, correctIndex: question.correctIndex, explanation: question.explanation)
         }
         guard !payload.objective.isEmpty, !payload.keyIdeas.isEmpty else { throw GemmaRuntimeError.emptyResponse }
+        if format == .flashcards, cards.isEmpty { throw GemmaRuntimeError.emptyResponse }
+        if format == .quiz, questions.isEmpty { throw GemmaRuntimeError.emptyResponse }
         let sections = [
             RevisionSection(title: "Objectif du cours", body: payload.objective, fidelity: .generatedExplanation),
             RevisionSection(title: "Idées essentielles", body: payload.keyIdeas.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"), fidelity: .generatedExplanation),
