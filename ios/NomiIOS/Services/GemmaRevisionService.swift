@@ -92,8 +92,7 @@ struct GemmaRevisionService {
         var uniqueFacts: [String] = []
         var seen: Set<String> = []
         for fact in facts {
-            let key = fact.lowercased()
-            if seen.insert(key).inserted { uniqueFacts.append(fact) }
+            if seen.insert(fact).inserted { uniqueFacts.append(fact) }
         }
 
         var iteration = 0
