@@ -152,6 +152,11 @@ private struct LiveTranscriptionContent: View {
         .onDisappear {
             model.stop()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .nomiCompactTabDidChange)) { notification in
+            if (notification.object as? CompactTab) != .more {
+                model.stop()
+            }
+        }
     }
 
     private func formatDuration(_ value: TimeInterval) -> String {

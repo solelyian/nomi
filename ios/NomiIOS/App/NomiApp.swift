@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let nomiCompactTabDidChange = Notification.Name("nomi.compactTabDidChange")
+}
+
 @main
 struct NomiApp: App {
     @StateObject private var state = AppState()
@@ -186,6 +190,9 @@ struct RootTabView: View {
             NomiTabBar(selection: $selection)
         }
         .background(NomiAmbientBackground())
+        .onChange(of: selection) { newValue in
+            NotificationCenter.default.post(name: .nomiCompactTabDidChange, object: newValue)
+        }
     }
 }
 
