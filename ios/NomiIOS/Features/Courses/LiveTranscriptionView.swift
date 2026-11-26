@@ -148,7 +148,7 @@ private struct LiveTranscriptionContent: View {
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
-        .navigationTitle("Cours")
+        .navigationTitle("")
         .onDisappear {
             model.stop()
         }

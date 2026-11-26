@@ -121,19 +121,19 @@ Le mode démonstration produit des segments horodatés sans permission et foncti
 
 Réel : bibliothèque, création depuis texte ou transcription, affichage des sections, flashcards, quiz interactif, export par feuille de partage, persistance locale. La génération utilise Gemma 4 localement quand le modèle est installé ; sinon un repli extractif hors-ligne est utilisé. Les sections affichent leur fidélité (`source`, `explication IA`, `hypothèse`) pour éviter de présenter une invention comme un fait du cours.
 
-## 6. Design system — direction « Nomi Aura »
+## 6. Design system — direction « Nomi Aura × Liquid Glass »
 
-La refonte visuelle validée est **Nomi Aura** : une interface plus chaleureuse, vivante et tactile, tout en restant native SwiftUI et dégradable.
+La refonte visuelle validée est **Nomi Aura**, unifiée dans cette itération avec **Liquid Glass** : une interface chaleureuse, vivante et tactile qui privilégie les composants natifs iOS 26 et dégrade proprement les effets sur les versions antérieures.
 
 Tokens et composants actuels dans `NomiTheme` :
 
 - fond porcelaine chaud (`#F4EEE7`) avec variations sombres dynamiques ;
 - arrière-plan ambiant organique composé de halos corail, violet et turquoise floutés ;
-- cartes en verre chaud : material natif, gradient translucide, bordure lumineuse, ombre douce et liseré contextuel ;
+- cartes en verre chaud : material natif ou `glassEffect` progressif, gradient translucide, bordure lumineuse, ombre douce et liseré contextuel ;
 - hiérarchie typographique arrondie, grands titres explicites et métadonnées moins contrastées ;
 - accent corail pour l'action principale, violet pour Focus/Nomi, turquoise pour transcription/apprentissage, vert pour routines et réussites ;
 - boutons capsule primaires/secondaires avec ressort tactile et cibles d'au moins 44 pt ;
-- barre d'onglets flottante sur iPhone ; barre latérale en verre sur iPad ;
+- barre d'onglets native Liquid Glass sur iPhone ; barre latérale native translucide sur iPad ;
 - Focus comme objet central vivant : anneau animé en dégradé conique autour du minuteur ;
 - iPad en workspace multi-colonnes au lieu d'une simple colonne iPhone élargie.
 

@@ -73,7 +73,7 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: AppSection? = .today
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
     @State private var detailPath = NavigationPath()
     @AppStorage("nomi.didCompleteOnboarding") private var didCompleteOnboarding = false
 
@@ -81,39 +81,12 @@ struct RootView: View {
         Group {
             if horizontalSizeClass == .regular {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Nomi")
-                                .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                                .foregroundStyle(NomiTheme.ink)
-                                .padding(.horizontal, 12)
-                                .padding(.bottom, 12)
-                            ForEach(AppSection.allCases) { item in
-                                Button {
-                                    section = item
-                                } label: {
-                                    Label(item.title, systemImage: item.icon)
-                                        .font(.body.weight((section ?? .today) == item ? .bold : .medium))
-                                        .foregroundStyle((section ?? .today) == item ? NomiTheme.accent : NomiTheme.ink2)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 13)
-                                        .padding(.vertical, 11)
-                                        .background((section ?? .today) == item ? NomiTheme.surface.opacity(0.72) : Color.clear, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                                        .overlay {
-                                            if (section ?? .today) == item {
-                                                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                                                    .strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1)
-                                            }
-                                        }
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityAddTraits((section ?? .today) == item ? .isSelected : [])
-                            }
-                        }
-                        .padding(14)
+                    List(AppSection.allCases, selection: $section) { item in
+                        Label(item.title, systemImage: item.icon)
+                            .tag(item)
                     }
-                    .background(NomiAmbientBackground())
-                    .toolbar(.hidden, for: .navigationBar)
+                    .listStyle(.sidebar)
+                    .navigationTitle("Nomi")
                 } detail: {
                     NavigationStack(path: $detailPath) {
                         (section ?? .today).view
@@ -134,23 +107,9 @@ struct RootView: View {
                                     }
                                 }
                             }
-                            .toolbarBackground(.thinMaterial, for: .navigationBar)
-                            .toolbarBackground(.visible, for: .navigationBar)
-                            .toolbar {
-                                ToolbarItem(placement: .topBarLeading) {
-                                    Button {
-                                        withAnimation(NomiTheme.morphAnimation) {
-                                            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-                                        }
-                                    } label: {
-                                        Image(systemName: "sidebar.left")
-                                    }
-                                    .accessibilityLabel(columnVisibility == .detailOnly ? "Afficher la barre latérale" : "Masquer la barre latérale")
-                                }
-                            }
                     }
                     .id(section ?? .today)
-                    .onChange(of: section) { _ in
+                    .onChange(of: section) { _, _ in
                         detailPath = NavigationPath()
                     }
                 }
@@ -158,6 +117,7 @@ struct RootView: View {
                 RootTabView()
             }
         }
+        .nomiTopEdgeProtection()
         .fullScreenCover(isPresented: Binding(
             get: { !didCompleteOnboarding },
             set: { _ in }
@@ -216,89 +176,39 @@ struct RootTabView: View {
     @State private var selection: CompactTab = .today
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                ForEach(CompactTab.allCases) { tab in
-                    NavigationStack {
-                        tab.view
-                            .navigationTitle("")
-                            .navigationBarTitleDisplayMode(.inline)
-                            .navigationDestination(for: NomiDetailDestination.self) { destination in
-                                switch destination {
-                                case .routines: RoutinesView()
-                                case .transcript: LiveTranscriptionView()
-                                case .library: LibraryView()
-                                case .settings: SettingsView()
-                                case .gemma: GemmaSettingsView()
-                                case .revisionSheet(let id):
-                                    if let sheet = state.revisionSheets.first(where: { $0.id == id }) {
-                                        StoredSheetDetail(sheet: sheet)
-                                    } else {
-                                        LibraryView()
-                                    }
+        TabView(selection: $selection) {
+            ForEach(CompactTab.allCases) { tab in
+                NavigationStack {
+                    tab.view
+                        .navigationTitle("")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .navigationDestination(for: NomiDetailDestination.self) { destination in
+                            switch destination {
+                            case .routines: RoutinesView()
+                            case .transcript: LiveTranscriptionView()
+                            case .library: LibraryView()
+                            case .settings: SettingsView()
+                            case .gemma: GemmaSettingsView()
+                            case .revisionSheet(let id):
+                                if let sheet = state.revisionSheets.first(where: { $0.id == id }) {
+                                    StoredSheetDetail(sheet: sheet)
+                                } else {
+                                    LibraryView()
                                 }
                             }
-                            .toolbarBackground(.thinMaterial, for: .navigationBar)
-                            .toolbarBackground(.visible, for: .navigationBar)
-                    }
-                    .opacity(selection == tab ? 1 : 0)
-                    .allowsHitTesting(selection == tab)
-                    .accessibilityHidden(selection != tab)
-                    .zIndex(selection == tab ? 1 : 0)
+                        }
+                        .nomiNavigationBarHidden()
                 }
+                .tabItem {
+                    Label(tab.title, systemImage: tab.icon)
+                }
+                .tag(tab)
             }
-            NomiTabBar(selection: $selection)
         }
         .background(NomiAmbientBackground())
-        .onChange(of: selection) { newValue in
+        .onChange(of: selection) { _, newValue in
             NotificationCenter.default.post(name: .nomiCompactTabDidChange, object: newValue)
         }
-    }
-}
-
-struct NomiTabBar: View {
-    @Binding var selection: CompactTab
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(CompactTab.allCases) { tab in
-                Button {
-                    withAnimation(NomiTheme.morphAnimation) { selection = tab }
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 17, weight: .semibold))
-                            .frame(width: 34, height: 27)
-                            .background(selection == tab ? NomiTheme.accent.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                        if !dynamicTypeSize.isAccessibilitySize {
-                            Text(tab.title)
-                                .font(.caption2.weight(selection == tab ? .bold : .medium))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.72)
-                        }
-                    }
-                    .foregroundStyle(selection == tab ? NomiTheme.accent : NomiTheme.ink2)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.title)
-                .accessibilityAddTraits(selection == tab ? .isSelected : [])
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.thinMaterial)
-                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(NomiTheme.surface.opacity(0.45))
-            }
-        }
-        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.72), lineWidth: 1))
-        .shadow(color: .black.opacity(0.12), radius: 24, y: 10)
-        .padding(.horizontal, 18)
-        .padding(.bottom, 8)
     }
 }
 
@@ -357,10 +267,10 @@ struct OnboardingView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 10)
                     .padding(.bottom, 12)
-                    .background(.thinMaterial)
             }
             .nomiScreenBackground()
-            .toolbar(.hidden, for: .navigationBar)
+            .nomiTopEdgeProtection()
+            .nomiNavigationBarHidden()
         }
     }
 

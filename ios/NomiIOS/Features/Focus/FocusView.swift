@@ -79,13 +79,9 @@ struct FocusView: View {
                 .rotationEffect(.degrees(rotation))
                 .shadow(color: NomiTheme.focus.opacity(0.24), radius: 18)
             Circle()
-                .fill(.thinMaterial)
+                .fill(Color.clear)
                 .padding(24)
-                .overlay {
-                    Circle()
-                        .stroke(NomiTheme.glassStroke.opacity(0.66), lineWidth: 1)
-                        .padding(24)
-                }
+                .nomiLiquidGlass(shape: .circle, tint: NomiTheme.focus, tintStrength: 0.06)
             VStack(spacing: 6) {
                 Text(duration(session, at: date))
                     .font(.system(size: 45, weight: .bold, design: .rounded))
@@ -138,8 +134,7 @@ struct FocusView: View {
                     }
                 }
                 .padding(13)
-                .background(NomiTheme.surface.opacity(0.46), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.52), lineWidth: 1))
+                .nomiLiquidGlass(shape: .rounded(20), tintStrength: 0)
             }
         }
     }

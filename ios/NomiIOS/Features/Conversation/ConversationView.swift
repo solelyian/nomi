@@ -22,18 +22,22 @@ struct ConversationView: View {
                         .frame(width: max(0, geometry.size.width - 36), alignment: .leading)
                         .padding(.horizontal, 18)
                         .padding(.top, 14)
-                        .padding(.bottom, 18)
+                        .padding(.bottom, verticalSizeClass == .compact ? 76 : 26)
                     }
-                    .onChange(of: state.activeThread?.messages.count ?? 0) { _ in
+                    .onChange(of: state.activeThread?.messages.count ?? 0) { _, _ in
                         withAnimation { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
+                    .defaultScrollAnchor(.bottom)
                     .onAppear {
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
-                    .onChange(of: state.activeThreadID) { _ in
+                    .onChange(of: geometry.size.height) { _, _ in
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
-                    .onChange(of: state.activeThread?.messages.last?.text ?? "") { _ in
+                    .onChange(of: state.activeThreadID) { _, _ in
+                        DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                    }
+                    .onChange(of: state.activeThread?.messages.last?.text ?? "") { _, _ in
                         withAnimation(.linear(duration: 0.08)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                 }
@@ -68,7 +72,6 @@ struct ConversationView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, verticalSizeClass == .compact ? 6 : 12)
-        .background(NomiTheme.surface.opacity(0.26))
     }
 
     private func bubble(_ message: ChatMessage) -> some View {
@@ -89,26 +92,12 @@ struct ConversationView: View {
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)
-            .background {
-                if message.role == .user {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .fill(LinearGradient(colors: [NomiTheme.focus, Color.dynamic(light: "654DDE", dark: "8267EA")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                } else {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .fill(.thinMaterial)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                                .fill(NomiTheme.surface.opacity(0.56))
-                        }
-                }
-            }
-            .overlay {
-                if message.role == .assistant {
-                    RoundedRectangle(cornerRadius: 23, style: .continuous)
-                        .strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1)
-                }
-            }
-            .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
+            .nomiLiquidGlass(
+                shape: .rounded(23),
+                tint: message.role == .user ? NomiTheme.focus : nil,
+                tintStrength: message.role == .user ? 0.86 : 0
+            )
+            .shadow(color: .black.opacity(0.045), radius: 12, y: 6)
             if message.role == .assistant { Spacer(minLength: 58) }
         }
         .frame(maxWidth: .infinity)
@@ -127,8 +116,7 @@ struct ConversationView: View {
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 12)
-                    .background(NomiTheme.surface.opacity(0.58), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
+                    .nomiLiquidGlass(shape: .rounded(22), tintStrength: 0)
                 Button {
                     state.sendMessage(input)
                     input = ""
@@ -137,8 +125,8 @@ struct ConversationView: View {
                         .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
                         .frame(width: 44, height: 44)
-                        .background(NomiTheme.accentGradient, in: Circle())
-                        .shadow(color: NomiTheme.accent.opacity(0.28), radius: 12, y: 6)
+                        .nomiLiquidGlass(shape: .circle, tint: NomiTheme.accent, tintStrength: 0.92, interactive: true)
+                        .shadow(color: NomiTheme.accent.opacity(0.18), radius: 10, y: 5)
                 }
                 .buttonStyle(.plain)
                 .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply)
@@ -155,6 +143,5 @@ struct ConversationView: View {
         .padding(.horizontal, 18)
         .padding(.top, verticalSizeClass == .compact ? 5 : 9)
         .padding(.bottom, verticalSizeClass == .compact ? 4 : 8)
-        .background(.thinMaterial)
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Jetons « Nomi Aura » : porcelaine chaude, verre lumineux et accents organiques.
-/// Les couleurs restent dynamiques clair/sombre et les effets sont dégradables nativement.
+/// Jetons « Nomi Aura » unifiés avec Liquid Glass : porcelaine chaude, matière native
+/// iOS 26 quand elle est disponible, accents organiques et repli translucide sur les versions antérieures.
 public enum NomiTheme {
     public static let canvas = Color.dynamic(light: "F4EEE7", dark: "12100F")
     public static let surface = Color.dynamic(light: "FFFDFB", dark: "211E1C")
@@ -26,7 +26,7 @@ public enum NomiTheme {
     public static let warningSoft = Color.dynamic(light: "F6E7C8", dark: "453620")
 
     public static let radiusSmall: CGFloat = 14
-    public static let radius: CGFloat = 26
+    public static let radius: CGFloat = 28
     public static let padding: CGFloat = 18
 
     public static let pressAnimation = Animation.spring(response: 0.24, dampingFraction: 0.62)
@@ -38,6 +38,81 @@ public enum NomiTheme {
 
     public static var focusGradient: AngularGradient {
         AngularGradient(colors: [focus, course, warning, focus], center: .center)
+    }
+}
+
+
+public enum NomiLiquidShape {
+    case capsule
+    case circle
+    case rounded(CGFloat)
+}
+
+/// Progressive Liquid Glass surface. iOS 26 receives the native optical material;
+/// earlier OS versions keep a dense translucent fallback with the same geometry.
+public struct NomiLiquidGlassModifier: ViewModifier {
+    public var shape: NomiLiquidShape
+    public var tint: Color?
+    public var tintStrength: Double
+    public var interactive: Bool
+
+    public init(shape: NomiLiquidShape, tint: Color? = nil, tintStrength: Double = 0.18, interactive: Bool = false) {
+        self.shape = shape
+        self.tint = tint
+        self.tintStrength = tintStrength
+        self.interactive = interactive
+    }
+
+    @available(iOS 26.0, *)
+    private var glass: Glass {
+        var glass = Glass.regular
+        if let tint {
+            glass = glass.tint(tint.opacity(tintStrength))
+        }
+        if interactive {
+            glass = glass.interactive()
+        }
+        return glass
+    }
+
+    @ViewBuilder
+    public func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            switch shape {
+            case .capsule:
+                content.glassEffect(glass, in: Capsule())
+            case .circle:
+                content.glassEffect(glass, in: Circle())
+            case .rounded(let radius):
+                content.glassEffect(glass, in: .rect(cornerRadius: radius))
+            }
+        } else {
+            switch shape {
+            case .capsule:
+                content
+                    .background(.thinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
+            case .circle:
+                content
+                    .background(.thinMaterial, in: Circle())
+                    .overlay(Circle().strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
+            case .rounded(let radius):
+                content
+                    .background {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: radius, style: .continuous).fill(.thinMaterial)
+                            RoundedRectangle(cornerRadius: radius, style: .continuous).fill(NomiTheme.surface.opacity(0.46))
+                        }
+                    }
+                    .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1))
+            }
+        }
+    }
+}
+
+public extension View {
+    func nomiLiquidGlass(shape: NomiLiquidShape, tint: Color? = nil, tintStrength: Double = 0.18, interactive: Bool = false) -> some View {
+        modifier(NomiLiquidGlassModifier(shape: shape, tint: tint, tintStrength: tintStrength, interactive: interactive))
     }
 }
 
@@ -59,6 +134,22 @@ extension UIColor {
         let green = CGFloat((value >> 8) & 0xff) / 255
         let blue = CGFloat(value & 0xff) / 255
         self.init(red: red, green: green, blue: blue, alpha: 1)
+    }
+}
+
+
+public extension View {
+    /// Hides the system navigation bar while preserving the correct layout on iOS 17.
+    /// `toolbarVisibility` is the supported API from iOS 18; the older modal API is
+    /// kept only as a compatibility fallback because `.toolbar(.hidden:)` can leave
+    /// the bar's vertical space behind in NavigationStack roots.
+    @ViewBuilder
+    func nomiNavigationBarHidden() -> some View {
+        if #available(iOS 18.0, *) {
+            self.toolbarVisibility(.hidden, for: .navigationBar)
+        } else {
+            self.navigationBarHidden(true)
+        }
     }
 }
 
@@ -94,24 +185,7 @@ public struct NomiCardModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .padding(NomiTheme.padding)
-            .background {
-                ZStack {
-                    RoundedRectangle(cornerRadius: NomiTheme.radius, style: .continuous)
-                        .fill(.thinMaterial)
-                    RoundedRectangle(cornerRadius: NomiTheme.radius, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [NomiTheme.surface.opacity(0.76), NomiTheme.surface.opacity(0.42)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: NomiTheme.radius, style: .continuous)
-                    .strokeBorder(NomiTheme.glassStroke.opacity(0.72), lineWidth: 1)
-            }
+            .nomiLiquidGlass(shape: .rounded(NomiTheme.radius), tint: tint, tintStrength: 0.11)
             .overlay(alignment: .topLeading) {
                 Capsule()
                     .fill(LinearGradient(colors: [tint.opacity(0.85), tint.opacity(0.25)], startPoint: .leading, endPoint: .trailing))
@@ -119,8 +193,8 @@ public struct NomiCardModifier: ViewModifier {
                     .padding([.top, .leading], 11)
                     .opacity(0.75)
             }
-            .shadow(color: Color.black.opacity(0.10), radius: 28, y: 14)
-            .shadow(color: tint.opacity(0.07), radius: 20, y: 4)
+            .shadow(color: Color.black.opacity(0.055), radius: 20, y: 9)
+            .shadow(color: tint.opacity(0.045), radius: 16, y: 3)
     }
 }
 
@@ -136,10 +210,10 @@ extension View {
     public func nomiInput() -> some View {
         padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(NomiTheme.surface.opacity(0.56), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+            .nomiLiquidGlass(shape: .rounded(17), tintStrength: 0)
             .overlay {
                 RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .strokeBorder(NomiTheme.glassStroke.opacity(0.62), lineWidth: 1)
+                    .strokeBorder(NomiTheme.ink.opacity(0.12), lineWidth: 1)
             }
     }
 }
@@ -154,8 +228,8 @@ public struct NomiPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 18)
             .padding(.vertical, 11)
             .frame(minHeight: 44)
-            .background(NomiTheme.accentGradient, in: Capsule())
-            .shadow(color: NomiTheme.accent.opacity(0.30), radius: 16, y: 8)
+            .nomiLiquidGlass(shape: .capsule, tint: NomiTheme.accent, tintStrength: 0.92, interactive: true)
+            .shadow(color: NomiTheme.accent.opacity(0.18), radius: 12, y: 5)
             .scaleEffect(configuration.isPressed ? 0.965 : 1)
             .animation(NomiTheme.pressAnimation, value: configuration.isPressed)
     }
@@ -171,8 +245,7 @@ public struct NomiSecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 15)
             .padding(.vertical, 10)
             .frame(minHeight: 44)
-            .background(NomiTheme.surface.opacity(0.54), in: Capsule())
-            .overlay(Capsule().strokeBorder(NomiTheme.glassStroke.opacity(0.66), lineWidth: 1))
+            .nomiLiquidGlass(shape: .capsule, tintStrength: 0, interactive: true)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(NomiTheme.pressAnimation, value: configuration.isPressed)
     }
@@ -234,8 +307,7 @@ public struct NomiBadge: View {
             .foregroundStyle(tint)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(tint.opacity(0.13), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(0.16), lineWidth: 1))
+            .nomiLiquidGlass(shape: .capsule, tint: tint, tintStrength: 0.28)
             .accessibilityLabel(Text(text))
     }
 }
@@ -296,6 +368,52 @@ public struct NomiScreenTitle: View {
     }
 }
 
+
+private struct NomiTopEdgeProtection: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var height: CGFloat {
+        if verticalSizeClass == .compact { return 22 }
+        return horizontalSizeClass == .compact ? 62 : 28
+    }
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.regularMaterial)
+            LinearGradient(
+                colors: [
+                    NomiTheme.canvas.opacity(colorScheme == .dark ? 0.50 : 0.62),
+                    NomiTheme.canvas.opacity(colorScheme == .dark ? 0.16 : 0.12)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(NomiTheme.ink.opacity(0.035))
+                .frame(height: 0.7)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+}
+
+public extension View {
+    /// Keeps scrolled content optically behind a translucent top edge while the
+    /// system navigation bar itself remains hidden for Nomi's custom headers.
+    func nomiTopEdgeProtection() -> some View {
+        overlay(alignment: .top) {
+            NomiTopEdgeProtection()
+        }
+    }
+}
+
 private struct NomiChildNavigationModifier: ViewModifier {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -303,7 +421,7 @@ private struct NomiChildNavigationModifier: ViewModifier {
     func body(content: Content) -> some View {
         if horizontalSizeClass == .compact {
             content
-                .toolbar(.hidden, for: .navigationBar)
+                .nomiNavigationBarHidden()
                 .safeAreaInset(edge: .top, spacing: 0) {
                     HStack {
                         Button {
@@ -314,8 +432,7 @@ private struct NomiChildNavigationModifier: ViewModifier {
                                 .foregroundStyle(NomiTheme.ink)
                                 .padding(.horizontal, 13)
                                 .padding(.vertical, 9)
-                                .background(NomiTheme.surface.opacity(0.62), in: Capsule())
-                                .overlay(Capsule().strokeBorder(NomiTheme.glassStroke.opacity(0.58), lineWidth: 1))
+                                .nomiLiquidGlass(shape: .capsule, interactive: true)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Retour")
@@ -323,7 +440,6 @@ private struct NomiChildNavigationModifier: ViewModifier {
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 6)
-                    .background(.thinMaterial)
                 }
         } else {
             content

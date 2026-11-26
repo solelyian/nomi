@@ -3,6 +3,7 @@ import NomiCore
 
 struct BoardView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var phrase = ""
     @State private var selectedColumn: WorkColumn = .todo
     @State private var editingTask: WorkTask?
@@ -42,44 +43,43 @@ struct BoardView: View {
             Label("Nouvelle intention", systemImage: "plus.circle.fill")
                 .font(.headline)
                 .foregroundStyle(NomiTheme.accent)
-            TextField("Ex. Envoyer le compte rendu demain 30 min important", text: $phrase, axis: .vertical)
+            TextField(dynamicTypeSize.isAccessibilitySize ? "Nouvelle tâche…" : "Ex. Envoyer le compte rendu demain 30 min important", text: $phrase, axis: .vertical)
                 .textFieldStyle(.plain)
                 .nomiInput()
                 .submitLabel(.done)
                 .onSubmit { add() }
-            HStack(alignment: .center, spacing: 12) {
-                Button("Ajouter", systemImage: "plus") { add() }
-                    .buttonStyle(.nomiPrimary)
-                    .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Text("Comprend demain, aujourd'hui, urgent/important et une durée simple.")
-                    .font(.caption)
-                    .foregroundStyle(NomiTheme.ink2)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    Button("Ajouter", systemImage: "plus") { add() }
+                        .buttonStyle(.nomiPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Text("Comprend demain, aujourd'hui, urgent/important et une durée simple.")
+                        .font(.caption)
+                        .foregroundStyle(NomiTheme.ink2)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 12) {
+                    Button("Ajouter", systemImage: "plus") { add() }
+                        .buttonStyle(.nomiPrimary)
+                        .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Text("Comprend demain, aujourd'hui, urgent/important et une durée simple.")
+                        .font(.caption)
+                        .foregroundStyle(NomiTheme.ink2)
+                }
             }
         }
         .nomiCard(tint: NomiTheme.accent)
     }
 
     private var columnPicker: some View {
-        HStack(spacing: 4) {
+        Picker("Colonne", selection: $selectedColumn) {
             ForEach(WorkColumn.allCases, id: \.self) { column in
-                Button {
-                    withAnimation(NomiTheme.morphAnimation) { selectedColumn = column }
-                } label: {
-                    Text(column.frenchTitle)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(selectedColumn == column ? NomiTheme.ink : NomiTheme.ink2)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(selectedColumn == column ? NomiTheme.surface.opacity(0.84) : Color.clear, in: Capsule())
-                        .shadow(color: selectedColumn == column ? .black.opacity(0.06) : .clear, radius: 8, y: 3)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selectedColumn == column ? .isSelected : [])
+                Text(column.frenchTitle).tag(column)
             }
         }
-        .padding(4)
-        .background(NomiTheme.surface.opacity(0.38), in: Capsule())
-        .overlay(Capsule().strokeBorder(NomiTheme.glassStroke.opacity(0.55), lineWidth: 1))
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Colonne du tableau")
     }
 
     private func add() {
@@ -120,7 +120,7 @@ struct BoardView: View {
                         .font(.headline)
                         .foregroundStyle(NomiTheme.ink2)
                         .frame(width: 40, height: 40)
-                        .background(NomiTheme.surface.opacity(0.52), in: Circle())
+                        .nomiLiquidGlass(shape: .circle, interactive: true)
                 }
                 .accessibilityLabel("Actions pour \(task.title)")
             }

@@ -9,7 +9,7 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let useTwoColumns = horizontalSizeClass == .regular && geometry.size.width >= 680
+            let useTwoColumns = geometry.size.width >= 680
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     NomiScreenTitle(greeting, kicker: Date.now.formatted(date: .complete, time: .omitted), subtitle: "\(state.openTasks.count) tâche(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
@@ -37,7 +37,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
                 .padding(.top, 18)
-                .padding(.bottom, 34)
+                .padding(.bottom, geometry.size.width >= 680 ? 58 : 34)
             }
         }
         .nomiScreenBackground()

@@ -27,15 +27,28 @@ struct LibraryView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .nomiCard(tint: NomiTheme.focus)
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 14)], spacing: 14) {
-                        ForEach(state.revisionSheets) { sheet in
-                            NavigationLink(value: NomiDetailDestination.revisionSheet(sheet.id)) {
-                                sheetCard(sheet)
+                    if state.revisionSheets.count == 1, let sheet = state.revisionSheets.first {
+                        NavigationLink(value: NomiDetailDestination.revisionSheet(sheet.id)) {
+                            sheetCard(sheet)
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: 560, alignment: .leading)
+                        .contextMenu {
+                            Button("Supprimer", role: .destructive) {
+                                state.revisionSheets.removeAll { $0.id == sheet.id }
                             }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button("Supprimer", role: .destructive) {
-                                    state.revisionSheets.removeAll { $0.id == sheet.id }
+                        }
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 300, maximum: 520), spacing: 14)], spacing: 14) {
+                            ForEach(state.revisionSheets) { sheet in
+                                NavigationLink(value: NomiDetailDestination.revisionSheet(sheet.id)) {
+                                    sheetCard(sheet)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button("Supprimer", role: .destructive) {
+                                        state.revisionSheets.removeAll { $0.id == sheet.id }
+                                    }
                                 }
                             }
                         }
@@ -52,6 +65,7 @@ struct LibraryView: View {
                         .font(.caption)
                         .foregroundStyle(NomiTheme.ink2)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .nomiCard(tint: NomiTheme.course)
             }
             .padding(.horizontal, 20)
@@ -232,7 +246,7 @@ struct StoredSheetDetail: View {
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
-        .navigationTitle(sheet.title)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

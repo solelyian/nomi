@@ -24,7 +24,7 @@ struct RoutinesView: View {
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
-        .navigationTitle("Routines")
+        .navigationTitle("")
         .sheet(item: $editingRoutine) { routine in
             RoutineDetailView(routine: routine) { updated in state.updateRoutine(updated) }
         }

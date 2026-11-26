@@ -1,6 +1,6 @@
 # Nomi iOS 0.10.6
 
-Application iPhone/iPad de productivité et d'apprentissage, refondue selon la direction **Nomi Aura** (fond porcelaine ambiant, cartes de verre chaud, navigation flottante iPhone et workspace iPad). L'IA conversationnelle et la génération de fiches utilisent **Gemma 4 en local** lorsque le modèle est installé. La relecture de code est hors périmètre. Le dossier produit/design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
+Application iPhone/iPad de productivité et d'apprentissage, refondue selon la direction **Nomi Aura × Liquid Glass** (fond porcelaine ambiant, matières translucides, navigation native iOS 26 en verre liquide et workspace iPad). L'IA conversationnelle et la génération de fiches utilisent **Gemma 4 en local** lorsque le modèle est installé. La relecture de code est hors périmètre. Le dossier produit/design complet est dans [`docs/dossier-produit-design.md`](docs/dossier-produit-design.md).
 
 ## Structure
 
@@ -85,7 +85,7 @@ L'app ne demande aucun mode arrière-plan. Les routines temporisées ne sont don
 ```text
 Packages/NomiCore       domaine, protocoles, mocks, parseurs, vérificateur, tests
 NomiIOS/App             composition, navigation adaptative et injection
-NomiIOS/DesignSystem    jetons et composants visuels Nomi Aura
+NomiIOS/DesignSystem    jetons et composants visuels Nomi Aura × Liquid Glass
 NomiIOS/Features        espaces produit par fonctionnalité
 NomiIOS/Services        Apple Speech, téléchargement Gemma et runtime LiteRT-LM
 ```

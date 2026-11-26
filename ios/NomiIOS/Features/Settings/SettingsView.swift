@@ -65,7 +65,7 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .nomiScreenBackground()
         .nomiChildNavigation()
-        .navigationTitle("Réglages")
+        .navigationTitle("")
     }
 
     private func integrationRow(_ rank: String, _ title: String, _ detail: String) -> some View {
