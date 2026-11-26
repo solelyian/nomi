@@ -13,6 +13,7 @@
 		196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */; };
 		2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF73F3880DCB25695E3BFEF4 /* BoardView.swift */; };
 		2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */; };
+		347B4775FD45330268A19A61 /* GemmaModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174081E4779ECEB047958DEE /* GemmaModelManager.swift */; };
 		422B3AA8E484EDAFD16BB8E5 /* NomiCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDDE39AC951D9B0D69E70DC3 /* NomiCore */; };
 		4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E958D41F2C193E270060A927 /* NomiApp.swift */; };
 		56A4DC127636B19C238A8716 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2AB5800E2427860CDF6562 /* AppState.swift */; };
@@ -20,23 +21,31 @@
 		8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93D0B7E0E1C835F46D7811E /* SettingsView.swift */; };
 		B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4686E95F33FC49354ECAB971 /* NomiTheme.swift */; };
 		C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */; };
+		C3DBB6850A66B74E34FF33D8 /* GemmaRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */; };
 		D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */; };
+		E6ECB3ED71DD4A7451EF2102 /* GemmaRevisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */; };
+		E8978F751B6C1AE22AB1D8ED /* GemmaSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */; };
 		F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C7C4694181A6764B0893C0 /* HomeView.swift */; };
 		F36C5CA064941CCB9A2BA2E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC1264985F627D3D8DB8AA54 /* Assets.xcassets */; };
 		F98D54D91EC939E8B4698201 /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */; };
+		FF80234D7572C9C8F510A474 /* LiteRTLM in Frameworks */ = {isa = PBXBuildFile; productRef = 910F707D8B50DB572E55157D /* LiteRTLM */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionView.swift; sourceTree = "<group>"; };
+		093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaRuntime.swift; sourceTree = "<group>"; };
 		0E2AB5800E2427860CDF6562 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		174081E4779ECEB047958DEE /* GemmaModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaModelManager.swift; sourceTree = "<group>"; };
 		2251A5C2D66244DBF77F8769 /* NomiCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NomiCore; path = Packages/NomiCore; sourceTree = SOURCE_ROOT; };
 		2DAB9754010E9C28497EBBDA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
 		4686E95F33FC49354ECAB971 /* NomiTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiTheme.swift; sourceTree = "<group>"; };
 		5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisionSheetView.swift; sourceTree = "<group>"; };
+		71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaSettingsView.swift; sourceTree = "<group>"; };
 		89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionViewModel.swift; sourceTree = "<group>"; };
 		8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 		92C7C4694181A6764B0893C0 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaRevisionService.swift; sourceTree = "<group>"; };
 		AC1264985F627D3D8DB8AA54 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AF73F3880DCB25695E3BFEF4 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
 		B0C80D96754E86221C2E5F5D /* FocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusView.swift; sourceTree = "<group>"; };
@@ -54,6 +63,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				422B3AA8E484EDAFD16BB8E5 /* NomiCore in Frameworks */,
+				FF80234D7572C9C8F510A474 /* LiteRTLM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -64,6 +74,9 @@
 			isa = PBXGroup;
 			children = (
 				41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */,
+				174081E4779ECEB047958DEE /* GemmaModelManager.swift */,
+				99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */,
+				093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -137,6 +150,7 @@
 		9C5F8A1081DF2528C6D7645E /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */,
 				E93D0B7E0E1C835F46D7811E /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -247,6 +261,7 @@
 			name = Nomi;
 			packageProductDependencies = (
 				DDDE39AC951D9B0D69E70DC3 /* NomiCore */,
+				910F707D8B50DB572E55157D /* LiteRTLM */,
 			);
 			productName = Nomi;
 			productReference = E309461932F89F5AF71FE5D8 /* Nomi.app */;
@@ -276,6 +291,7 @@
 			mainGroup = 1AE436BA3878FEC4233A11F7;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */,
 				69CB872000168EF3FCA4CD39 /* XCLocalSwiftPackageReference "Packages/NomiCore" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -309,6 +325,10 @@
 				2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */,
 				D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */,
 				12E65184E7B782F96FF7F533 /* FocusView.swift in Sources */,
+				347B4775FD45330268A19A61 /* GemmaModelManager.swift in Sources */,
+				E6ECB3ED71DD4A7451EF2102 /* GemmaRevisionService.swift in Sources */,
+				C3DBB6850A66B74E34FF33D8 /* GemmaRuntime.swift in Sources */,
+				E8978F751B6C1AE22AB1D8ED /* GemmaSettingsView.swift in Sources */,
 				F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */,
 				C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */,
 				0181CA7280F883CFDEB63072 /* LiveTranscriptionView.swift in Sources */,
@@ -386,7 +406,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 106;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NomiIOS/Resources/Info.plist;
@@ -395,7 +415,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.10.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nyne.Nomi;
 				PRODUCT_NAME = Nomi;
 				SDKROOT = iphoneos;
@@ -473,7 +493,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 106;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NomiIOS/Resources/Info.plist;
@@ -482,7 +502,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.10.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nyne.Nomi;
 				PRODUCT_NAME = Nomi;
 				SDKROOT = iphoneos;
@@ -522,7 +542,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google-ai-edge/LiteRT-LM";
+			requirement = {
+				kind = exactVersion;
+				version = 0.20.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		910F707D8B50DB572E55157D /* LiteRTLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */;
+			productName = LiteRTLM;
+		};
 		DDDE39AC951D9B0D69E70DC3 /* NomiCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NomiCore;

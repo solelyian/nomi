@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import NomiCore
 
@@ -14,6 +15,17 @@ private struct ProductivitySnapshot: Codable {
     var preferredFormat: RevisionFormat
     var allowRemoteAI: Bool
     var transcriptionLanguage: String
+}
+
+enum GemmaAvailabilityError: LocalizedError {
+    case modelNotInstalled
+
+    var errorDescription: String? {
+        switch self {
+        case .modelNotInstalled:
+            "Gemma 4 n'est pas encore installé sur cet appareil. Ouvrez Réglages › Gemma 4 local pour télécharger le modèle (2,6 Go recommandé). Le téléchargement utilise le réseau une fois ; les conversations sont ensuite traitées localement."
+        }
+    }
 }
 
 @MainActor
@@ -33,16 +45,25 @@ final class AppState: ObservableObject {
     @Published var activeThreadID: ChatThread.ID? { didSet { persist() } }
     @Published var dayStartHour = 8
     @Published var dayEndHour = 18
+    @Published var isGeneratingReply = false
 
     let revisionService: any RevisionService
     let demoTranscriptionService: any LiveTranscriptionService
+    let gemmaManager: GemmaModelManager
+    let gemmaRuntime: GemmaRuntime
+    private var cancellables: Set<AnyCancellable> = []
+    private var suppressPersistence = false
 
     init(
         revisionService: any RevisionService = MockRevisionService(),
-        demoTranscriptionService: any LiveTranscriptionService = MockLiveTranscriptionService()
+        demoTranscriptionService: any LiveTranscriptionService = MockLiveTranscriptionService(),
+        gemmaManager: GemmaModelManager? = nil,
+        gemmaRuntime: GemmaRuntime = GemmaRuntime()
     ) {
         self.revisionService = revisionService
         self.demoTranscriptionService = demoTranscriptionService
+        self.gemmaManager = gemmaManager ?? GemmaModelManager()
+        self.gemmaRuntime = gemmaRuntime
         let stored = Self.loadSnapshot()
         self.revisionSheets = stored?.revisionSheets ?? []
 
@@ -62,7 +83,7 @@ final class AppState: ObservableObject {
             NomiRoutine(name: "Rappel de révision", action: "Rouvrir la dernière fiche et proposer un quiz", hour: 17, minute: 30)
         ]
         let thread = ChatThread(title: "Nouvelle conversation", messages: [
-            ChatMessage(role: .assistant, text: "Bonjour, je peux planifier, vérifier, convertir, apprendre et résumer. Les réponses IA sont simulées dans ce prototype tant qu'aucun moteur distant ou local n'est configuré.")
+            ChatMessage(role: .assistant, text: "Bonjour, je peux planifier, vérifier, apprendre et résumer. Installez Gemma 4 local dans Réglages pour activer la génération IA sur appareil ; aucun contenu ne quitte alors votre iPhone.")
         ])
         if let storedThreads = stored?.threads, !storedThreads.isEmpty {
             self.threads = storedThreads
@@ -76,6 +97,11 @@ final class AppState: ObservableObject {
         self.preferredFormat = stored?.preferredFormat ?? .sheet
         self.allowRemoteAI = stored?.allowRemoteAI ?? false
         self.transcriptionLanguage = stored?.transcriptionLanguage ?? "fr-FR"
+        self.gemmaManager.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.objectWillChange.send() }
+            }
+            .store(in: &cancellables)
     }
 
     private static var snapshotURL: URL {
@@ -88,6 +114,7 @@ final class AppState: ObservableObject {
     }
 
     private func persist() {
+        guard !suppressPersistence else { return }
         let snapshot = ProductivitySnapshot(
             revisionSheets: revisionSheets,
             tasks: tasks,
@@ -119,6 +146,18 @@ final class AppState: ObservableObject {
     var nextAgendaEvent: AgendaEvent? { agenda.filter { $0.end > .now }.sorted { $0.start < $1.start }.first }
     var activeThread: ChatThread? { threads.first { $0.id == activeThreadID } ?? threads.first }
     var readyRoutine: NomiRoutine? { routines.first { $0.isDue(at: .now) } }
+
+
+    func makeRevision(from source: String, sourceTitle: String, level: RevisionDetailLevel, format: RevisionFormat) async throws -> RevisionSheet {
+        if let modelURL = gemmaManager.selectedModelURL {
+            do {
+                return try await GemmaRevisionService(runtime: gemmaRuntime, modelURL: modelURL).makeRevision(from: source, sourceTitle: sourceTitle, level: level, format: format)
+            } catch {
+                gemmaManager.runtimeNotice = "Gemma 4 n'a pas pu générer cette fiche ; le mode extractif local a été utilisé."
+            }
+        }
+        return try await revisionService.makeRevision(from: source, sourceTitle: sourceTitle, level: level, format: format)
+    }
 
     func addSheet(_ sheet: RevisionSheet) {
         revisionSheets.insert(sheet, at: 0)
@@ -253,24 +292,75 @@ final class AppState: ObservableObject {
     func sendMessage(_ text: String) {
         guard var thread = activeThread else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty, !isGeneratingReply else { return }
+        let priorMessages = thread.messages
         thread.messages.append(ChatMessage(role: .user, text: trimmed))
         let verification = trimmed.contains("=") ? CalculationVerifier().verify(trimmed) : nil
-        let answer: String
-        if let verification {
-            answer = "\(verification.message)\n\nCette réponse est produite localement par le vérificateur déterministe, sans IA générative."
-        } else if trimmed.lowercased().contains("plan") || trimmed.lowercased().contains("organise") {
-            answer = "Réponse simulée : je propose de commencer par la tâche la plus urgente, de réserver un focus de 25 minutes, puis de réviser le résultat avant de continuer. Un moteur local ou distant remplacera cette réponse dans la version production."
-        } else {
-            answer = "Réponse simulée du prototype : la structure conversationnelle est réelle, mais la génération IA n'est pas encore connectée. Aucune donnée ne quitte l'appareil."
-        }
-        thread.messages.append(ChatMessage(role: .assistant, text: answer, verification: verification))
         if thread.title == "Nouvelle conversation" {
             thread.title = String(trimmed.prefix(42))
         }
+
+        if let verification {
+            let answer = "\(verification.message)\n\nCette réponse est produite localement par le vérificateur déterministe, sans IA générative."
+            thread.messages.append(ChatMessage(role: .assistant, text: answer, verification: verification))
+            replaceThread(thread)
+            return
+        }
+
+        let assistantID = UUID()
+        thread.messages.append(ChatMessage(id: assistantID, role: .assistant, text: "Gemma 4 prépare une réponse locale…"))
+        replaceThread(thread)
+        isGeneratingReply = true
+        let threadID = thread.id
+        let context = productivityContext()
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.isGeneratingReply = false }
+            do {
+                guard let modelURL = self.gemmaManager.selectedModelURL else {
+                    throw GemmaAvailabilityError.modelNotInstalled
+                }
+                let answer = try await self.gemmaRuntime.generateResponse(
+                    userText: trimmed,
+                    history: priorMessages,
+                    productivityContext: context,
+                    modelURL: modelURL
+                ) { partial in
+                    self.updateAssistantMessage(partial, id: assistantID, threadID: threadID, persistUpdate: false)
+                }
+                self.updateAssistantMessage(answer, id: assistantID, threadID: threadID)
+            } catch {
+                let explanation: String
+                if let availability = error as? GemmaAvailabilityError {
+                    explanation = availability.errorDescription ?? "Gemma 4 est indisponible."
+                } else {
+                    explanation = "Gemma 4 n'a pas pu produire de réponse sur cet appareil : \(error.localizedDescription)"
+                }
+                self.updateAssistantMessage(explanation, id: assistantID, threadID: threadID)
+            }
+        }
+    }
+
+    private func replaceThread(_ thread: ChatThread) {
         guard let index = threads.firstIndex(where: { $0.id == thread.id }) else { return }
         threads[index] = thread
         activeThreadID = thread.id
+    }
+
+    private func updateAssistantMessage(_ text: String, id: UUID, threadID: UUID, persistUpdate: Bool = true) {
+        guard let threadIndex = threads.firstIndex(where: { $0.id == threadID }),
+              let messageIndex = threads[threadIndex].messages.firstIndex(where: { $0.id == id }) else { return }
+        if !persistUpdate { suppressPersistence = true }
+        threads[threadIndex].messages[messageIndex].text = text
+        suppressPersistence = false
+    }
+
+    private func productivityContext() -> String {
+        let importantTasks = openTasks.prefix(5).map { task in
+            "- \(task.title) [\(task.column.frenchTitle), priorité \(task.priority.frenchTitle)]"
+        }.joined(separator: "\n")
+        let routineNames = routines.filter(\.enabled).prefix(4).map(\.name).joined(separator: ", ")
+        return "Tâches ouvertes:\n\(importantTasks.isEmpty ? "aucune" : importantTasks)\nRoutines actives: \(routineNames.isEmpty ? "aucune" : routineNames). Nomi peut conseiller mais ne modifie les données que lorsque l'utilisateur utilise explicitement les écrans prévus."
     }
 
     func newThread() {

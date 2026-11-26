@@ -227,14 +227,14 @@ struct RevisionSheetView: View {
         isGenerating = true
         errorMessage = nil
         do {
-            sheet = try await state.revisionService.makeRevision(
+            sheet = try await state.makeRevision(
                 from: sourceText,
                 sourceTitle: sourceTitle,
                 level: state.preferredDetailLevel,
                 format: state.preferredFormat
             )
         } catch {
-            errorMessage = "La génération simulée a échoué. En production, le fallback hors-ligne conserverait un résumé extractif."
+            errorMessage = "La génération locale a échoué. Le mode extractif hors-ligne devrait normalement prendre le relais."
         }
         isGenerating = false
     }

@@ -8,6 +8,9 @@ options:
 packages:
   NomiCore:
     path: Packages/NomiCore
+  LiteRTLM:
+    url: https://github.com/google-ai-edge/LiteRT-LM
+    exactVersion: 0.20.0
 targets:
   Nomi:
     type: application
@@ -20,12 +23,14 @@ targets:
     dependencies:
       - package: NomiCore
         product: NomiCore
+      - package: LiteRTLM
+        product: LiteRTLM
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nyne.Nomi
         PRODUCT_NAME: Nomi
-        MARKETING_VERSION: 0.1.0
-        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.10.6
+        CURRENT_PROJECT_VERSION: 106
         INFOPLIST_FILE: NomiIOS/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_VERSION: "5.0"

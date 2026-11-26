@@ -64,7 +64,9 @@ enum AppSection: String, CaseIterable, Identifiable {
 }
 
 struct RootView: View {
+    @EnvironmentObject private var state: AppState
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var section: AppSection? = .today
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @AppStorage("nomi.didCompleteOnboarding") private var didCompleteOnboarding = false
@@ -138,6 +140,11 @@ struct RootView: View {
         )) {
             OnboardingView {
                 didCompleteOnboarding = true
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                Task { await state.gemmaRuntime.unload() }
             }
         }
     }
@@ -276,7 +283,7 @@ struct OnboardingView: View {
                         Divider().overlay(NomiTheme.line)
                         onboardingRow("repeat", "Gardez le contrôle", "Les routines sont visibles, modifiables et jamais exécutées sans action configurée.")
                         Divider().overlay(NomiTheme.line)
-                        onboardingRow("lock.shield", "Local d'abord", "Ce prototype n'envoie aucune donnée vers un service externe. Les réponses IA génératives sont simulées.")
+                        onboardingRow("lock.shield", "Local d'abord", "Gemma 4 fonctionne sur appareil après installation. Le contenu des conversations n'est pas envoyé vers un service externe.")
                     }
                     .nomiCard(tint: NomiTheme.accent)
 

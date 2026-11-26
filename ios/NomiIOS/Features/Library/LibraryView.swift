@@ -3,11 +3,17 @@ import NomiCore
 
 struct LibraryView: View {
     @EnvironmentObject private var state: AppState
+    @State private var showingNewSheet = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                NomiScreenTitle("Fiches et révisions", subtitle: "Flashcards, quiz et exports générés depuis vos cours.")
+                HStack(alignment: .top) {
+                    NomiScreenTitle("Fiches et révisions", subtitle: "Flashcards, quiz et exports générés localement depuis vos cours.")
+                    Spacer()
+                    Button("Nouvelle fiche", systemImage: "plus") { showingNewSheet = true }
+                        .buttonStyle(.nomiSecondary)
+                }
                 if state.revisionSheets.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Image(systemName: "books.vertical.fill")
@@ -15,7 +21,7 @@ struct LibraryView: View {
                             .foregroundStyle(NomiTheme.focus)
                         Text("Bibliothèque vide")
                             .font(.system(.title3, design: .rounded).weight(.bold))
-                        Text("Les fiches générées depuis une transcription ou un document apparaîtront ici. La génération reste simulée dans ce prototype.")
+                        Text("Créez une fiche depuis une transcription ou un texte collé. Gemma 4 la génère localement lorsqu’il est installé ; sinon un mode extractif hors-ligne prend le relais.")
                             .foregroundStyle(NomiTheme.ink2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -56,6 +62,10 @@ struct LibraryView: View {
         }
         .nomiScreenBackground()
         .nomiChildNavigation()
+        .sheet(isPresented: $showingNewSheet) {
+            NewRevisionSourceView()
+                .environmentObject(state)
+        }
     }
 
     private func sheetCard(_ sheet: RevisionSheet) -> some View {
@@ -91,6 +101,51 @@ struct LibraryView: View {
         Label(title, systemImage: icon)
             .font(.subheadline)
             .foregroundStyle(NomiTheme.ink2)
+    }
+}
+
+
+private struct NewRevisionSourceView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var sourceTitle = ""
+    @State private var sourceText = ""
+
+    private var canContinue: Bool {
+        !sourceTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        sourceText.trimmingCharacters(in: .whitespacesAndNewlines).count >= 80
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Source") {
+                    TextField("Titre du cours ou document", text: $sourceTitle)
+                    TextEditor(text: $sourceText)
+                        .frame(minHeight: 220)
+                        .accessibilityLabel("Texte source")
+                }
+                Section {
+                    NavigationLink {
+                        RevisionSheetView(
+                            sourceText: sourceText.trimmingCharacters(in: .whitespacesAndNewlines),
+                            sourceTitle: sourceTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                        )
+                    } label: {
+                        Label("Préparer la fiche", systemImage: "sparkles")
+                    }
+                    .disabled(!canContinue)
+                    Text("Collez au moins 80 caractères. La génération utilise Gemma 4 localement quand le modèle est installé.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Nouvelle fiche")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fermer") { dismiss() }
+                }
+            }
+        }
     }
 }
 

@@ -7,9 +7,26 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Gemma 4 local") {
+                NavigationLink {
+                    GemmaSettingsView()
+                } label: {
+                    HStack {
+                        Label("Modèle IA sur appareil", systemImage: "cpu")
+                        Spacer()
+                        Text(state.gemmaManager.state(for: state.gemmaManager.selectedModel).label)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text("Gemma 4 E2B est téléchargé à la demande (2,6 Go). Après installation, Nomi génère les réponses localement avec LiteRT-LM.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("IA et confidentialité") {
                 Toggle("Autoriser l'IA distante", isOn: $state.allowRemoteAI)
-                Text("Désactivé par défaut. Aucune clé API n'est embarquée. Une version production doit passer par un serveur intermédiaire, demander consentement et indiquer quelles données quittent l'appareil.")
+                Text("Désactivé par défaut et inutile pour Gemma 4 local. Aucune clé API n'est embarquée. Toute future IA distante devra passer par un serveur intermédiaire, demander consentement et indiquer quelles données quittent l'appareil.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Picker("Langue de transcription", selection: $state.transcriptionLanguage) {
@@ -32,10 +49,11 @@ struct SettingsView: View {
                 integrationRow("5", "Spotlight", "fiches et cours indexés localement")
             }
 
-            Section("État réel du prototype") {
+            Section("État fonctionnel") {
                 Label("Tâches, Focus, calculs et persistance locale : réels", systemImage: "checkmark.circle")
                 Label("Reconnaissance vocale Apple : semi-réelle sur appareil", systemImage: "checkmark.circle")
-                Label("Réponses IA et génération de fiches : simulées", systemImage: "circle.dashed")
+                Label("Réponses IA conversationnelles : réelles avec Gemma 4 après installation", systemImage: "checkmark.circle")
+                Label("Génération de fiches : Gemma 4 local, avec repli extractif hors-ligne", systemImage: "circle.dashed")
                 Label("Notifications, iCloud, Documents et extension de partage : non implémentés", systemImage: "xmark.circle")
             }
         }

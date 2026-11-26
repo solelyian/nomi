@@ -25,6 +25,9 @@ struct ConversationView: View {
                     .onChange(of: state.activeThread?.messages.count ?? 0) { _ in
                         withAnimation { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
+                    .onChange(of: state.activeThread?.messages.last?.text ?? "") { _ in
+                        withAnimation(.linear(duration: 0.08)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                    }
                 }
             }
             composer
@@ -44,6 +47,9 @@ struct ConversationView: View {
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(NomiTheme.ink2)
+                Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
             }
             Spacer()
             Button("Nouvelle", systemImage: "square.and.pencil") { state.newThread() }
@@ -58,7 +64,7 @@ struct ConversationView: View {
         HStack(alignment: .bottom, spacing: 0) {
             if message.role == .user { Spacer(minLength: 58) }
             VStack(alignment: .leading, spacing: 7) {
-                Text(message.text)
+                Text(markdownAttributed(message.text))
                     .font(.body)
                     .foregroundStyle(message.role == .user ? .white : NomiTheme.ink)
                     .textSelection(.enabled)
@@ -98,10 +104,15 @@ struct ConversationView: View {
         .accessibilityElement(children: .combine)
     }
 
+
+    private func markdownAttributed(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    }
+
     private var composer: some View {
         VStack(spacing: 7) {
             HStack(alignment: .bottom, spacing: 10) {
-                TextField("Demander, planifier ou vérifier un calcul…", text: $input, axis: .vertical)
+                TextField(state.gemmaManager.selectedModelURL == nil ? "Installer Gemma 4 dans Réglages pour l’IA…" : "Demander, planifier ou vérifier un calcul…", text: $input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 12)
@@ -119,11 +130,11 @@ struct ConversationView: View {
                         .shadow(color: NomiTheme.accent.opacity(0.28), radius: 12, y: 6)
                 }
                 .buttonStyle(.plain)
-                .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.48 : 1)
+                .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply)
+                .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply ? 0.48 : 1)
                 .accessibilityLabel("Envoyer")
             }
-            Text("Réponses génératives simulées ; les calculs simples sont vérifiés localement par le moteur déterministe.")
+            Text("Génération Gemma 4 locale après installation ; les calculs simples restent vérifiés par le moteur déterministe.")
                 .font(.caption)
                 .foregroundStyle(NomiTheme.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)

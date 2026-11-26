@@ -1,6 +1,6 @@
 # Nomi iOS — dossier produit et design
 
-Version : 0.3, 25 novembre 2026. Produit de Nyne Technologies.
+Version produit : 0.10.6, 25 novembre 2026. Produit de Nyne Technologies.
 
 ## 1. Pivot de périmètre
 
@@ -11,7 +11,7 @@ Nomi iOS devient un compagnon de journée centré sur :
 1. **Aujourd'hui** — orientation, agenda, priorités, routine prête et focus ;
 2. **Tableau** — tâches À faire / En cours / Terminé, création en langage naturel et édition ;
 3. **Focus** — minuteur explicite avec pause, reprise, fin et notes ;
-4. **Nomi** — conversation à fils multiples, avec vérification locale de calculs et réponses génératives simulées ;
+4. **Nomi** — conversation à fils multiples, avec vérification locale de calculs et réponses générées localement par Gemma 4 après installation du modèle ;
 5. **Routines** — automatisations visibles, jamais silencieuses, avec heure, jours, document lié et déclencheurs simples ;
 6. **Transcription** — capture de cours en direct avec mode démonstration et chemin Apple Speech ;
 7. **Fiches** — transformation de contenu en fiche, flashcards et quiz.
@@ -119,7 +119,7 @@ Le mode démonstration produit des segments horodatés sans permission et foncti
 
 ### Fiches et révisions
 
-Réel : bibliothèque, affichage des sections, flashcards, quiz interactif, export par feuille de partage, persistance locale du prototype. Simulé : génération de fiche par extraction/gabarits locaux. Les sections affichent leur fidélité (`source`, `explication IA`, `hypothèse`) pour éviter de présenter une invention comme un fait du cours.
+Réel : bibliothèque, création depuis texte ou transcription, affichage des sections, flashcards, quiz interactif, export par feuille de partage, persistance locale. La génération utilise Gemma 4 localement quand le modèle est installé ; sinon un repli extractif hors-ligne est utilisé. Les sections affichent leur fidélité (`source`, `explication IA`, `hypothèse`) pour éviter de présenter une invention comme un fait du cours.
 
 ## 6. Design system — direction « Nomi Aura »
 
@@ -141,7 +141,7 @@ Règles : Dynamic Type, zones tactiles ≥ 44 pt, contrastes système, pas de si
 
 ## 7. Données et confidentialité
 
-Le prototype persiste les tâches, routines, sessions Focus, conversations et fiches dans un fichier JSON local du répertoire Application Support, écrit avec l'option de protection complète des fichiers iOS. Ce n'est pas une solution de production : SwiftData, migration de schéma, export/effacement utilisateur et éventuel chiffrement applicatif restent à concevoir.
+Les tâches, routines, sessions Focus, conversations et fiches sont persistées dans un fichier JSON local du répertoire Application Support, écrit avec l'option de protection complète des fichiers iOS. SwiftData, migration de schéma, export/effacement utilisateur et chiffrement applicatif restent à concevoir avant diffusion App Store.
 
 Aucune clé API n'est embarquée et aucun mock n'effectue d'appel réseau. Une future IA distante doit passer par un serveur intermédiaire, avec consentement explicite, journal minimal, quotas et suppression.
 
@@ -156,7 +156,7 @@ Aucune clé API n'est embarquée et aucun mock n'effectue d'appel réseau. Une f
 | Focus minuteur/pause/reprise/fin/notes | réel |
 | Calculs vérifiés dans Nomi | réel pour expressions simples |
 | Fils de conversation et persistance | réel |
-| Réponses IA génératives | simulées localement |
+| Réponses IA conversationnelles | réelles avec Gemma 4 local après installation ; impossible sans modèle |
 | Routines : parseur simple, heure, jours, activation | réel mais limité |
 | Routines déclenchées par fin de tâche/focus | réel tant que l'app est ouverte |
 | Documents liés | simulé par titre, sans Document Picker |
@@ -164,8 +164,8 @@ Aucune clé API n'est embarquée et aucun mock n'effectue d'appel réseau. Une f
 | Notifications locales, App Intents, widgets, Live Activity | non implémentés |
 | Transcription démonstration | réel localement |
 | Apple Speech microphone | semi-réel : compilé, non validé sur appareil physique |
-| Génération de fiches | simulée par extraction/gabarits |
-| Flashcards/quiz/export | réel dans les limites du contenu simulé |
+| Génération de fiches | réelle avec Gemma 4 local après installation ; repli extractif hors-ligne si indisponible/en échec |
+| Flashcards/quiz/export | réel ; qualité dépendante de la source et de Gemma 4 |
 | SwiftData, iCloud, extension de partage, Spotlight | non implémentés |
 | Diarisation fiable et résumé live | non implémentés |
 
@@ -175,6 +175,9 @@ Vérifié dans cette itération :
 
 - compilation iOS Debug réussie ;
 - 30 tests unitaires NomiCore réussis ;
+- réponse Gemma 4 E2B réelle en français, avec streaming, sur iPhone 17 Simulator ;
+- génération de fiche Gemma avec sections, flashcards et quiz sur simulateur ;
+- rendu Markdown inline sans astérisques bruts ;
 - tests du parseur de tâches, du parseur de routines, de l'échéance des routines et du vérificateur de calculs.
 
 Non vérifié ou insuffisant :
