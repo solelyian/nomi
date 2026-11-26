@@ -301,10 +301,10 @@ private struct NomiChildNavigationModifier: ViewModifier {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     func body(content: Content) -> some View {
-        content
-            .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if horizontalSizeClass == .compact {
+        if horizontalSizeClass == .compact {
+            content
+                .toolbar(.hidden, for: .navigationBar)
+                .safeAreaInset(edge: .top, spacing: 0) {
                     HStack {
                         Button {
                             dismiss()
@@ -325,7 +325,9 @@ private struct NomiChildNavigationModifier: ViewModifier {
                     .padding(.vertical, 6)
                     .background(.thinMaterial)
                 }
-            }
+        } else {
+            content
+        }
     }
 }
 
