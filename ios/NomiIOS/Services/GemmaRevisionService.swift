@@ -5,6 +5,10 @@ struct GemmaRevisionService {
     let runtime: GemmaRuntime
     let modelURL: URL
 
+    private struct FactsPayload: Decodable {
+        var facts: [String]
+    }
+
     private struct Payload: Decodable {
         struct Card: Decodable { var front: String; var back: String }
         struct Question: Decodable {
@@ -20,8 +24,107 @@ struct GemmaRevisionService {
         var quiz: [Question]
     }
 
+
+    private func chunkedSource(_ source: String, limit: Int) -> [String] {
+        var chunks: [String] = []
+        var current = ""
+        for paragraph in source.components(separatedBy: "\n") {
+            if paragraph.count > limit {
+                if !current.isEmpty {
+                    chunks.append(current)
+                    current = ""
+                }
+                var start = paragraph.startIndex
+                while start < paragraph.endIndex {
+                    let end = paragraph.index(start, offsetBy: limit, limitedBy: paragraph.endIndex) ?? paragraph.endIndex
+                    chunks.append(String(paragraph[start..<end]))
+                    start = end
+                }
+            } else if current.count + paragraph.count + 1 > limit, !current.isEmpty {
+                chunks.append(current)
+                current = paragraph
+            } else {
+                if !current.isEmpty { current += "\n" }
+                current += paragraph
+            }
+        }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
+    }
+
+    private var factsSchema: [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "facts": ["type": "array", "items": ["type": "string"]]
+            ],
+            "required": ["facts"]
+        ]
+    }
+
+    private func extractFacts(from text: String, instruction: String, modelURL: URL) async throws -> [String] {
+        let prompt = """
+        \(instruction)
+        Retourne uniquement le JSON demandé. Chaque fait doit être court, fidèle et exploitable pour construire une fiche de révision. N'invente rien.
+
+        Texte :
+        \(text)
+        """
+        let data = try await runtime.generateStructuredJSON(prompt: prompt, schema: factsSchema, modelURL: modelURL, maxOutputTokens: 700)
+        let payload = try JSONDecoder().decode(FactsPayload.self, from: data)
+        return payload.facts
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    private func fullSourceSynthesis(from source: String, modelURL: URL) async throws -> (text: String, coverageNote: String) {
+        let chunks = chunkedSource(source, limit: 4_500)
+        var facts: [String] = []
+        for (index, chunk) in chunks.enumerated() {
+            let extracted = try await extractFacts(
+                from: chunk,
+                instruction: "Segment \(index + 1) sur \(chunks.count). Extrais les définitions, formules, exemples, étapes, limites et idées essentielles de ce segment.",
+                modelURL: modelURL
+            )
+            facts.append(contentsOf: extracted)
+        }
+
+        var uniqueFacts: [String] = []
+        var seen: Set<String> = []
+        for fact in facts {
+            let key = fact.lowercased()
+            if seen.insert(key).inserted { uniqueFacts.append(fact) }
+        }
+
+        var iteration = 0
+        while uniqueFacts.joined(separator: "\n").count > 8_500, iteration < 6 {
+            iteration += 1
+            var condensed: [String] = []
+            let batches = chunkedSource(uniqueFacts.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"), limit: 4_500)
+            for batch in batches {
+                condensed.append(contentsOf: try await extractFacts(
+                    from: batch,
+                    instruction: "Condense cette liste exhaustive de faits sans perdre de notion distincte. Fusionne seulement les doublons ou reformulations.",
+                    modelURL: modelURL
+                ))
+            }
+            uniqueFacts = condensed
+        }
+        guard uniqueFacts.joined(separator: "\n").count <= 8_500 else { throw GemmaRuntimeError.emptyResponse }
+        let text = uniqueFacts.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        guard !text.isEmpty else { throw GemmaRuntimeError.emptyResponse }
+        return (text, "Source longue analysée en \(chunks.count) segments successifs ; la fiche s'appuie sur une synthèse factuelle de l'ensemble, pas seulement sur le début.")
+    }
+
     func makeRevision(from source: String, sourceTitle: String, level: RevisionDetailLevel, format: RevisionFormat) async throws -> RevisionSheet {
-        let trimmedSource = String(source.prefix(9_000))
+        let directLimit = 9_000
+        var revisionSource = String(source.prefix(directLimit))
+        var coverageNote = "Source courte analysée directement dans son intégralité."
+        if source.count > directLimit {
+            let synthesis = try await fullSourceSynthesis(from: source, modelURL: modelURL)
+            revisionSource = synthesis.text
+            coverageNote = synthesis.coverageNote
+        }
         let ideaCount = level == .condensed ? 3 : level == .standard ? 5 : 8
         let prompt = """
         Crée une fiche de révision en français à partir de la source ci-dessous. Reste strictement fidèle à la source, signale les incertitudes plutôt qu'inventer, et adapte la densité au niveau \(level.frenchTitle). Retourne uniquement le JSON demandé.
@@ -34,8 +137,8 @@ struct GemmaRevisionService {
         - quiz : 3 questions avec exactement 3 choix chacune, correctIndex entre 0 et 2 ;
         - aucun contenu hors source sauf formulation pédagogique prudente.
 
-        Source intitulée « \(sourceTitle) » :
-        \(trimmedSource)
+        Matière fidèle issue de la source intitulée « \(sourceTitle) » :
+        \(revisionSource)
         """
         let schema: [String: Any] = [
             "type": "object",
@@ -81,7 +184,7 @@ struct GemmaRevisionService {
             RevisionSection(title: "Objectif du cours", body: payload.objective, fidelity: .generatedExplanation),
             RevisionSection(title: "Idées essentielles", body: payload.keyIdeas.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"), fidelity: .generatedExplanation),
             RevisionSection(title: "Définitions", body: payload.definitions.isEmpty ? "Aucune définition fiable n'a été identifiée dans la source." : payload.definitions.joined(separator: "\n"), fidelity: .generatedExplanation),
-            RevisionSection(title: "Moteur", body: "Fiche générée localement par Gemma 4. Les formulations doivent être comparées à la source avant révision intensive.", fidelity: .generatedExplanation)
+            RevisionSection(title: "Moteur", body: "Fiche générée localement par Gemma 4. \(coverageNote) Les formulations doivent être comparées à la source avant révision intensive.", fidelity: .generatedExplanation)
         ]
         return RevisionSheet(
             title: "Fiche — \(sourceTitle)",
