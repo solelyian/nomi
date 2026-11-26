@@ -208,6 +208,14 @@ final class GemmaModelManager: NSObject, ObservableObject {
 
     func download(_ model: GemmaModelDescriptor) {
         guard downloadTask == nil else { return }
+        if let blockedModel = GemmaModelDescriptor.all.first(where: {
+            guard $0.id != model.id else { return false }
+            if case .paused = state(for: $0) { return true }
+            return state(for: $0).isActive
+        }) {
+            runtimeNotice = "Terminez ou annulez le téléchargement de \(blockedModel.title) avant d'en démarrer un autre."
+            return
+        }
         select(model)
         refreshStates()
         guard state(for: model) != .downloaded else { return }
