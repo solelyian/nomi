@@ -171,7 +171,7 @@ struct FocusView: View {
                                 Text(session.notes)
                                     .font(.caption2)
                                     .foregroundStyle(NomiTheme.ink3)
-                                    .lineLimit(1)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         Spacer()

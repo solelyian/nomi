@@ -119,6 +119,8 @@ struct RootView: View {
             }
         }
         .nomiTopEdgeProtection()
+        .disabled(state.commandPalettePresented)
+        .accessibilityHidden(state.commandPalettePresented)
         .background {
             Button("Ouvrir la commande") { state.commandPalettePresented = true }
                 .keyboardShortcut("k", modifiers: [.command])
