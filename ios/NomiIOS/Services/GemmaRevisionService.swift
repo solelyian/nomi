@@ -77,15 +77,40 @@ struct GemmaRevisionService {
             .filter { !$0.isEmpty }
     }
 
+
+    private func balancedFactsAcrossSegments(_ segments: [[String]], limit: Int) -> [String] {
+        var selected: [String] = []
+        var seen: Set<String> = []
+        var usedCharacters = 0
+        var depth = 0
+        while true {
+            var addedAtDepth = false
+            for segment in segments where depth < segment.count {
+                let fact = segment[depth]
+                let cost = fact.count + 4
+                guard usedCharacters + cost <= limit else { return selected }
+                if seen.insert(fact).inserted {
+                    selected.append(fact)
+                    usedCharacters += cost
+                }
+                addedAtDepth = true
+            }
+            guard addedAtDepth else { return selected }
+            depth += 1
+        }
+    }
+
     private func fullSourceSynthesis(from source: String, modelURL: URL) async throws -> (text: String, coverageNote: String) {
         let chunks = chunkedSource(source, limit: 4_500)
         var facts: [String] = []
+        var factsBySegment: [[String]] = []
         for (index, chunk) in chunks.enumerated() {
             let extracted = try await extractFacts(
                 from: chunk,
                 instruction: "Segment \(index + 1) sur \(chunks.count). Extrais les définitions, formules, exemples, étapes, limites et idées essentielles de ce segment.",
                 modelURL: modelURL
             )
+            factsBySegment.append(extracted)
             facts.append(contentsOf: extracted)
         }
 
@@ -103,16 +128,23 @@ struct GemmaRevisionService {
             for batch in batches {
                 condensed.append(contentsOf: try await extractFacts(
                     from: batch,
-                    instruction: "Condense cette liste exhaustive de faits sans perdre de notion distincte. Fusionne seulement les doublons ou reformulations.",
+                    instruction: "Condense cette liste de faits en préservant la couverture de tous les segments. Fusionne les doublons, puis privilégie les notions essentielles à réviser.",
                     modelURL: modelURL
                 ))
             }
             uniqueFacts = condensed
         }
-        guard uniqueFacts.joined(separator: "\n").count <= 8_500 else { throw GemmaRuntimeError.emptyResponse }
+        var usedBalancedSelection = false
+        if uniqueFacts.joined(separator: "\n").count > 8_500 {
+            uniqueFacts = balancedFactsAcrossSegments(factsBySegment, limit: 8_500)
+            usedBalancedSelection = true
+        }
         let text = uniqueFacts.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
         guard !text.isEmpty else { throw GemmaRuntimeError.emptyResponse }
-        return (text, "Source longue analysée en \(chunks.count) segments successifs ; la fiche s'appuie sur une synthèse factuelle de l'ensemble, pas seulement sur le début.")
+        let coverage = usedBalancedSelection
+            ? "Source longue et dense analysée en \(chunks.count) segments ; faute de place contextuelle, la synthèse retient des faits répartis sur tous les segments mais n'est pas exhaustive."
+            : "Source longue analysée en \(chunks.count) segments successifs ; la fiche s'appuie sur une synthèse factuelle de l'ensemble, pas seulement sur le début."
+        return (text, coverage)
     }
 
     func makeRevision(from source: String, sourceTitle: String, level: RevisionDetailLevel, format: RevisionFormat) async throws -> RevisionSheet {
