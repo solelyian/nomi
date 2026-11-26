@@ -83,6 +83,14 @@ struct LibraryView: View {
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }
                     Button { selectedSheet = sheet } label: { sheetRow(sheet) }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Supprimer", systemImage: "trash", role: .destructive) {
+                            state.revisionSheets.removeAll { $0.id == sheet.id }
+                        }
+                    }
+                    .accessibilityAction(named: "Supprimer") {
+                        state.revisionSheets.removeAll { $0.id == sheet.id }
+                    }
                 }
                 if state.revisionSheets.isEmpty {
                     Text("Aucune fiche. La première peut être créée depuis une transcription ou un texte source.")
