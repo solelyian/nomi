@@ -129,7 +129,7 @@ struct ConversationView: View {
     }
 
     private func suggestion(_ text: String) -> some View {
-        Button(text) { input = text }
+        Button(text) { input = input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? text : input + " " + text }
             .font(.caption)
             .foregroundStyle(NomiTheme.ink2)
             .padding(.horizontal, 9)
