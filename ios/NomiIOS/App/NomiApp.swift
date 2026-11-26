@@ -104,7 +104,10 @@ struct RootView: View {
                 } detail: {
                     NavigationStack {
                         (section ?? .today).view
-                            .toolbar(.hidden, for: .navigationBar)
+                            .navigationTitle("")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbarBackground(.thinMaterial, for: .navigationBar)
+                            .toolbarBackground(.visible, for: .navigationBar)
                             .id(section ?? .today)
                     }
                 }
