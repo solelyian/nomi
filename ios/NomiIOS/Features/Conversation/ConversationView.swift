@@ -9,6 +9,7 @@ struct ConversationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var input = ""
     @State private var latestMessageVisible = true
+    @State private var restoreBottomAfterKeyboard = false
     @State private var threadLibraryPresented = false
     @State private var threadSearch = ""
 
@@ -97,8 +98,14 @@ struct ConversationView: View {
                         withAnimation(.linear(duration: 0.08)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                     .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-                        guard latestMessageVisible else { return }
-                        withAnimation(.easeOut(duration: 0.16)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                        restoreBottomAfterKeyboard = latestMessageVisible
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                        guard restoreBottomAfterKeyboard else { return }
+                        restoreBottomAfterKeyboard = false
+                        DispatchQueue.main.async {
+                            withAnimation(.easeOut(duration: 0.16)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                        }
                     }
                 }
             }
