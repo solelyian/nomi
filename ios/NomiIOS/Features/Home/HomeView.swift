@@ -71,6 +71,22 @@ struct HomeView: View {
         state.openTasks.sorted(by: { $0.priority > $1.priority })
     }
 
+    private var productivitySummary: String {
+        let open: String
+        switch state.openTasks.count {
+        case 0: open = "aucune intention ouverte"
+        case 1: open = "1 intention ouverte"
+        default: open = "\(state.openTasks.count) intentions ouvertes"
+        }
+        let focus: String
+        switch state.focusHistory.count {
+        case 0: focus = "aucun focus terminé"
+        case 1: focus = "1 focus terminé"
+        default: focus = "\(state.focusHistory.count) focus terminés"
+        }
+        return "\(open) · \(focus)"
+    }
+
     private var header: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
@@ -84,7 +100,7 @@ struct HomeView: View {
                     .font(verticalSizeClass == .compact ? .system(.title, design: .serif).weight(.semibold) : .system(.largeTitle, design: .serif).weight(.semibold))
                     .tracking(-0.8)
                     .foregroundStyle(NomiTheme.ink)
-                Text("\(state.openTasks.count) intention(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
+                Text(productivitySummary)
                     .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
             }
@@ -198,7 +214,7 @@ struct HomeView: View {
     private var trajectorySection: some View {
         let events = state.agenda.filter { $0.end > .now }.sorted { $0.start < $1.start }.prefix(2)
         return VStack(alignment: .leading, spacing: 6) {
-            sectionHeader("Trajectoire", detail: "\(events.count) événement(s)")
+            sectionHeader("Trajectoire", detail: events.isEmpty ? "aucun événement" : (events.count == 1 ? "1 événement" : "\(events.count) événements"))
             VStack(spacing: 0) {
                 ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42) }

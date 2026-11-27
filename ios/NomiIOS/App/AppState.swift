@@ -190,7 +190,9 @@ final class AppState: ObservableObject {
             guard let dueDate = task.dueDate else { return task.priority >= .high }
             return dueDate < tomorrow || task.priority >= .high
         }.count
-        return "\(deferred) tâche(s) normales reportées à demain ; \(kept) priorité(s) conservées aujourd'hui."
+        let deferredLabel = deferred == 1 ? "1 tâche normale reportée" : "\(deferred) tâches normales reportées"
+        let keptLabel = kept == 1 ? "1 priorité conservée" : "\(kept) priorités conservées"
+        return "\(deferredLabel) à demain ; \(keptLabel) aujourd'hui."
     }
 
     func addTask(from phrase: String) {

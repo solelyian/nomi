@@ -97,7 +97,7 @@ struct NomiCommandPalette: View {
                 }
 
                 HStack {
-                    Text("\(resultCount) résultat(s)")
+                    Text(resultCount == 1 ? "1 résultat" : "\(resultCount) résultats")
                     Spacer()
                     Text("Échap fermer · ↵ exécuter")
                 }
