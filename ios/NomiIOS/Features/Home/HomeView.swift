@@ -127,7 +127,7 @@ struct HomeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(NomiTheme.line.opacity(0.7), lineWidth: 0.7))
             }
             .padding(.horizontal, 11)
-            .frame(height: 46)
+            .frame(minHeight: 46)
             .background(NomiTheme.surface.opacity(0.96), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.88), lineWidth: 0.8))
         }
@@ -160,15 +160,18 @@ struct HomeView: View {
                             .buttonStyle(.nomiSecondary)
                     }
                     VStack(alignment: .leading, spacing: 7) {
-                        Button("Démarrer") { state.startFocus(objective: task.title) }
-                            .buttonStyle(.nomiPrimary)
-                            .frame(maxWidth: .infinity)
-                        Button("Terminer") { state.moveTask(task, to: .done) }
-                            .buttonStyle(.nomiSecondary)
-                            .frame(maxWidth: .infinity)
-                        Button("Sauver") { showRescueConfirmation = true }
-                            .buttonStyle(.nomiSecondary)
-                            .frame(maxWidth: .infinity)
+                        Button { state.startFocus(objective: task.title) } label: {
+                            Text("Démarrer").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.nomiPrimary)
+                        Button { state.moveTask(task, to: .done) } label: {
+                            Text("Terminer").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.nomiSecondary)
+                        Button { showRescueConfirmation = true } label: {
+                            Text("Sauver").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.nomiSecondary)
                     }
                 }
                 if !rescueSummary.isEmpty {
