@@ -267,26 +267,21 @@ Pas d’animation circulaire permanente tape-à-l’œil.
 
 ### 9.6 Conversation Nomi
 
-État vide inspiré de Claude :
+La conversation suit la référence Claude mobile, adaptée à Nomi :
 
-- marque ou symbole simple ;
-- grande question serif ;
-- indication honnête du modèle/local ;
-- suggestions utiles et non enfantines ;
-- composer immédiatement visible.
-
-État actif :
-
-- bulles sobres ou contenu en flux documentaire ;
-- réponses structurées ;
-- actions copier/régénérer ;
-- indicateur local/modèle discret.
+- chrome supérieur minimal : deux contrôles circulaires seulement, bibliothèque de conversations à gauche et nouvelle conversation à droite ; pas de grand titre de marque répété ;
+- les conversations récentes vivent dans un tiroir latéral avec recherche, aperçu du dernier message et action de création ;
+- l’état vide est centré et calme : astérisque corail, salutation serif, capsule honnête d’état Gemma, puis composer immédiatement visible ;
+- l’état actif privilégie un flux documentaire : réponses Nomi directement composées sur le fond, sans carte géante ni étiquette répétée ; messages utilisateur compacts à droite ;
+- les preuves (`calcul vérifié localement`, erreurs ou replis) restent attachées à la réponse en métadonnée discrète ;
+- sur iPad, la colonne de lecture et le composer sont bornés puis centrés au lieu de s’étirer sur toute la largeur.
 
 ### 9.7 Composer
 
-- hauteur 48–56 pt ;
-- attachement, champ, envoi ;
-- matériau système/Liquid Glass ;
+- composer arrondi en deux zones : saisie en haut, actions en bas ;
+- actions réelles seulement : points de départ, état/accès Gemma, envoi ; pas de microphone ou pièce jointe simulé si la fonction n’existe pas ;
+- l’envoi est intégré au composer plutôt que détaché en bouton flottant séparé ;
+- matériau système/Liquid Glass selon les contrôles ;
 - reste visible clavier ouvert ;
 - ne recouvre pas le contenu sans compensation de scroll.
 
