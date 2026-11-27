@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace Nomi.CalcEngine;
@@ -37,7 +38,7 @@ public sealed partial class VerifierEngine
         {
             var character = text[index];
             if (char.IsWhiteSpace(character)) { index++; continue; }
-            if ((character >= '0' && character <= '9') || character == '.')
+            if (character >= '0' && character <= '9')
             {
                 var start = index;
                 while (index < text.Length && ((text[index] >= '0' && text[index] <= '9') || text[index] is '.' or ',')) index++;
@@ -70,6 +71,19 @@ public sealed partial class VerifierEngine
     {
         names ??= new Dictionary<string, Rational>();
         var tokens = Scan(input);
+        // SPEC 2.1 : l'équilibre des parenthèses est structurel — vérifié avant
+        // toute évaluation, comme dans le noyau (`(1/0` est `parenthesis`).
+        var parenthesisBalance = 0;
+        foreach (var scanned in tokens)
+        {
+            if (scanned.Kind == ScanKind.LeftParen) parenthesisBalance++;
+            if (scanned.Kind == ScanKind.RightParen)
+            {
+                parenthesisBalance--;
+                if (parenthesisBalance < 0) throw new CalculationException("parenthesis");
+            }
+        }
+        if (parenthesisBalance > 0) throw new CalculationException("parenthesis");
         var output = new Stack<Symbol>();
         var operators = new Stack<char>();
         var expectValue = true;
@@ -114,6 +128,8 @@ public sealed partial class VerifierEngine
                         || right.Numerator > Kernel.MaxExponent
                         || right.Numerator < -Kernel.MaxExponent)
                         throw new CalculationException("exponent");
+                    if (Rational.PowerExceedsLimits(BigInteger.Abs(left.Numerator), left.Denominator, (int)right.Numerator))
+                        throw new CalculationException("overflow");
                     result = left.RaisedTo((int)right.Numerator);
                     break;
                 default: throw new CalculationException("parse-error");

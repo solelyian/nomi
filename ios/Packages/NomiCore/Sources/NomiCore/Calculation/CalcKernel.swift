@@ -89,7 +89,7 @@ struct CalcKernel: Sendable {
         while index < characters.count {
             let character = characters[index]
             if character.isWhitespace { index += 1; continue }
-            if (character >= "0" && character <= "9") || character == "." {
+            if character >= "0" && character <= "9" {
                 let start = index
                 while index < characters.count,
                       (characters[index] >= "0" && characters[index] <= "9") || characters[index] == "." || characters[index] == "," {
@@ -220,6 +220,9 @@ struct CalcKernel: Sendable {
                 let exponent = exponentValue.numerator.isNegative ? -magnitude : magnitude
                 guard abs(exponent) <= maxExponent else { throw CalcError.exponent }
                 if exponent < 0, base.isZero { throw CalcError.divisionByZero }
+                if Rational.powerExceedsLimits(numeratorMagnitude: base.numerator.magnitude, denominator: base.denominator, exponent: exponent) {
+                    throw CalcError.overflow
+                }
                 let result = base.raised(to: exponent)
                 try checkOverflow(result)
                 return result

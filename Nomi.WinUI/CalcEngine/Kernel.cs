@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace Nomi.CalcEngine;
@@ -149,6 +150,8 @@ public sealed partial class Kernel
                     || exponentValue.Numerator < -MaxExponent)
                     throw new CalculationException("exponent");
                 var exponent = (int)exponentValue.Numerator;
+                if (Rational.PowerExceedsLimits(BigInteger.Abs(baseValue.Numerator), baseValue.Denominator, exponent))
+                    throw new CalculationException("overflow");
                 var result = baseValue.RaisedTo(exponent);
                 CheckOverflow(result);
                 return result;

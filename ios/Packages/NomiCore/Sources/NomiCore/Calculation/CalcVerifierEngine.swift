@@ -42,7 +42,7 @@ struct CalcVerifierEngine: Sendable {
         while index < text.endIndex {
             let character = text[index]
             if character.isWhitespace { index = text.index(after: index); continue }
-            if (character >= "0" && character <= "9") || character == "." {
+            if character >= "0" && character <= "9" {
                 var end = index
                 while end < text.endIndex, (text[end] >= "0" && text[end] <= "9") || text[end] == "." || text[end] == "," {
                     end = text.index(after: end)
@@ -74,6 +74,17 @@ struct CalcVerifierEngine: Sendable {
     /// Évalue par machine à pile. Lève les mêmes erreurs typées que la spec.
     func evaluate(_ input: String, names: [String: Rational] = [:]) throws -> Rational {
         let tokens = try scan(input)
+        // SPEC 2.1 : l'équilibre des parenthèses est structurel — vérifié avant
+        // toute évaluation, comme dans le noyau (`(1/0` est `parenthesis`).
+        var parenthesisBalance = 0
+        for token in tokens {
+            if case .leftParen = token { parenthesisBalance += 1 }
+            if case .rightParen = token {
+                parenthesisBalance -= 1
+                if parenthesisBalance < 0 { throw CalcError.parenthesis(position: 0) }
+            }
+        }
+        if parenthesisBalance > 0 { throw CalcError.parenthesis(position: 0) }
         var output: [Symbol] = []
         var operators: [Character] = []
         var expectValue = true
@@ -125,6 +136,9 @@ struct CalcVerifierEngine: Sendable {
                 let exponent = right.numerator.isNegative ? -magnitude : magnitude
                 guard abs(exponent) <= CalcKernel.maxExponent else { throw CalcError.exponent }
                 if exponent < 0, left.isZero { throw CalcError.divisionByZero }
+                if Rational.powerExceedsLimits(numeratorMagnitude: left.numerator.magnitude, denominator: left.denominator, exponent: exponent) {
+                    throw CalcError.overflow
+                }
                 result = left.raised(to: exponent)
             default: throw CalcError.parseError(position: 0)
             }

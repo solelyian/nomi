@@ -46,6 +46,19 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
         return new Rational(numerator, denominator);
     }
 
+    /// <summary>Précontrôle de capacité avant exponentiation — SPEC 1.2.
+    /// Surestime les chiffres via la longueur binaire (log10(2) &lt; 0,30103) :
+    /// conservateur, jamais laxiste — aucune puissance hors borne n'est calculée.</summary>
+    public static bool PowerExceedsLimits(BigInteger numeratorMagnitude, BigInteger denominator, int exponent)
+    {
+        var magnitude = Math.Abs(exponent);
+        if (magnitude == 0) return false;
+        static long DigitUpperBound(BigInteger value) =>
+            value.IsZero ? 1 : (long)(value.GetBitLength() * 30103 / 100000 + 1);
+        return magnitude * DigitUpperBound(BigInteger.Abs(numeratorMagnitude)) > DigitLimit
+            || magnitude * DigitUpperBound(denominator) > DigitLimit;
+    }
+
     public bool IsZero => Numerator.IsZero;
 
     public bool ExceedsLimits =>

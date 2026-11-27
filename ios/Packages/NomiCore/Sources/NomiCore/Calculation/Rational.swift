@@ -96,6 +96,23 @@ struct Rational: Equatable, Comparable, Sendable {
     }
 
     /// Puissance exacte, exposant entier borné par le noyau avant appel.
+    /// Précontrôle de capacité avant exponentiation — SPEC 1.2.
+    /// Surestime le nombre de chiffres du résultat via la longueur binaire
+    /// (digits(x) ≤ bitLength × 30103/100000 + 1, car log10(2) < 0,30103) :
+    /// conservateur d'un ou deux chiffres près, mais jamais laxiste — aucune
+    /// puissance dépassant la borne n'est calculée, ce qui borne la mémoire
+    /// et le temps quelle que soit la profondeur d'imbrication.
+    static func powerExceedsLimits(numeratorMagnitude: BigUInt, denominator: BigUInt, exponent: Int) -> Bool {
+        let magnitude = abs(exponent)
+        if magnitude == 0 { return false }
+        func digitUpperBound(_ value: BigUInt) -> Int {
+            if value.isZero { return 1 }
+            return value.bitLength * 30103 / 100000 + 1
+        }
+        return magnitude * digitUpperBound(numeratorMagnitude) > Rational.digitLimit
+            || magnitude * digitUpperBound(denominator) > Rational.digitLimit
+    }
+
     func raised(to exponent: Int) -> Rational {
         if exponent >= 0 {
             return Rational(
