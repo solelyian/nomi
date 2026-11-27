@@ -1,6 +1,6 @@
 # Nomi Command — design language iOS / iPadOS
 
-Version 0.1 — document de conception avant maquettes détaillées et implémentation.
+Version 1.1 — langage validé, enrichi par la passe de raffinement Atkinson Hyperlegible et Dynamic Type.
 
 ## 1. Intention
 
@@ -478,22 +478,32 @@ Une direction est acceptable seulement si :
 - elle est plus précise que la version actuelle ;
 - elle exploite les contraintes natives iOS au lieu de les imiter vaguement.
 
-## 18. Décisions à valider
+## 18. Décisions validées
 
-1. La commande universelle est-elle visible sur l’écran Aujourd’hui en permanence, ou seulement accessible par bouton/geste ?
-2. Le serif éditorial doit-il être limité à Aujourd’hui/Nomi ou étendu aux titres principaux ?
-3. La conversation Nomi doit-elle utiliser des bulles ou un flux documentaire plus sobre ?
-4. Focus doit-il être un instrument circulaire, une barre fine ou un simple temps mono ?
-5. Sur iPad, la sidebar doit-elle être persistante ou masquable comme Notion ?
-6. Le logotype interne `n.` est-il acceptable ou faut-il conserver le symbole orbital actuel ?
-7. Les identifiants internes type `NOM-124` apportent-ils une crédibilité Linear ou sont-ils trop « enterprise » pour un produit personnel ?
+1. La commande universelle reste visible sur Aujourd’hui et disponible globalement ; elle est la colonne vertébrale du produit.
+2. Le serif éditorial est limité aux titres principaux, accueils et moments humains ; les listes, formulaires et contrôles restent en sans.
+3. La conversation Nomi utilise un flux documentaire éditorial, avec actions inline et composer stable.
+4. Focus est un instrument typographique : temps monospace dynamique, objectif lisible, barre fine d’activité sans fausse progression.
+5. Sur iPad, la sidebar est persistante et les contenus peuvent former des colonnes indépendantes.
+6. Le logotype interne `n.` est conservé dans la palette et les moments de marque discrets.
+7. Les identifiants internes de type `NOM-124` ne sont pas affichés dans l’interface principale.
+8. Atkinson Hyperlegible est la sans de travail ; seules Regular et Bold sont utilisées, sans graisse intermédiaire simulée.
 
-## 19. Prochaine étape
+## 19. Raffinements d’implémentation — version 1.1
 
-Après validation de ce langage, produire uniquement trois maquettes haute-fidélité :
+Ces règles concrétisent la passe UI/UX actuelle :
 
-1. iPhone — Aujourd’hui + palette ouverte ;
-2. iPhone — Nomi conversation ;
-3. iPad — workspace Aujourd’hui/Tableau/Focus.
+- Les boutons principaux et secondaires possèdent un état désactivé visiblement distinct, pas une simple opacité globale.
+- Les composers affichent une action compacte seulement lorsque l’entrée est exploitable ; l’interprétation locale est indiquée sous le champ quand elle existe.
+- Les dates proches sont exprimées naturellement (`aujourd’hui`, `demain`, `hier`) avant les dates absolues.
+- Les compteurs visibles utilisent une pluralisation française correcte ; les formes `(s)` sont interdites.
+- Les flashcards masquent leur réponse par défaut. Le recto donne un indice partiel, jamais la réponse complète.
+- Les quiz ne révèlent ni la bonne réponse ni l’explication avant le choix. Après validation, l’état correct/incorrect est visible et annoncé à VoiceOver.
+- Les durées, compteurs et badges mono utilisent des styles dynamiques plutôt que des tailles fixes.
+- Les listes scrollables conservent un espace inférieur suffisant au-dessus de la tab bar flottante : 104 pt en compact, 44 pt en regular.
+- En grande taille dynamique, les actions verticales occupent toute la largeur disponible et les champs peuvent grandir en hauteur.
+- Les états réels, replis et limitations restent visibles sans transformer les écrans en documentation technique.
 
-Chaque maquette devra inclure états, interactions, mesures principales et variantes clair/sombre avant toute implémentation.
+## 20. Critère final
+
+Une implémentation conforme doit pouvoir être comparée écran par écran à ce document sans interprétation majeure. Toute exception est soit une adaptation iOS explicitement marquée, soit un écart à corriger avant livraison.
