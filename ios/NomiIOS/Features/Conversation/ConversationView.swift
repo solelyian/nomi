@@ -7,6 +7,7 @@ struct ConversationView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var input = ""
+    @State private var drafts: [UUID: String] = [:]
     @State private var threadLibraryPresented = false
     @State private var threadSearch = ""
 
@@ -75,7 +76,13 @@ struct ConversationView: View {
                     .onAppear {
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
-                    .onChange(of: state.activeThreadID) { _, _ in
+                    .onChange(of: state.activeThreadID) { oldID, newID in
+                        if let oldID, oldID != newID {
+                            drafts[oldID] = input
+                        }
+                        if let newID {
+                            input = drafts[newID] ?? ""
+                        }
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                     .onChange(of: state.activeThread?.messages.last?.text ?? "") { _, _ in
@@ -99,7 +106,6 @@ struct ConversationView: View {
                 Spacer()
                 topIconButton("square.and.pencil", label: "Nouvelle conversation") {
                     state.newThread()
-                    input = ""
                 }
             }
             .frame(maxWidth: contentWidth)
@@ -366,7 +372,6 @@ struct ConversationView: View {
 
             Button {
                 state.newThread()
-                input = ""
                 closeThreadLibrary()
             } label: {
                 Label("Nouvelle conversation", systemImage: "plus")
