@@ -4,6 +4,7 @@ import NomiCore
 struct HomeView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showRescueConfirmation = false
     @State private var rescueSummary = ""
 
@@ -16,7 +17,7 @@ struct HomeView: View {
                         header
                         commandBar
                             .padding(.top, 14)
-                        if geometry.size.width >= 680 {
+                        if usesWideLayout(width: geometry.size.width) {
                             HStack(alignment: .top, spacing: 14) {
                                 VStack(alignment: .leading, spacing: 14) {
                                     nextAction
@@ -37,11 +38,11 @@ struct HomeView: View {
                             focusSection.padding(.top, 16)
                         }
                     }
-                    .frame(maxWidth: geometry.size.width >= 680 ? 1040 : .infinity, alignment: .leading)
+                    .frame(maxWidth: usesWideLayout(width: geometry.size.width) ? 1040 : 680, alignment: .leading)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, geometry.size.width >= 680 ? 24 : 18)
+                    .padding(.horizontal, usesWideLayout(width: geometry.size.width) ? 24 : 18)
                     .padding(.top, 12)
-                    .padding(.bottom, 34)
+                    .padding(.bottom, verticalSizeClass == .compact ? 92 : 34)
                 }
             }
         }
@@ -53,6 +54,10 @@ struct HomeView: View {
         } message: {
             Text("Les tâches normales sont reportées à demain ; les priorités hautes restent visibles.")
         }
+    }
+
+    private func usesWideLayout(width: CGFloat) -> Bool {
+        horizontalSizeClass == .regular && width >= 680
     }
 
     private var greeting: String {
