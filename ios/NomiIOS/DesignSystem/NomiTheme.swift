@@ -201,7 +201,19 @@ extension UIColor {
 }
 
 
+private struct NomiBottomContentInset: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    func body(content: Content) -> some View {
+        content.padding(.bottom, horizontalSizeClass == .compact ? 104 : 44)
+    }
+}
+
 public extension View {
+    func nomiBottomContentInset() -> some View {
+        modifier(NomiBottomContentInset())
+    }
+
     /// Hides the system navigation bar while preserving the correct layout on iOS 17.
     /// `toolbarVisibility` is the supported API from iOS 18; the older modal API is
     /// kept only as a compatibility fallback because `.toolbar(.hidden:)` can leave

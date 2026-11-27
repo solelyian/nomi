@@ -42,7 +42,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, usesWideLayout(width: geometry.size.width) ? 24 : 18)
                     .padding(.top, 12)
-                    .padding(.bottom, verticalSizeClass == .compact ? 92 : 34)
+                    .nomiBottomContentInset()
                 }
             }
         }

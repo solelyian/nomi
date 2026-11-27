@@ -26,7 +26,7 @@ struct BoardView: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 14)
-            .padding(.bottom, 34)
+            .nomiBottomContentInset()
         }
         .nomiScreenBackground()
         .sheet(item: $editingTask) { task in
