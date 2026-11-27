@@ -1,0 +1,601 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0181CA7280F883CFDEB63072 /* LiveTranscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */; };
+		0E3B9D12CC66628FDB8B5573 /* LiveTranscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */; };
+		118036D2166FCB797EB30E6B /* AtkinsonHyperlegible-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 003568C56CBFFAF23854D085 /* AtkinsonHyperlegible-Bold.ttf */; };
+		12E65184E7B782F96FF7F533 /* FocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C80D96754E86221C2E5F5D /* FocusView.swift */; };
+		196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */; };
+		1DB6F42E9D7016C432A34230 /* AtkinsonHyperlegible-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BB24E977139E252C6C4DBECB /* AtkinsonHyperlegible-Italic.ttf */; };
+		2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF73F3880DCB25695E3BFEF4 /* BoardView.swift */; };
+		28D6E4B5630FF4DFB8983BEB /* AtkinsonHyperlegible-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4DA20B029AFCBE5B6F232503 /* AtkinsonHyperlegible-BoldItalic.ttf */; };
+		2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */; };
+		347B4775FD45330268A19A61 /* GemmaModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174081E4779ECEB047958DEE /* GemmaModelManager.swift */; };
+		422B3AA8E484EDAFD16BB8E5 /* NomiCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDDE39AC951D9B0D69E70DC3 /* NomiCore */; };
+		4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E958D41F2C193E270060A927 /* NomiApp.swift */; };
+		56A4DC127636B19C238A8716 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2AB5800E2427860CDF6562 /* AppState.swift */; };
+		7D9400AA2888DEFAD15A72AB /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */; };
+		8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93D0B7E0E1C835F46D7811E /* SettingsView.swift */; };
+		B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4686E95F33FC49354ECAB971 /* NomiTheme.swift */; };
+		BCABA269BCEE89F1A04C98D3 /* AtkinsonHyperlegible-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 407133FBC4B632279C69FCBC /* AtkinsonHyperlegible-Regular.ttf */; };
+		C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */; };
+		C3058BF47A7DC81DF31CAD00 /* NomiCommandPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */; };
+		C3DBB6850A66B74E34FF33D8 /* GemmaRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */; };
+		D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */; };
+		E6ECB3ED71DD4A7451EF2102 /* GemmaRevisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */; };
+		E8978F751B6C1AE22AB1D8ED /* GemmaSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */; };
+		EB78632CDD2E14442089B2E2 /* OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = E3DBCED20547732ABE5F0725 /* OFL.txt */; };
+		F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C7C4694181A6764B0893C0 /* HomeView.swift */; };
+		F36C5CA064941CCB9A2BA2E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC1264985F627D3D8DB8AA54 /* Assets.xcassets */; };
+		F98D54D91EC939E8B4698201 /* AppleSpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */; };
+		FF80234D7572C9C8F510A474 /* LiteRTLM in Frameworks */ = {isa = PBXBuildFile; productRef = 910F707D8B50DB572E55157D /* LiteRTLM */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		003568C56CBFFAF23854D085 /* AtkinsonHyperlegible-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AtkinsonHyperlegible-Bold.ttf"; sourceTree = "<group>"; };
+		05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionView.swift; sourceTree = "<group>"; };
+		093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaRuntime.swift; sourceTree = "<group>"; };
+		0E2AB5800E2427860CDF6562 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiCommandPalette.swift; sourceTree = "<group>"; };
+		174081E4779ECEB047958DEE /* GemmaModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaModelManager.swift; sourceTree = "<group>"; };
+		2251A5C2D66244DBF77F8769 /* NomiCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NomiCore; path = Packages/NomiCore; sourceTree = SOURCE_ROOT; };
+		2DAB9754010E9C28497EBBDA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		407133FBC4B632279C69FCBC /* AtkinsonHyperlegible-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AtkinsonHyperlegible-Regular.ttf"; sourceTree = "<group>"; };
+		41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechTranscriber.swift; sourceTree = "<group>"; };
+		4686E95F33FC49354ECAB971 /* NomiTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiTheme.swift; sourceTree = "<group>"; };
+		4DA20B029AFCBE5B6F232503 /* AtkinsonHyperlegible-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AtkinsonHyperlegible-BoldItalic.ttf"; sourceTree = "<group>"; };
+		5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisionSheetView.swift; sourceTree = "<group>"; };
+		71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaSettingsView.swift; sourceTree = "<group>"; };
+		89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriptionViewModel.swift; sourceTree = "<group>"; };
+		8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+		92C7C4694181A6764B0893C0 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GemmaRevisionService.swift; sourceTree = "<group>"; };
+		AC1264985F627D3D8DB8AA54 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AF73F3880DCB25695E3BFEF4 /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
+		B0C80D96754E86221C2E5F5D /* FocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusView.swift; sourceTree = "<group>"; };
+		B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		BB24E977139E252C6C4DBECB /* AtkinsonHyperlegible-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AtkinsonHyperlegible-Italic.ttf"; sourceTree = "<group>"; };
+		DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
+		E309461932F89F5AF71FE5D8 /* Nomi.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Nomi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E3DBCED20547732ABE5F0725 /* OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = OFL.txt; sourceTree = "<group>"; };
+		E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
+		E93D0B7E0E1C835F46D7811E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		E958D41F2C193E270060A927 /* NomiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NomiApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D0ABD6C8693F29832DCD92C1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				422B3AA8E484EDAFD16BB8E5 /* NomiCore in Frameworks */,
+				FF80234D7572C9C8F510A474 /* LiteRTLM in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		00079B1E70855B213ECDE82A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				41B0E4F52E06B17B79B43A91 /* AppleSpeechTranscriber.swift */,
+				174081E4779ECEB047958DEE /* GemmaModelManager.swift */,
+				99CCAAA76175393206A6A442 /* GemmaRevisionService.swift */,
+				093AC21A7D4EC20738CA739D /* GemmaRuntime.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		1AE436BA3878FEC4233A11F7 = {
+			isa = PBXGroup;
+			children = (
+				A85043EF0F4604FBC31118E9 /* NomiIOS */,
+				47FA842CEFBAC3F9966BE24A /* Packages */,
+				F8A9B5F84032E6AF37B309C1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1BE00BDA5482354D342DB896 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				0F40FA0E0A5FE9614B42C0A8 /* NomiCommandPalette.swift */,
+				4686E95F33FC49354ECAB971 /* NomiTheme.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		1E70B63D9D417F04718D98D2 /* Board */ = {
+			isa = PBXGroup;
+			children = (
+				AF73F3880DCB25695E3BFEF4 /* BoardView.swift */,
+			);
+			path = Board;
+			sourceTree = "<group>";
+		};
+		2873E9E704DA198ACE6FA7D3 /* Routines */ = {
+			isa = PBXGroup;
+			children = (
+				DBCC65FCBEE653E27D6DC70B /* RoutinesView.swift */,
+			);
+			path = Routines;
+			sourceTree = "<group>";
+		};
+		47FA842CEFBAC3F9966BE24A /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				2251A5C2D66244DBF77F8769 /* NomiCore */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		83759B4CC458D371AEDDE12D /* More */ = {
+			isa = PBXGroup;
+			children = (
+				8F392CC67B4BAAB70A7BEF9E /* MoreView.swift */,
+			);
+			path = More;
+			sourceTree = "<group>";
+		};
+		8B17BD5D4AE544DB06C01B93 /* Courses */ = {
+			isa = PBXGroup;
+			children = (
+				05C6FC9A421C9E8AB2A9EFDF /* LiveTranscriptionView.swift */,
+				89604DCDB2D133222EEA3118 /* LiveTranscriptionViewModel.swift */,
+			);
+			path = Courses;
+			sourceTree = "<group>";
+		};
+		8C699752C2CBE01E623E404F /* Conversation */ = {
+			isa = PBXGroup;
+			children = (
+				E52F0D8A4A238C0FBFC7AF8E /* ConversationView.swift */,
+			);
+			path = Conversation;
+			sourceTree = "<group>";
+		};
+		9C5F8A1081DF2528C6D7645E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				71E14DDEAAC0919DD36A798C /* GemmaSettingsView.swift */,
+				E93D0B7E0E1C835F46D7811E /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A0F95421793148B085AB6FC6 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				003568C56CBFFAF23854D085 /* AtkinsonHyperlegible-Bold.ttf */,
+				4DA20B029AFCBE5B6F232503 /* AtkinsonHyperlegible-BoldItalic.ttf */,
+				BB24E977139E252C6C4DBECB /* AtkinsonHyperlegible-Italic.ttf */,
+				407133FBC4B632279C69FCBC /* AtkinsonHyperlegible-Regular.ttf */,
+				E3DBCED20547732ABE5F0725 /* OFL.txt */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		A80D3C9C6DCD21666E79F5B4 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				92C7C4694181A6764B0893C0 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		A85043EF0F4604FBC31118E9 /* NomiIOS */ = {
+			isa = PBXGroup;
+			children = (
+				F1CCEECA15E611F9DD3818FA /* App */,
+				1BE00BDA5482354D342DB896 /* DesignSystem */,
+				C6409D12EFD7CEFEE911A029 /* Features */,
+				BF6B90581F08F99A94FCE136 /* Resources */,
+				00079B1E70855B213ECDE82A /* Services */,
+			);
+			path = NomiIOS;
+			sourceTree = "<group>";
+		};
+		BB1959C31FECAED95505381D /* Focus */ = {
+			isa = PBXGroup;
+			children = (
+				B0C80D96754E86221C2E5F5D /* FocusView.swift */,
+			);
+			path = Focus;
+			sourceTree = "<group>";
+		};
+		BE6AFC3C75A94DD31CA20AF2 /* Revision */ = {
+			isa = PBXGroup;
+			children = (
+				5861800D1D6C890665DF0E11 /* RevisionSheetView.swift */,
+			);
+			path = Revision;
+			sourceTree = "<group>";
+		};
+		BF6B90581F08F99A94FCE136 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AC1264985F627D3D8DB8AA54 /* Assets.xcassets */,
+				2DAB9754010E9C28497EBBDA /* Info.plist */,
+				A0F95421793148B085AB6FC6 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C6409D12EFD7CEFEE911A029 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				1E70B63D9D417F04718D98D2 /* Board */,
+				8C699752C2CBE01E623E404F /* Conversation */,
+				8B17BD5D4AE544DB06C01B93 /* Courses */,
+				BB1959C31FECAED95505381D /* Focus */,
+				A80D3C9C6DCD21666E79F5B4 /* Home */,
+				E35879E2E2ECD438D7E315EC /* Library */,
+				83759B4CC458D371AEDDE12D /* More */,
+				BE6AFC3C75A94DD31CA20AF2 /* Revision */,
+				2873E9E704DA198ACE6FA7D3 /* Routines */,
+				9C5F8A1081DF2528C6D7645E /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		E35879E2E2ECD438D7E315EC /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				B7F56C23BD499EF28C3D5F24 /* LibraryView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		F1CCEECA15E611F9DD3818FA /* App */ = {
+			isa = PBXGroup;
+			children = (
+				0E2AB5800E2427860CDF6562 /* AppState.swift */,
+				E958D41F2C193E270060A927 /* NomiApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F8A9B5F84032E6AF37B309C1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E309461932F89F5AF71FE5D8 /* Nomi.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7B07A2CF2CA7111FDD489DE7 /* Nomi */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 271E11BB4170FC7F0DB3E672 /* Build configuration list for PBXNativeTarget "Nomi" */;
+			buildPhases = (
+				C223D1330DC7FD8FCDBA7842 /* Sources */,
+				BF644954E9525D2BB2C021B0 /* Resources */,
+				D0ABD6C8693F29832DCD92C1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Nomi;
+			packageProductDependencies = (
+				DDDE39AC951D9B0D69E70DC3 /* NomiCore */,
+				910F707D8B50DB572E55157D /* LiteRTLM */,
+			);
+			productName = Nomi;
+			productReference = E309461932F89F5AF71FE5D8 /* Nomi.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C068BF05C510306F7A39BA2B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					7B07A2CF2CA7111FDD489DE7 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 698B518F4C9507E89D15CF00 /* Build configuration list for PBXProject "Nomi" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1AE436BA3878FEC4233A11F7;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */,
+				69CB872000168EF3FCA4CD39 /* XCLocalSwiftPackageReference "Packages/NomiCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F8A9B5F84032E6AF37B309C1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7B07A2CF2CA7111FDD489DE7 /* Nomi */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BF644954E9525D2BB2C021B0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F36C5CA064941CCB9A2BA2E2 /* Assets.xcassets in Resources */,
+				118036D2166FCB797EB30E6B /* AtkinsonHyperlegible-Bold.ttf in Resources */,
+				28D6E4B5630FF4DFB8983BEB /* AtkinsonHyperlegible-BoldItalic.ttf in Resources */,
+				1DB6F42E9D7016C432A34230 /* AtkinsonHyperlegible-Italic.ttf in Resources */,
+				BCABA269BCEE89F1A04C98D3 /* AtkinsonHyperlegible-Regular.ttf in Resources */,
+				EB78632CDD2E14442089B2E2 /* OFL.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C223D1330DC7FD8FCDBA7842 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				56A4DC127636B19C238A8716 /* AppState.swift in Sources */,
+				F98D54D91EC939E8B4698201 /* AppleSpeechTranscriber.swift in Sources */,
+				2713590DA26769A2D2E8B3F9 /* BoardView.swift in Sources */,
+				D86529165A9BBB891BC3A615 /* ConversationView.swift in Sources */,
+				12E65184E7B782F96FF7F533 /* FocusView.swift in Sources */,
+				347B4775FD45330268A19A61 /* GemmaModelManager.swift in Sources */,
+				E6ECB3ED71DD4A7451EF2102 /* GemmaRevisionService.swift in Sources */,
+				C3DBB6850A66B74E34FF33D8 /* GemmaRuntime.swift in Sources */,
+				E8978F751B6C1AE22AB1D8ED /* GemmaSettingsView.swift in Sources */,
+				F13C27605A7D88E85DA059B7 /* HomeView.swift in Sources */,
+				C046FE06246F3A1D52D50303 /* LibraryView.swift in Sources */,
+				0181CA7280F883CFDEB63072 /* LiveTranscriptionView.swift in Sources */,
+				0E3B9D12CC66628FDB8B5573 /* LiveTranscriptionViewModel.swift in Sources */,
+				196A44879F208C11AC02A8A3 /* MoreView.swift in Sources */,
+				4E593165E3D517F0539DFBBF /* NomiApp.swift in Sources */,
+				C3058BF47A7DC81DF31CAD00 /* NomiCommandPalette.swift in Sources */,
+				B44724ACD1F3CE4B2E26C028 /* NomiTheme.swift in Sources */,
+				2FD5BB9F1C7907BAA781406D /* RevisionSheetView.swift in Sources */,
+				7D9400AA2888DEFAD15A72AB /* RoutinesView.swift in Sources */,
+				8A4A5C9848D51C313252C8FC /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A92F63D938DEF32236B41C43 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C4D120BB07B6845EDA3A8E57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 106;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NomiIOS/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.10.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyne.Nomi;
+				PRODUCT_NAME = Nomi;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E228305D736C8959EE7C595F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F1AC860254B94B1DF9A976C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 106;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NomiIOS/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.10.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyne.Nomi;
+				PRODUCT_NAME = Nomi;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		271E11BB4170FC7F0DB3E672 /* Build configuration list for PBXNativeTarget "Nomi" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1AC860254B94B1DF9A976C5 /* Debug */,
+				C4D120BB07B6845EDA3A8E57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		698B518F4C9507E89D15CF00 /* Build configuration list for PBXProject "Nomi" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E228305D736C8959EE7C595F /* Debug */,
+				A92F63D938DEF32236B41C43 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		69CB872000168EF3FCA4CD39 /* XCLocalSwiftPackageReference "Packages/NomiCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/NomiCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google-ai-edge/LiteRT-LM";
+			requirement = {
+				kind = exactVersion;
+				version = 0.20.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		910F707D8B50DB572E55157D /* LiteRTLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 121DF4D71E79D02E4B892DAB /* XCRemoteSwiftPackageReference "LiteRT-LM" */;
+			productName = LiteRTLM;
+		};
+		DDDE39AC951D9B0D69E70DC3 /* NomiCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NomiCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = C068BF05C510306F7A39BA2B /* Project object */;
+}
