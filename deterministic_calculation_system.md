@@ -1,6 +1,6 @@
 # Système de calcul déterministe de Nomi
 
-Version 0.1 — document de conception, avant implémentation.
+Version 0.2 — document de conception, avant implémentation.
 Produit de Nyne Technologies. S'applique à Nomi Windows (WinUI 3, .NET) et Nomi iOS (Swift, NomiCore).
 
 ---
@@ -262,7 +262,74 @@ Affiché dans l'UI sous forme de calcul posé (`remise = 80 × 15 % = 12 €`), 
 
 ---
 
-## 8. Conformité et stratégie de test
+## 8. Pertinence sémantique du calcul posé
+
+### 8.1 Le théorème d'impossibilité, posé honnêtement
+
+Vérifier que « le calcul posé est le bon » suppose de comprendre l'intention de l'utilisateur. Or la vérification formelle exige une spécification formelle, et l'utilisateur donne une intention **informelle** — en langage naturel, précisément le domaine où aucun oracle mécanique n'existe. Rendre la pertinence sémantique strictement infaillible reviendrait à résoudre la compréhension du langage naturel elle-même : impossible, et toute prétention contraire serait malhonnête.
+
+La stratégie n'est donc pas de rendre la pertinence infaillible, mais de rendre **l'incertitude infailliblement visible et bloquante** : le système devient incapable d'afficher avec assurance un chiffre dont la pertinence est douteuse. Cinq strates y conduisent, de la plus forte à la plus faible.
+
+### 8.2 Strate 1 — réduire l'interprétation à de la classification
+
+Le danger vient de la génération libre. Nomi se restreint donc à un **catalogue fermé de schémas de calcul**, chacun défini formellement par des slots typés requis et une formule exacte :
+
+| Schéma | Slots requis | Formule | Invariants |
+|---|---|---|---|
+| `remise` | `prix` (monnaie), `taux` (pourcent) | `final = prix × (1 − taux)` | `taux ∈ [0,1]`, `0 ≤ final ≤ prix` |
+| `tva` | `montant` (monnaie), `taux` (pourcent), sens ∈ {ajouter, retirer} | selon sens | `taux ∈ [0,1]`, coherence HT/TTC |
+| `heures_travail` | `durées[]` (temps), `taux_horaire` (monnaie/temps) | `total = Σdurées × taux` | `durées ≥ 0`, `total ≥ 0` |
+| `repartition` | `total` (monnaie), `parts[]` (ratios nommés) | `part_i = total × ratio_i / Σratios` | `Σpart_i = total` exactement |
+| `regle_de_trois` | `a`, `b`, `c` (dimension commune) | `x = b × c / a` | `a ≠ 0`, dimension conservée |
+| `moyenne` | `valeurs[]` (dimension commune) | `Σ/n` | `n > 0`, `min ≤ moyenne ≤ max` |
+| `variation` | `avant`, `après` (dimension commune) | `(après − avant) / avant` | `avant ≠ 0` |
+
+Le rôle du modèle se réduit alors à **classifier** la demande dans le catalogue et à **remplir les cases** — deux tâches bornées au lieu d'une génération ouverte. Remplir une case est vérifiable par la provenance (§7.1) : tout slot doit être traçable vers la demande ou les documents, jamais inventé. Il ne reste que le risque de mauvaise classification, traité par les strates suivantes.
+
+Hors catalogue : aucun chiffre présenté comme vérifié — voir strate 5.
+
+### 8.3 Strate 2 — invariants de domaine et vérification inverse
+
+Chaque schéma porte des **propriétés mathématiques** que tout résultat correct doit satisfaire (colonne « invariants » ci-dessus) : la remise est dans `[0, prix]`, les parts d'une répartition somment exactement au total, une moyenne est comprise entre le minimum et le maximum de ses valeurs. Ces invariants sont vérifiés mécaniquement en rationnels exacts ; un plan mal posé les viole très souvent — division au lieu de multiplication, taux appliqué à la mauvaise base, opérandes inversés.
+
+S'y ajoute la **vérification inverse** : le résultat est recalculé à rebours par un chemin indépendant. Pour la remise de 15 % sur 80 € donnant 68 €, le système vérifie `68 ÷ 80 = 0,85 = 1 − 15 %`. Les deux chemins doivent converger **exactement** — même méthode que le recoupement arithmétique du vérificateur, appliquée cette fois à la structure du problème. Une divergence est bloquante.
+
+### 8.4 Strate 3 — analyse dimensionnelle stricte
+
+L'analyse dimensionnelle (§5.3) élimine mécaniquement toute une classe de contresens sémantiques : additionner euros et heures, appliquer un taux à une quantité déjà indexée, mélanger deux monnaies. Les erreurs sémantiques laissent presque toujours une trace dimensionnelle — un plan qui « fonctionne » arithmétiquement mais dont les dimensions sont incohérentes est rejeté avant tout affichage.
+
+### 8.5 Strate 4 — l'utilisateur comme oracle, à friction adaptative
+
+Le seul vérificateur d'intention qui existe est l'utilisateur. Le calcul posé est donc toujours reformulé en langage clair (« je calcule une remise de 15 % sur 80 € ») avant le chiffre. Mais la confirmation n'est demandée **que lorsque l'incertitude est mesurable** :
+
+- plusieurs schémas du catalogue sont candidats avec une confiance proche ;
+- un slot est non ancré ou ambigu ;
+- la classification est incertaine (le routeur signale un doute).
+
+Dans ces cas — et seulement dans ces cas — le système pose la question de désambiguïsation **avant** tout chiffre. Pas de confirmation systématique : la fatigue de confirmation finirait par faire valider mécaniquement, ce qui détruirait la protection. La friction est proportionnée à l'incertitude réelle.
+
+### 8.6 Strate 5 — refus hors périmètre
+
+Ce qui sort du catalogue ne produit jamais un chiffre présenté comme vérifié. Deux conduites possibles, honnêtes toutes les deux :
+
+- réponse non chiffrée expliquant la limite et proposant l'action manuelle la plus utile ;
+- calcul posé explicitement marqué **« interprété, à contrôler »** — statut distinct de `verified`, visuellement différencié, jamais promu automatiquement.
+
+L'infaillibilité sémantique est ainsi obtenue **par restriction du domaine d'assertion** : le système n'affirme jamais une pertinence qu'il ne peut pas garantir. C'est la seule forme d'infaillibilité sémantique réellement atteignable — et elle est complète à l'intérieur de sa frontière déclarée.
+
+### 8.7 Synthèse
+
+| Strate | Ce qu'elle garantit | Ce qu'elle ne garantit pas |
+|---|---|---|
+| Catalogue fermé | pas de génération libre de formules | la bonne classification |
+| Invariants + inverse | cohérence mathématique du plan | que le schéma soit le bon |
+| Dimensions | cohérence physique des grandeurs | la pertinence métier |
+| Oracle utilisateur | résolution des ambiguïtés réelles | — (dépend de l'humain) |
+| Refus hors périmètre | aucune assertion non garantie | couverture fonctionnelle bornée |
+
+---
+
+## 9. Conformité et stratégie de test
 
 Le dépôt porte un corpus unique `calc-spec/vectors.json` : grammaire, parsing, arrondis d'affichage, cas limites (division par zéro, milliers ambigus, monnaies mal placées, pourcentages chaînés, exposants bornes, entiers géants), cas d'ancrage et de masquage. Les deux plateformes exécutent **le même corpus** en CI ; un écart est un échec de build.
 
@@ -276,7 +343,7 @@ Au-delà du corpus figé :
 
 ---
 
-## 9. Taxonomie des erreurs et expérience utilisateur
+## 10. Taxonomie des erreurs et expérience utilisateur
 
 | Statut | Signification | Conduite |
 |---|---|---|
@@ -286,22 +353,24 @@ Au-delà du corpus figé :
 | `invalid` | hors grammaire | reformulation demandée, aucune devinette |
 | `unsupported` | unités/conversion hors périmètre | périmètre expliqué, pas de conversion inventée |
 | `engine-disagreement` | noyau ≠ vérificateur | blocage + consignation — ne devrait jamais arriver en production |
+| `interpreted` | calcul hors catalogue, posé mais non garanti | affiché avec la mention « interprété, à contrôler », jamais promu en `verified` |
 
 Les messages restent en langage clair, sans jargon, et l'état `verified` n'est jamais imitable par du texte généré.
 
-## 10. Limites honnêtes
+## 11. Limites honnêtes
 
-1. **Exactitude ≠ pertinence** : le système garantit que le calcul posé est exact et ancré, pas que c'est le bon calcul pour la situation. Le calcul posé visible est la réponse à cette limite.
+1. **Exactitude ≠ pertinence** : la pertinence sémantique ne peut pas être strictement infaillible — voir la section 8, qui détaille le théorème d'impossibilité et les cinq strates qui rendent l'incertitude visible et bloquante à la place.
 2. Les données externes (taux de change, fiscalité) sont hors périmètre déterministe : acceptées comme opérandes déclarées, jamais comme faits du moteur.
 3. Le recoupement interne borne les bogues d'implémentation sans les exclure mathématiquement ; le corpus partagé et les tests de propriétés bornent les erreurs de spécification. « Infaillible » signifie ici : aucun chiffre ne peut être altéré, inventé ou contourné par l'IA, et toute erreur d'implémentation est bloquante plutôt que silencieuse.
 4. La reconnaissance des chiffres en toutes lettres dans le masquage a une couverture bornée (français/anglais usuels) ; ce qui n'est pas reconnu comme nombre n'est pas masquable — la composition structurée rend ce chemin marginal.
 
-## 11. Plan d'implémentation proposé
+## 12. Plan d'implémentation proposé
 
 1. **Phase 1 — spécification et corpus** : figer grammaire, arithmétique rationnelle, règles d'arrondi et `calc-spec/vectors.json` ; faire passer le corpus sur les implémentations actuelles pour mesurer l'écart.
 2. **Phase 2 — noyaux** : réécrire `Calc.cs` en rationnels exacts ; porter le même noyau dans `NomiCore` ; vérificateurs indépendants des deux côtés ; CI de conformité.
 3. **Phase 3 — pipeline iOS** : plan JSON contraint pour Gemma, ancrage, composition mécanique, masquage — parité avec Windows.
 4. **Phase 4 — dimensions et certificat** : analyse dimensionnelle, unités de temps, certificat affiché et consigné.
-5. **Phase 5 — durcissement** : tests adversariaux, mutants, audit de dépendances du module noyau.
+5. **Phase 5 — pertinence sémantique** : catalogue fermé de schémas formels (strate 1), invariants de domaine et vérification inverse (strate 2), friction adaptative (strate 4), statut `interpreted` différencié (strate 5) — sur les deux plateformes.
+6. **Phase 6 — durcissement** : tests adversariaux, mutants, audit de dépendances du module noyau.
 
-Chaque phase est vérifiable indépendamment ; les phases 1–3 suffisent à fermer le risque majeur actuel (les chiffres de Gemma sur iOS ne sont pas vérifiés du tout).
+Chaque phase est vérifiable indépendamment ; les phases 1–3 suffisent à fermer le risque majeur actuel (les chiffres de Gemma sur iOS ne sont pas vérifiés du tout) ; la phase 5 ferme le risque sémantique.
