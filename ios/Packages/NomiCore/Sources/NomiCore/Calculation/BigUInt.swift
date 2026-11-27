@@ -205,7 +205,14 @@ struct BigUInt: Equatable, Comparable, Sendable {
                 if result >= decimalOverflowMagnitude { throw CalcError.overflow }
             }
             remaining /= 2
-            if remaining > 0 { factor = factor * factor }
+            if remaining > 0 {
+                factor = factor * factor
+                // Plafond exact : un facteur ≥ 10^10000 n'a plus besoin d'être exact —
+                // soit il entre dans le résultat (dépassement certain, détecté), soit il
+                // n'y entre jamais (bit non posé) et sa valeur exacte importe peu.
+                // Le coût reste borné quelle que soit la profondeur d'imbrication.
+                if factor >= decimalOverflowMagnitude { factor = decimalOverflowMagnitude }
+            }
         }
         return result
     }

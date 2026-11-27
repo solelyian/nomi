@@ -98,7 +98,13 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
                 if (BigInteger.Abs(result) >= DecimalOverflowMagnitude) throw new CalculationException("overflow");
             }
             remaining /= 2;
-            if (remaining > 0) factor *= factor;
+            if (remaining > 0)
+            {
+                factor *= factor;
+                // Plafond exact : un facteur ≥ 10^10000 n'a plus besoin d'être exact —
+                // soit il entre dans le résultat (dépassement certain), soit jamais.
+                if (BigInteger.Abs(factor) >= DecimalOverflowMagnitude) factor = DecimalOverflowMagnitude;
+            }
         }
         return result;
     }
