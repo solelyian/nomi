@@ -22,7 +22,7 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
             RevisionSection(title: "Questions de révision", body: "• Quelle est l'idée centrale ?\n• Quel exemple du cours l'illustre ?\n• Quelle partie reste incertaine ?", fidelity: .generatedExplanation)
         ]
         let cards = keyIdeas.prefix(5).enumerated().map { index, idea in
-            Flashcard(front: "À retenir : passage \(index + 1)", back: idea)
+            Flashcard(front: "Passage \(index + 1) — \(Self.recallCue(idea))", back: idea)
         }
         let quiz = keyIdeas.prefix(3).enumerated().map { index, idea in
             let choices = [idea, "Une affirmation absente du cours", "L'inverse de l'idée présentée"].shuffled()
@@ -42,6 +42,12 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
             flashcards: Array(cards),
             quiz: Array(quiz)
         )
+    }
+
+    private static func recallCue(_ text: String, wordCount: Int = 4) -> String {
+        let words = text.split(whereSeparator: { $0.isWhitespace })
+        let cue = words.prefix(wordCount).joined(separator: " ")
+        return "« \(cue)… »"
     }
 
     /// Splits after sentence punctuation only when whitespace follows it, so
