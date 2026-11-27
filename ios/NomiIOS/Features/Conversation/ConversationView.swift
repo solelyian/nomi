@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import NomiCore
 
 struct ConversationView: View {
@@ -87,6 +88,11 @@ struct ConversationView: View {
                     }
                     .onChange(of: state.activeThread?.messages.last?.text ?? "") { _, _ in
                         withAnimation(.linear(duration: 0.08)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                        DispatchQueue.main.async {
+                            withAnimation(.easeOut(duration: 0.16)) { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
+                        }
                     }
                 }
             }
