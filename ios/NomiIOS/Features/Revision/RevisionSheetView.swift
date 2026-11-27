@@ -32,7 +32,8 @@ struct RevisionSheetView: View {
             .padding(.bottom, 34)
         }
         .nomiScreenBackground()
-        .navigationTitle("Révision")
+        .nomiChildNavigation()
+        .navigationTitle("")
     }
 
     private var header: some View {

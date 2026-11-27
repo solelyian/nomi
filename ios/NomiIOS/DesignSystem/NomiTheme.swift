@@ -3,16 +3,16 @@ import SwiftUI
 /// Jetons « Nomi Command » : porcelaine chaude, encre précise, accent corail rare,
 /// surfaces documentaires opaques et matériaux natifs réservés à la navigation/aux contrôles.
 public enum NomiTheme {
-    public static let canvas = Color.dynamic(light: "F6F1E9", dark: "11100F")
-    public static let surface = Color.dynamic(light: "FFFDFA", dark: "1C1A18")
-    public static let surface2 = Color.dynamic(light: "EEE7DC", dark: "252220")
-    public static let ink = Color.dynamic(light: "191512", dark: "F2EDE4")
-    public static let ink2 = Color.dynamic(light: "716961", dark: "A99E90")
-    public static let ink3 = Color.dynamic(light: "9B938A", dark: "777068")
-    public static let line = Color.dynamic(light: "D9D3CA", dark: "343331")
+    public static let canvas = Color.dynamic(light: "F6F1E9", dark: "11100F", highLight: "FFFDF7", highDark: "000000")
+    public static let surface = Color.dynamic(light: "FFFDFA", dark: "1C1A18", highLight: "FFFFFF", highDark: "111111")
+    public static let surface2 = Color.dynamic(light: "EEE7DC", dark: "252220", highLight: "E4DACE", highDark: "2E2A27")
+    public static let ink = Color.dynamic(light: "191512", dark: "F2EDE4", highLight: "000000", highDark: "FFFFFF")
+    public static let ink2 = Color.dynamic(light: "716961", dark: "A99E90", highLight: "4F4943", highDark: "D8D0C6")
+    public static let ink3 = Color.dynamic(light: "9B938A", dark: "777068", highLight: "625B54", highDark: "BDB4AA")
+    public static let line = Color.dynamic(light: "D9D3CA", dark: "343331", highLight: "8F867D", highDark: "8A8178")
     public static let glassStroke = Color.dynamic(light: "FFFFFF", dark: "4A4340")
 
-    public static let accent = Color.dynamic(light: "D95F43", dark: "E47B5D")
+    public static let accent = Color.dynamic(light: "D95F43", dark: "E47B5D", highLight: "B83E25", highDark: "FF9A7E")
     public static let accentSoft = Color.dynamic(light: "F1DDD6", dark: "3A211D")
     public static let focus = Color.dynamic(light: "D95F43", dark: "E47B5D")
     public static let focusSoft = Color.dynamic(light: "F1DDD6", dark: "3A211D")
@@ -20,9 +20,9 @@ public enum NomiTheme {
     public static let codeSoft = Color.dynamic(light: "E9E3FB", dark: "302B4B")
     public static let course = Color.dynamic(light: "557C68", dark: "85AE9A")
     public static let courseSoft = Color.dynamic(light: "DDF0ED", dark: "1D3735")
-    public static let success = Color.dynamic(light: "4F9F72", dark: "79C99A")
+    public static let success = Color.dynamic(light: "4F9F72", dark: "79C99A", highLight: "247145", highDark: "9BE0B8")
     public static let successSoft = Color.dynamic(light: "E0EFE3", dark: "23382D")
-    public static let warning = Color.dynamic(light: "B7791F", dark: "E4B85F")
+    public static let warning = Color.dynamic(light: "B7791F", dark: "E4B85F", highLight: "7A4D00", highDark: "FFD27A")
     public static let warningSoft = Color.dynamic(light: "F6E7C8", dark: "453620")
 
     public static let radiusSmall: CGFloat = 10
@@ -134,9 +134,14 @@ public extension View {
 }
 
 extension Color {
-    static func dynamic(light: String, dark: String) -> Color {
+    static func dynamic(light: String, dark: String, highLight: String? = nil, highDark: String? = nil) -> Color {
         Color(UIColor { traits in
-            traits.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light)
+            let darkMode = traits.userInterfaceStyle == .dark
+            let highContrast = traits.accessibilityContrast == .high
+            if darkMode {
+                return UIColor(hex: highContrast ? (highDark ?? dark) : dark)
+            }
+            return UIColor(hex: highContrast ? (highLight ?? light) : light)
         })
     }
 }

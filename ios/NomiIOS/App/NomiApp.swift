@@ -72,6 +72,7 @@ enum NomiDetailDestination: Hashable {
 struct RootView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: AppSection? = .today
     @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
@@ -138,7 +139,7 @@ struct RootView: View {
                 .zIndex(10)
             }
         }
-        .animation(.spring(response: 0.24, dampingFraction: 0.86), value: state.commandPalettePresented)
+        .animation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 0.86), value: state.commandPalettePresented)
         .onReceive(NotificationCenter.default.publisher(for: .nomiOpenConversation)) { _ in
             section = .conversation
         }

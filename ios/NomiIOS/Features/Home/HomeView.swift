@@ -3,6 +3,7 @@ import NomiCore
 
 struct HomeView: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var showRescueConfirmation = false
     @State private var rescueSummary = ""
 
@@ -37,7 +38,6 @@ struct HomeView: View {
                     .padding(.bottom, 34)
                 }
             }
-            .animation(.spring(response: 0.24, dampingFraction: 0.86), value: state.commandPalettePresented)
         }
         .confirmationDialog("Sauver ma journée ?", isPresented: $showRescueConfirmation, titleVisibility: .visible) {
             Button("Reporter les tâches normales", role: .destructive) {
@@ -63,12 +63,14 @@ struct HomeView: View {
     private var header: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(Date.now.formatted(date: .complete, time: .omitted).uppercased())
-                    .font(.caption2.weight(.bold))
-                    .tracking(1.1)
-                    .foregroundStyle(NomiTheme.ink3)
+                if verticalSizeClass != .compact {
+                    Text(Date.now.formatted(date: .complete, time: .omitted).uppercased())
+                        .font(.caption2.weight(.bold))
+                        .tracking(1.1)
+                        .foregroundStyle(NomiTheme.ink3)
+                }
                 Text(greeting)
-                    .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                    .font(verticalSizeClass == .compact ? .system(.title, design: .serif).weight(.semibold) : .system(.largeTitle, design: .serif).weight(.semibold))
                     .tracking(-0.8)
                     .foregroundStyle(NomiTheme.ink)
                 Text("\(state.openTasks.count) intention(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
