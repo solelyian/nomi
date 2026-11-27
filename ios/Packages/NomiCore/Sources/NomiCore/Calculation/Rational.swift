@@ -36,7 +36,7 @@ struct Rational: Equatable, Comparable, Sendable {
         let parts = body.split(separator: ".", omittingEmptySubsequences: false)
         guard parts.count <= 2, parts.allSatisfy({ !$0.isEmpty || parts.count == 1 }) else { return nil }
         let digits = parts.joined()
-        guard !digits.isEmpty, digits.allSatisfy(\.isNumber) else { return nil }
+        guard !digits.isEmpty, digits.allSatisfy({ $0 >= "0" && $0 <= "9" }) else { return nil }
         guard let magnitude = BigUInt(decimalDigits: String(digits)) else { return nil }
         var denominator = BigUInt(1)
         if parts.count == 2 {
@@ -48,9 +48,12 @@ struct Rational: Equatable, Comparable, Sendable {
     var isZero: Bool { numerator.isZero }
 
     /// Dépassement de la borne de ressources (SPEC 1.2).
+    /// Première magnitude à `digitLimit + 1` chiffres : le dépassement est une
+    /// comparaison directe — jamais de conversion décimale complète (coûteuse).
+    private static let overflowMagnitude = BigUInt.pow(BigUInt(10), Rational.digitLimit)
+
     var exceedsLimits: Bool {
-        numerator.magnitude.decimalDigitCount > Rational.digitLimit
-            || denominator.decimalDigitCount > Rational.digitLimit
+        numerator.magnitude >= Rational.overflowMagnitude || denominator >= Rational.overflowMagnitude
     }
 
     static func + (lhs: Rational, rhs: Rational) -> Rational {

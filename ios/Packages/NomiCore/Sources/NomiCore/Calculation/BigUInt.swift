@@ -189,11 +189,19 @@ struct BigUInt: Equatable, Comparable, Sendable {
 
     static func pow(_ base: BigUInt, _ exponent: Int) -> BigUInt {
         precondition(exponent >= 0)
+        // Au-delà de ~600 membres (> 11 500 chiffres décimaux) le résultat dépasse
+        // forcément la borne de la spec : on court-circuite l'exponentiation, qui
+        // sinon ne terminerait jamais (`((10^64)^64)^…`). La valeur exacte importe
+        // peu — tout dépassement est rejeté en `overflow` quelle que soit la valeur.
+        let limbBailout = 600
         var result = BigUInt(1)
         var factor = base
         var remaining = exponent
         while remaining > 0 {
             if remaining % 2 == 1 { result = result * factor }
+            if result.limbs.count > limbBailout || factor.limbs.count > limbBailout {
+                return BigUInt(limbsNormalized: [UInt64](repeating: 0, count: limbBailout) + [1])
+            }
             remaining /= 2
             if remaining > 0 { factor = factor * factor }
         }

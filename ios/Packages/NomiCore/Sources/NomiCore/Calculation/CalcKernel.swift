@@ -89,18 +89,18 @@ struct CalcKernel: Sendable {
         while index < characters.count {
             let character = characters[index]
             if character.isWhitespace { index += 1; continue }
-            if character.isNumber || character == "." {
+            if (character >= "0" && character <= "9") || character == "." {
                 let start = index
                 while index < characters.count,
-                      characters[index].isNumber || characters[index] == "." || characters[index] == "," {
+                      (characters[index] >= "0" && characters[index] <= "9") || characters[index] == "." || characters[index] == "," {
                     index += 1
                 }
                 tokens.append(.number(String(characters[start..<index]), position: start))
                 continue
             }
-            if character.isLetter || character == "_" {
+            if (character >= "a" && character <= "z") || (character >= "A" && character <= "Z") || character == "_" {
                 let start = index
-                while index < characters.count, characters[index].isLetter || characters[index].isNumber || characters[index] == "_" {
+                while index < characters.count, (characters[index] >= "a" && characters[index] <= "z") || (characters[index] >= "A" && characters[index] <= "Z") || (characters[index] >= "0" && characters[index] <= "9") || characters[index] == "_" {
                     index += 1
                 }
                 tokens.append(.identifier(String(characters[start..<index]), position: start))
@@ -140,6 +140,17 @@ struct CalcKernel: Sendable {
         var peek: Token { tokens[min(at, tokens.count - 1)] }
 
         mutating func parse() throws -> Rational {
+            // SPEC 2.1 : fermante sans ouvrante et ouvrante non fermée — `parenthesis`,
+            // détectées structurellement avant l'évaluation.
+            var balance = 0
+            for token in tokens {
+                if case .operator("(", _) = token { balance += 1 }
+                if case .operator(")", let closePosition) = token {
+                    balance -= 1
+                    if balance < 0 { throw CalcError.parenthesis(position: closePosition) }
+                }
+            }
+            if balance > 0 { throw CalcError.parenthesis(position: tokens.count - 1) }
             let value = try expression(depth: 0)
             if case .end = peek {} else {
                 // SPEC 2.1 : une parenthèse fermante sans ouvrante est `parenthesis`,
@@ -221,6 +232,7 @@ struct CalcKernel: Sendable {
             while case .operator("%", _) = peek {
                 at += 1
                 value = value / Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
+                try checkOverflow(value)
             }
             return value
         }
@@ -232,11 +244,19 @@ struct CalcKernel: Sendable {
             switch token {
             case .number(let raw, let position):
                 return try CalcKernel.parseNumber(raw, position: position)
-            case .identifier(let name, _):
+            case .identifier(let name, let namePosition):
+                // SPEC : identificateur = lettre (lettre|chiffre|"_")*, 32 caractères au plus.
+                guard name.count <= 32, let first = name.first, first != "_" else {
+                    throw CalcError.parseError(position: namePosition)
+                }
                 guard let value = names[name] else { throw CalcError.unknownIdentifier(name) }
                 return value
             case .operator("(", let position):
                 let value = try expression(depth: depth + 1)
+                // Juxtaposition dans les parenthèses (`(3 4)`) : `trailing`, pas `parenthesis`.
+                if case .number(_, let juxtapositionPosition) = peek { throw CalcError.trailing(position: juxtapositionPosition) }
+                if case .identifier(_, let juxtapositionPosition) = peek { throw CalcError.trailing(position: juxtapositionPosition) }
+                if case .operator("(", let juxtapositionPosition) = peek { throw CalcError.trailing(position: juxtapositionPosition) }
                 guard case .operator(")", _) = peek else { throw CalcError.parenthesis(position: position) }
                 at += 1
                 return value

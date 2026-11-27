@@ -42,18 +42,18 @@ struct CalcVerifierEngine: Sendable {
         while index < text.endIndex {
             let character = text[index]
             if character.isWhitespace { index = text.index(after: index); continue }
-            if character.isNumber || character == "." {
+            if (character >= "0" && character <= "9") || character == "." {
                 var end = index
-                while end < text.endIndex, text[end].isNumber || text[end] == "." || text[end] == "," {
+                while end < text.endIndex, (text[end] >= "0" && text[end] <= "9") || text[end] == "." || text[end] == "," {
                     end = text.index(after: end)
                 }
                 tokens.append(.number(String(text[index..<end])))
                 index = end
                 continue
             }
-            if character.isLetter || character == "_" {
+            if (character >= "a" && character <= "z") || (character >= "A" && character <= "Z") || character == "_" {
                 var end = index
-                while end < text.endIndex, text[end].isLetter || text[end].isNumber || text[end] == "_" {
+                while end < text.endIndex, (text[end] >= "a" && text[end] <= "z") || (text[end] >= "A" && text[end] <= "Z") || (text[end] >= "0" && text[end] <= "9") || text[end] == "_" {
                     end = text.index(after: end)
                 }
                 tokens.append(.identifier(String(text[index..<end])))
@@ -98,7 +98,9 @@ struct CalcVerifierEngine: Sendable {
             }
             if op == "%" {
                 guard case .value(let top) = output.popLast() else { throw CalcError.parseError(position: 0) }
-                output.append(.value(top / Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))))
+                let percentResult = top / Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
+                if percentResult.exceedsLimits { throw CalcError.overflow }
+                output.append(.value(percentResult))
                 return
             }
             guard case .value(let right) = output.popLast(),
@@ -145,6 +147,7 @@ struct CalcVerifierEngine: Sendable {
                 expectValue = false
             case .identifier(let name):
                 if !expectValue { throw CalcError.trailing(position: 0) }
+                if name.count > 32 || name.first == "_" { throw CalcError.parseError(position: 0) }
                 guard let value = names[name] else { throw CalcError.unknownIdentifier(name) }
                 output.append(.value(value))
                 expectValue = false
@@ -156,6 +159,9 @@ struct CalcVerifierEngine: Sendable {
                 expectValue = true
             case .rightParen:
                 depth -= 1
+                // SPEC 2.1 : fermante sans ouvrante — `parenthesis` avant toute application
+                // d'opérateur en attente (`2+)` reste `parenthesis`).
+                if !operators.contains("(") { throw CalcError.parenthesis(position: 0) }
                 while let top = operators.last, top != "(" {
                     try applyTop()
                 }
