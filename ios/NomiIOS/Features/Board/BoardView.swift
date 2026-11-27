@@ -12,6 +12,10 @@ struct BoardView: View {
         state.tasks.filter { $0.column == selectedColumn }
     }
 
+    private var trimmedPhrase: String {
+        phrase.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -37,41 +41,62 @@ struct BoardView: View {
                     .font(.system(.largeTitle, design: .serif).weight(.semibold))
                     .tracking(-0.7)
                     .foregroundStyle(NomiTheme.ink)
-                Text("\(state.openTasks.count) ouverte(s) · tri par colonne")
+                Text(openCountLabel)
                     .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
             }
             Spacer()
-            Button { add() } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(NomiTheme.canvas)
-                    .frame(width: 34, height: 34)
-                    .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .opacity(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
-            .accessibilityLabel("Ajouter la tâche")
         }
     }
 
-    private var composer: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "plus")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(NomiTheme.ink3)
-            TextField(dynamicTypeSize.isAccessibilitySize ? "Nouvelle tâche…" : "Ex. Envoyer le compte rendu demain 30 min important", text: $phrase)
-                .textFieldStyle(.plain)
-                .font(.nomi(.subheadline))
-                .foregroundStyle(NomiTheme.ink)
-                .submitLabel(.done)
-                .onSubmit(add)
+    private var openCountLabel: String {
+        state.openTasks.count == 1 ? "1 intention ouverte · organisée par statut" : "\(state.openTasks.count) intentions ouvertes · organisées par statut"
+    }
+
+    private var composerHint: String {
+        guard !trimmedPhrase.isEmpty else {
+            return "Ex. « Envoyer le compte rendu demain 30 min important »"
         }
-        .padding(.horizontal, 11)
-        .frame(height: 44)
-        .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+        let parsed = TaskPhraseParser.parse(trimmedPhrase)
+        var parts: [String] = []
+        if let dueDate = parsed.dueDate { parts.append(NomiDateCopy.dueLabel(dueDate)) }
+        if let estimate = parsed.estimateMinutes { parts.append("\(estimate) min") }
+        if parsed.priority != .normal { parts.append("priorité \(parsed.priority.frenchTitle.lowercased())") }
+        return parts.isEmpty ? "Sera ajoutée dans À faire." : parts.joined(separator: " · ")
+    }
+
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 9) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(NomiTheme.ink3)
+                TextField("Nouvelle intention…", text: $phrase)
+                    .textFieldStyle(.plain)
+                    .font(.nomi(.subheadline))
+                    .foregroundStyle(NomiTheme.ink)
+                    .submitLabel(.done)
+                    .onSubmit(add)
+                if !trimmedPhrase.isEmpty {
+                    Button("Ajouter", action: add)
+                        .font(.nomi(.caption, weight: .semibold))
+                        .foregroundStyle(NomiTheme.canvas)
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .accessibilityLabel("Ajouter la tâche")
+                }
+            }
+            .padding(.horizontal, 11)
+            .frame(minHeight: 46)
+            .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+            Text(composerHint)
+                .font(.nomi(.caption2))
+                .foregroundStyle(trimmedPhrase.isEmpty ? NomiTheme.ink3 : NomiTheme.accent)
+                .padding(.leading, 34)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+        }
     }
 
     private var columnPicker: some View {
@@ -203,9 +228,22 @@ private struct BoardTaskRow: View {
     private var metadata: String {
         var parts: [String] = []
         if let estimate = task.estimateMinutes { parts.append("\(estimate) min") }
-        if let dueDate = task.dueDate { parts.append(dueDate.formatted(date: .abbreviated, time: .omitted)) }
+        if let dueDate = task.dueDate { parts.append(NomiDateCopy.dueLabel(dueDate)) }
         if !task.notes.isEmpty { parts.append("notes") }
         return parts.isEmpty ? task.priority.frenchTitle : parts.joined(separator: " · ")
+    }
+}
+
+private enum NomiDateCopy {
+    static func dueLabel(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "aujourd’hui" }
+        if calendar.isDateInTomorrow(date) { return "demain" }
+        if calendar.isDateInYesterday(date) { return "hier" }
+        if calendar.isDate(date, equalTo: .now, toGranularity: .year) {
+            return date.formatted(.dateTime.day().month(.abbreviated)).lowercased()
+        }
+        return date.formatted(date: .abbreviated, time: .omitted)
     }
 }
 
