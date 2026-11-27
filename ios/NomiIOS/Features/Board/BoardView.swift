@@ -79,11 +79,7 @@ struct BoardView: View {
                     .onSubmit(add)
                 if !trimmedPhrase.isEmpty {
                     Button("Ajouter", action: add)
-                        .font(.nomi(.caption, weight: .semibold))
-                        .foregroundStyle(NomiTheme.canvas)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .buttonStyle(.nomiCompact)
                         .accessibilityLabel("Ajouter la tâche")
                 }
             }

@@ -35,15 +35,16 @@ struct FocusView: View {
 
     private var activeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel(state.focusSession == nil ? "Nouveau focus" : "Session active", detail: state.focusSession?.status.frenchTitle.uppercased() ?? "PRÊT")
+            sectionLabel(state.focusSession == nil ? "Nouveau focus" : "Session active", detail: state.focusSession?.status.frenchTitle.uppercased() ?? "LOCAL")
             if let session = state.focusSession {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     VStack(alignment: .leading, spacing: 13) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(duration(session, at: context.date))
-                                .font(.system(size: 54, weight: .light, design: .monospaced))
-                                .tracking(-2.4)
+                                .font(.system(.largeTitle, design: .monospaced).weight(.light))
+                                .tracking(-1.2)
                                 .foregroundStyle(NomiTheme.ink)
+                                .minimumScaleFactor(0.72)
                             Spacer()
                             Text(session.status == .running ? "EN COURS" : "PAUSE")
                                 .font(.caption2.monospaced().weight(.bold))
@@ -53,15 +54,10 @@ struct FocusView: View {
                             .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Rectangle()
-                            .fill(NomiTheme.ink.opacity(0.08))
+                        Capsule()
+                            .fill(session.status == .running ? NomiTheme.accent.opacity(0.72) : NomiTheme.warning.opacity(0.42))
                             .frame(height: 3)
-                            .overlay(alignment: .leading) {
-                                Rectangle()
-                                    .fill(NomiTheme.accent)
-                                    .frame(width: 132)
-                            }
-                            .clipShape(Capsule())
+                            .accessibilityHidden(true)
                         TextField("Notes de contexte à conserver", text: $notes, axis: .vertical)
                             .textFieldStyle(.plain)
                             .font(.nomi(.subheadline))
@@ -99,7 +95,7 @@ struct FocusView: View {
                         .submitLabel(.go)
                         .onSubmit(start)
                     Button("Démarrer", action: start)
-                        .buttonStyle(.nomiPrimary)
+                        .buttonStyle(.nomiCompact)
                         .disabled(objective.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(.horizontal, 11)
@@ -133,7 +129,7 @@ struct FocusView: View {
                                         .foregroundStyle(NomiTheme.ink)
                                         .lineLimit(1)
                                     Spacer()
-                                    Text(task.estimateMinutes.map { "\($0)m" } ?? "—")
+                                    Text(task.estimateMinutes.map { "\($0)m" } ?? "libre")
                                         .font(.caption2.monospaced())
                                         .foregroundStyle(NomiTheme.ink3)
                                 }

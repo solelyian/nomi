@@ -301,6 +301,24 @@ extension ButtonStyle where Self == NomiSecondaryButtonStyle {
     public static var nomiSecondary: NomiSecondaryButtonStyle { NomiSecondaryButtonStyle() }
 }
 
+public struct NomiCompactButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    public init() {}
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.nomi(.caption, weight: .semibold))
+            .foregroundStyle(isEnabled ? NomiTheme.canvas : NomiTheme.ink3)
+            .padding(.horizontal, 10)
+            .frame(minHeight: 32)
+            .background(isEnabled ? NomiTheme.ink : NomiTheme.surface2.opacity(0.64), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .opacity(configuration.isPressed ? 0.72 : 1)
+    }
+}
+
+extension ButtonStyle where Self == NomiCompactButtonStyle {
+    public static var nomiCompact: NomiCompactButtonStyle { NomiCompactButtonStyle() }
+}
+
 public struct NomiProgressRing: View {
     public var progress: Double
     public var tint: Color
