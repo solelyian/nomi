@@ -15,7 +15,7 @@ public enum NomiTheme {
     public static let accent = Color.dynamic(light: "D95F43", dark: "E47B5D")
     public static let accentSoft = Color.dynamic(light: "F1DDD6", dark: "3A211D")
     public static let focus = Color.dynamic(light: "D95F43", dark: "E47B5D")
-    public static let focusSoft = Color.dynamic(light: "E9E3FB", dark: "302B4B")
+    public static let focusSoft = Color.dynamic(light: "F1DDD6", dark: "3A211D")
     public static let code = Color.dynamic(light: "8267EA", dark: "A896FF")
     public static let codeSoft = Color.dynamic(light: "E9E3FB", dark: "302B4B")
     public static let course = Color.dynamic(light: "557C68", dark: "85AE9A")
@@ -206,12 +206,12 @@ extension View {
     }
 
     public func nomiInput() -> some View {
-        padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .nomiLiquidGlass(shape: .rounded(17), tintStrength: 0)
+        padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .strokeBorder(NomiTheme.ink.opacity(0.12), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .strokeBorder(NomiTheme.line.opacity(0.82), lineWidth: 0.8)
             }
     }
 }
@@ -224,7 +224,7 @@ public struct NomiPrimaryButtonStyle: ButtonStyle {
             .foregroundStyle(NomiTheme.canvas)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .frame(minHeight: 36)
+            .frame(minHeight: 44)
             .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
             .opacity(configuration.isPressed ? 0.76 : 1)
     }
@@ -238,7 +238,7 @@ public struct NomiSecondaryButtonStyle: ButtonStyle {
             .foregroundStyle(NomiTheme.ink)
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
-            .frame(minHeight: 36)
+            .frame(minHeight: 44)
             .background(NomiTheme.surface2.opacity(0.52), in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous).strokeBorder(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
             .opacity(configuration.isPressed ? 0.68 : 1)
@@ -299,9 +299,10 @@ public struct NomiBadge: View {
         Text(text)
             .font(.caption.weight(.bold))
             .foregroundStyle(tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .nomiLiquidGlass(shape: .capsule, tint: tint, tintStrength: 0.28)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(tint.opacity(0.11), in: Capsule())
+            .overlay(Capsule().stroke(tint.opacity(0.18), lineWidth: 0.7))
             .accessibilityLabel(Text(text))
     }
 }
@@ -349,7 +350,7 @@ public struct NomiScreenTitle: View {
                     .foregroundStyle(NomiTheme.ink2)
             }
             Text(title)
-                .font(.system(size: 34, weight: .semibold, design: .serif))
+                .font(.system(.largeTitle, design: .serif).weight(.semibold))
                 .foregroundStyle(NomiTheme.ink)
                 .minimumScaleFactor(0.75)
             if let subtitle {

@@ -6,7 +6,7 @@ struct MoreView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Plus")
-                        .font(.system(size: 32, weight: .semibold, design: .serif))
+                        .font(.system(.largeTitle, design: .serif).weight(.semibold))
                         .tracking(-0.7)
                         .foregroundStyle(NomiTheme.ink)
                     Text("Apprentissage, automatisations et réglages")

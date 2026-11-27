@@ -111,7 +111,7 @@ struct ConversationView: View {
                 .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .rotationEffect(.degrees(4))
             Text("Comment puis-je t’aider ?")
-                .font(.system(size: 30, weight: .semibold, design: .serif))
+                .font(.system(.title, design: .serif).weight(.semibold))
                 .tracking(-0.7)
                 .multilineTextAlignment(.center)
             Text(state.gemmaManager.selectedModelURL == nil ? "Installe Gemma 4 pour une génération locale complète ; le repli déterministe reste disponible." : "Gemma 4 fonctionne sur cet appareil. Aucune clé API n’est requise.")

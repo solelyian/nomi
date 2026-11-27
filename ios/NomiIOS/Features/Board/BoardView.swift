@@ -34,7 +34,7 @@ struct BoardView: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Tableau")
-                    .font(.system(size: 32, weight: .semibold, design: .serif))
+                    .font(.system(.largeTitle, design: .serif).weight(.semibold))
                     .tracking(-0.7)
                     .foregroundStyle(NomiTheme.ink)
                 Text("\(state.openTasks.count) ouverte(s) · tri par colonne")

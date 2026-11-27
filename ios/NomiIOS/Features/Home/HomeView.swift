@@ -68,7 +68,7 @@ struct HomeView: View {
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Text(greeting)
-                    .font(.system(size: 34, weight: .semibold, design: .serif))
+                    .font(.system(.largeTitle, design: .serif).weight(.semibold))
                     .tracking(-0.8)
                     .foregroundStyle(NomiTheme.ink)
                 Text("\(state.openTasks.count) intention(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
@@ -121,13 +121,26 @@ struct HomeView: View {
                 Text("Priorité \(task.priority.frenchTitle.lowercased()) · \(task.estimateMinutes.map { "\($0) min" } ?? "durée libre")")
                     .font(.caption)
                     .foregroundStyle(NomiTheme.ink2)
-                HStack(spacing: 7) {
-                    Button("Démarrer") { state.startFocus(objective: task.title) }
-                        .buttonStyle(.nomiPrimary)
-                    Button("Terminer") { state.moveTask(task, to: .done) }
-                        .buttonStyle(.nomiSecondary)
-                    Button("Sauver") { showRescueConfirmation = true }
-                        .buttonStyle(.nomiSecondary)
+                ViewThatFits {
+                    HStack(spacing: 7) {
+                        Button("Démarrer") { state.startFocus(objective: task.title) }
+                            .buttonStyle(.nomiPrimary)
+                        Button("Terminer") { state.moveTask(task, to: .done) }
+                            .buttonStyle(.nomiSecondary)
+                        Button("Sauver") { showRescueConfirmation = true }
+                            .buttonStyle(.nomiSecondary)
+                    }
+                    VStack(alignment: .leading, spacing: 7) {
+                        Button("Démarrer") { state.startFocus(objective: task.title) }
+                            .buttonStyle(.nomiPrimary)
+                            .frame(maxWidth: .infinity)
+                        Button("Terminer") { state.moveTask(task, to: .done) }
+                            .buttonStyle(.nomiSecondary)
+                            .frame(maxWidth: .infinity)
+                        Button("Sauver") { showRescueConfirmation = true }
+                            .buttonStyle(.nomiSecondary)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 if !rescueSummary.isEmpty {
                     Text(rescueSummary)
@@ -278,6 +291,7 @@ struct HomeView: View {
 }
 
 private struct HomeTaskRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: WorkTask
     let complete: () -> Void
 
@@ -296,11 +310,12 @@ private struct HomeTaskRow: View {
                 Text(task.title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(NomiTheme.ink)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(task.estimateMinutes.map { "\($0) min" } ?? "Durée libre")
                     .font(.caption2)
                     .foregroundStyle(NomiTheme.ink3)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
             }
             Spacer(minLength: 8)
             Text(task.priority >= .high ? "P1" : "P2")

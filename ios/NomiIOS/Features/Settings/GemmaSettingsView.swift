@@ -22,7 +22,7 @@ struct GemmaSettingsView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Gemma 4 local")
-                .font(.system(size: 32, weight: .semibold, design: .serif))
+                .font(.system(.largeTitle, design: .serif).weight(.semibold))
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Modèle open model exécuté sur appareil")

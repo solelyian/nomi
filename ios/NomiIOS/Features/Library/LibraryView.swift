@@ -30,7 +30,7 @@ struct LibraryView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Fiches et révisions")
-                .font(.system(size: 32, weight: .semibold, design: .serif))
+                .font(.system(.largeTitle, design: .serif).weight(.semibold))
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Sources transformées en supports révisables")
@@ -200,17 +200,48 @@ struct StoredSheetDetail: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                NomiScreenTitle(sheet.title, subtitle: "\(sheet.level.frenchTitle) · \(sheet.format.frenchTitle) · \(sheet.createdAt.formatted(date: .abbreviated, time: .shortened))")
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                sections
+                if !sheet.flashcards.isEmpty { flashcards }
+                if !sheet.quiz.isEmpty { quiz }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+            .padding(.bottom, 34)
+        }
+        .nomiScreenBackground()
+        .nomiChildNavigation()
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
-                ForEach(sheet.sections) { section in
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(alignment: .top) {
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(sheet.title)
+                .font(.system(.title, design: .serif).weight(.semibold))
+                .tracking(-0.6)
+                .foregroundStyle(NomiTheme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(sheet.level.frenchTitle) · \(sheet.format.frenchTitle) · \(sheet.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+        }
+    }
+
+    private var sections: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle("SECTIONS", count: sheet.sections.count)
+            VStack(spacing: 0) {
+                ForEach(Array(sheet.sections.enumerated()), id: \.element.id) { index, section in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)) }
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline) {
                             Text(section.title)
-                                .font(.system(.headline, design: .rounded).weight(.bold))
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(NomiTheme.ink)
                             Spacer()
-                            NomiBadge(section.fidelity.frenchTitle, tint: section.fidelity == .source ? NomiTheme.success : NomiTheme.focus)
+                            fidelityLabel(section.fidelity)
                         }
                         Text(section.body)
                             .font(.subheadline)
@@ -218,69 +249,109 @@ struct StoredSheetDetail: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                     }
-                    .nomiCard(tint: section.fidelity == .source ? NomiTheme.success : NomiTheme.focus)
-                }
-
-                if !sheet.flashcards.isEmpty {
-                    VStack(alignment: .leading, spacing: 13) {
-                        Label("Flashcards", systemImage: "rectangle.on.rectangle.fill")
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(NomiTheme.focus)
-                        ForEach(sheet.flashcards) { card in
-                            VStack(alignment: .leading, spacing: 7) {
-                                Text(card.front)
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(NomiTheme.ink)
-                                Text(card.back)
-                                    .font(.subheadline)
-                                    .foregroundStyle(NomiTheme.ink2)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(13)
-                            .background(NomiTheme.focus.opacity(0.09), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        }
-                    }
-                    .nomiCard(tint: NomiTheme.focus)
-                }
-
-                if !sheet.quiz.isEmpty {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Label("Quiz", systemImage: "checkmark.circle.fill")
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(NomiTheme.course)
-                        ForEach(sheet.quiz) { question in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(question.question)
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(NomiTheme.ink)
-                                ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Image(systemName: index == question.correctIndex ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(index == question.correctIndex ? NomiTheme.success : NomiTheme.ink3)
-                                        Text(choice)
-                                            .font(.subheadline)
-                                            .foregroundStyle(index == question.correctIndex ? NomiTheme.ink : NomiTheme.ink2)
-                                    }
-                                }
-                                Text(question.explanation)
-                                    .font(.caption)
-                                    .foregroundStyle(NomiTheme.ink2)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(13)
-                            .background(NomiTheme.course.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        }
-                    }
-                    .nomiCard(tint: NomiTheme.course)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 34)
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
         }
-        .nomiScreenBackground()
-        .nomiChildNavigation()
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var flashcards: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle("FLASHCARDS", count: sheet.flashcards.count)
+            VStack(spacing: 0) {
+                ForEach(Array(sheet.flashcards.enumerated()), id: \.element.id) { index, card in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(card.front)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(NomiTheme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(card.back)
+                            .font(.caption)
+                            .foregroundStyle(NomiTheme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private var quiz: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle("QUIZ", count: sheet.quiz.count)
+            VStack(spacing: 0) {
+                ForEach(Array(sheet.quiz.enumerated()), id: \.element.id) { index, question in
+                    if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text(question.question)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(NomiTheme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ForEach(Array(question.choices.enumerated()), id: \.offset) { choiceIndex, choice in
+                            HStack(alignment: .top, spacing: 7) {
+                                Image(systemName: choiceIndex == question.correctIndex ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.success : NomiTheme.ink3)
+                                Text(choice)
+                                    .font(.caption)
+                                    .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.ink : NomiTheme.ink2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        Text(question.explanation)
+                            .font(.caption)
+                            .foregroundStyle(NomiTheme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                }
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private func sectionTitle(_ title: String, count: Int) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(NomiTheme.ink3)
+            Spacer()
+            Text("\(count)")
+                .font(.caption2.monospaced())
+                .foregroundStyle(NomiTheme.ink3)
+        }
+        .padding(.horizontal, 1)
+    }
+
+    private func fidelityLabel(_ fidelity: FidelityKind) -> some View {
+        let label: String
+        let tint: Color
+        switch fidelity {
+        case .source:
+            label = "SOURCE"
+            tint = NomiTheme.success
+        case .generatedExplanation:
+            label = "IA"
+            tint = NomiTheme.accent
+        case .hypothesis:
+            label = "HYPOTHÈSE"
+            tint = NomiTheme.warning
+        }
+        return Text(label)
+            .font(.system(size: 8, weight: .bold, design: .monospaced))
+            .tracking(0.6)
+            .foregroundStyle(tint)
     }
 }

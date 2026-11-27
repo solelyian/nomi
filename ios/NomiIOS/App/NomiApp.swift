@@ -248,42 +248,12 @@ struct OnboardingView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemName: "sun.max.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(NomiTheme.accent)
-                        Text("Bienvenue dans Nomi")
-                            .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                        Text("Votre compagnon de journée pour organiser, vous concentrer, transcrire et réviser.")
-                            .foregroundStyle(NomiTheme.ink2)
-                    }
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        onboardingRow("checklist", "Organisez vos priorités", "Ajoutez des tâches et faites-les progresser.")
-                        Divider().overlay(NomiTheme.line)
-                        onboardingRow("timer", "Travaillez en focus", "Minuteur avec pause, notes et historique.")
-                        Divider().overlay(NomiTheme.line)
-                        onboardingRow("repeat", "Gardez le contrôle", "Des routines visibles, modifiables et contrôlées.")
-                        Divider().overlay(NomiTheme.line)
-                        onboardingRow("lock.shield", "Local d'abord", "Gemma 4 fonctionne sur appareil ; vos conversations restent locales.")
-                    }
-                    .nomiCard(tint: NomiTheme.accent)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Langue de transcription")
-                            .font(.headline)
-                        Picker("Langue de transcription", selection: $state.transcriptionLanguage) {
-                            Text("Français").tag("fr-FR")
-                            Text("English").tag("en-US")
-                        }
-                        .pickerStyle(.segmented)
-                        Text("Le choix concerne la reconnaissance vocale ; l'interface complète reste francophone dans cette itération.")
-                            .font(.caption)
-                            .foregroundStyle(NomiTheme.ink2)
-                    }
-                    .nomiCard(tint: NomiTheme.course)
+                    header
+                    principles
+                    languagePanel
                 }
-                .padding(24)
+                .padding(.horizontal, 22)
+                .padding(.top, 22)
                 .padding(.bottom, 12)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -291,9 +261,10 @@ struct OnboardingView: View {
                     .buttonStyle(.nomiPrimary)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 22)
                     .padding(.top, 10)
                     .padding(.bottom, 12)
+                    .background(NomiTheme.canvas.opacity(0.92))
             }
             .nomiScreenBackground()
             .nomiTopEdgeProtection()
@@ -301,17 +272,94 @@ struct OnboardingView: View {
         }
     }
 
-    private func onboardingRow(_ icon: String, _ title: String, _ detail: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(NomiTheme.accent)
-                .frame(width: 40, height: 40)
-                .background(NomiTheme.accent.opacity(0.11), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.headline)
-                Text(detail).font(.subheadline).foregroundStyle(NomiTheme.ink2)
-            }
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("n.")
+                .font(.system(size: 20, weight: .bold, design: .serif))
+                .foregroundStyle(.white)
+                .frame(width: 34, height: 34)
+                .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .accessibilityHidden(true)
+            Text("Bienvenue dans Nomi")
+                .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                .tracking(-0.8)
+                .foregroundStyle(NomiTheme.ink)
+            Text("Un espace de commande personnel pour décider, agir et réviser — local d’abord, sans automatisation silencieuse.")
+                .font(.subheadline)
+                .foregroundStyle(NomiTheme.ink2)
+                .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var principles: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("PRINCIPES")
+                .font(.caption2.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(NomiTheme.ink3)
+                .padding(.horizontal, 1)
+            VStack(spacing: 0) {
+                onboardingRow(index: 0, icon: "command", title: "Commander", detail: "Créer, chercher ou demander depuis une seule entrée.")
+                divider
+                onboardingRow(index: 1, icon: "checklist", title: "Décider", detail: "Une prochaine action visible, pas un tableau décoratif.")
+                divider
+                onboardingRow(index: 2, icon: "timer", title: "Se concentrer", detail: "Minuteur explicite, pause contrôlée et notes lisibles.")
+                divider
+                onboardingRow(index: 3, icon: "lock.shield", title: "Rester local", detail: "Gemma 4 fonctionne sur appareil après téléchargement.")
+            }
+            .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.7))
+        }
+    }
+
+    private var divider: some View {
+        Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 42)
+    }
+
+    private var languagePanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TRANSCRIPTION")
+                .font(.caption2.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(NomiTheme.ink3)
+            Text("Langue de reconnaissance vocale")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(NomiTheme.ink)
+            Picker("Langue de transcription", selection: $state.transcriptionLanguage) {
+                Text("Français").tag("fr-FR")
+                Text("English").tag("en-US")
+            }
+            .pickerStyle(.segmented)
+            Text("L’interface complète reste francophone dans cette itération ; la langue concerne la reconnaissance vocale.")
+                .font(.caption)
+                .foregroundStyle(NomiTheme.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(NomiTheme.surface.opacity(0.72), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.68), lineWidth: 0.7))
+    }
+
+    private func onboardingRow(index: Int, icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(index == 0 ? NomiTheme.accent : NomiTheme.ink2)
+                .frame(width: 24, height: 24)
+                .background((index == 0 ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(NomiTheme.ink)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(NomiTheme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
     }
 }
