@@ -7,6 +7,10 @@ struct ConversationView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var input = ""
 
+    private var canSend: Bool {
+        !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !state.isGeneratingReply
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             threadSelector
@@ -53,7 +57,9 @@ struct ConversationView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Nomi")
-                    .font(.system(size: 28, weight: .semibold, design: .serif))
+                    .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                    .tracking(-0.7)
+                    .foregroundStyle(NomiTheme.ink)
                 Menu(state.activeThread?.title ?? "Conversation") {
                     ForEach(state.threads) { thread in
                         Button(thread.title) { state.activeThreadID = thread.id }
@@ -62,9 +68,14 @@ struct ConversationView: View {
                 .font(.nomi(.subheadline, weight: .semibold))
                 .foregroundStyle(NomiTheme.ink2)
                 if verticalSizeClass != .compact {
-                    Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
-                        .font(.nomi(.caption, weight: .bold))
-                        .foregroundStyle(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
+                            .frame(width: 5, height: 5)
+                        Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
+                            .font(.nomi(.caption, weight: .semibold))
+                            .foregroundStyle(NomiTheme.ink2)
+                    }
                 }
             }
             Spacer()
@@ -109,20 +120,27 @@ struct ConversationView: View {
                 .foregroundStyle(.white)
                 .frame(width: 43, height: 43)
                 .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .rotationEffect(.degrees(4))
             Text("Comment puis-je t’aider ?")
                 .font(.system(.title, design: .serif).weight(.semibold))
                 .tracking(-0.7)
                 .multilineTextAlignment(.center)
-            Text(state.gemmaManager.selectedModelURL == nil ? "Installe Gemma 4 pour une génération locale complète ; le repli déterministe reste disponible." : "Gemma 4 fonctionne sur cet appareil. Aucune clé API n’est requise.")
+            Text(state.gemmaManager.selectedModelURL == nil ? "Demandez, planifiez ou vérifiez. Le repli local reste disponible tant que Gemma n’est pas installé." : "Gemma 4 fonctionne sur cet appareil. Aucune clé API n’est requise.")
                 .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 290)
-            HStack(spacing: 7) {
-                suggestion("Planifier ma soirée")
-                suggestion("Créer une fiche")
-                suggestion("Vérifier un calcul")
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 7) {
+                    suggestion("Planifier ma soirée")
+                    suggestion("Créer une fiche")
+                    suggestion("Vérifier un calcul")
+                }
+            } else {
+                HStack(spacing: 7) {
+                    suggestion("Planifier ma soirée")
+                    suggestion("Créer une fiche")
+                    suggestion("Vérifier un calcul")
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -132,10 +150,10 @@ struct ConversationView: View {
 
     private func suggestion(_ text: String) -> some View {
         Button(text) { input = input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? text : input + " " + text }
-            .font(.nomi(.caption))
+            .font(.nomi(.footnote))
             .foregroundStyle(NomiTheme.ink2)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(NomiTheme.surface.opacity(0.72), in: Capsule())
             .overlay(Capsule().stroke(NomiTheme.line.opacity(0.75), lineWidth: 0.7))
     }
@@ -148,7 +166,7 @@ struct ConversationView: View {
     private var composer: some View {
         VStack(spacing: 7) {
             HStack(alignment: .bottom, spacing: 10) {
-                TextField(state.gemmaManager.selectedModelURL == nil ? "Installer Gemma 4…" : "Demander à Nomi…", text: $input, axis: .vertical)
+                TextField("Demander à Nomi…", text: $input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 15)
                     .padding(.vertical, 12)
@@ -160,14 +178,20 @@ struct ConversationView: View {
                 } label: {
                     Image(systemName: "arrow.up")
                         .font(.nomi(.headline, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(canSend ? .white : NomiTheme.ink3)
                         .frame(width: 44, height: 44)
-                        .nomiLiquidGlass(shape: .circle, tint: NomiTheme.accent, tintStrength: 0.92, interactive: true)
-                        .shadow(color: NomiTheme.accent.opacity(0.18), radius: 10, y: 5)
+                        .background {
+                            if canSend {
+                                Circle().fill(NomiTheme.accent)
+                            } else {
+                                Circle().fill(NomiTheme.surface2.opacity(0.68))
+                            }
+                        }
+                        .overlay(Circle().stroke(NomiTheme.line.opacity(canSend ? 0 : 0.72), lineWidth: 0.8))
+                        .shadow(color: NomiTheme.accent.opacity(canSend ? 0.18 : 0), radius: 10, y: 5)
                 }
                 .buttonStyle(.plain)
-                .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply)
-                .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state.isGeneratingReply ? 0.48 : 1)
+                .disabled(!canSend)
                 .accessibilityLabel("Envoyer")
             }
         }
