@@ -89,11 +89,13 @@ struct RootView: View {
                             .tag(item)
                     }
                     .listStyle(.sidebar)
+                    .scrollContentBackground(.hidden)
+                    .background(NomiAmbientBackground())
                     .navigationTitle("n.")
                 } detail: {
                     NavigationStack(path: $detailPath) {
                         (section ?? .today).view
-                            .frame(maxWidth: 920)
+                            .frame(maxWidth: .infinity)
                             .navigationTitle("")
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationDestination(for: NomiDetailDestination.self) { destination in
@@ -112,11 +114,13 @@ struct RootView: View {
                                 }
                             }
                     }
+                    .background(NomiAmbientBackground())
                     .id(section ?? .today)
                     .onChange(of: section) { _, _ in
                         detailPath = NavigationPath()
                     }
                 }
+                .background(NomiAmbientBackground())
             } else {
                 RootTabView()
             }
