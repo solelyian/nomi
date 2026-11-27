@@ -398,7 +398,7 @@ private struct QuizStudyRow: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(answered)
-                    .accessibilityLabel("Réponse \(choiceIndex + 1) : \(choice)")
+                    .accessibilityLabel(accessibilityLabel(choiceIndex: choiceIndex, choice: choice))
                 }
             }
             if answered {
@@ -417,6 +417,14 @@ private struct QuizStudyRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 9)
+    }
+
+    private func accessibilityLabel(choiceIndex: Int, choice: String) -> String {
+        let base = "Réponse \(choiceIndex + 1) : \(choice)"
+        guard answered else { return base }
+        if choiceIndex == question.correctIndex { return "\(base), bonne réponse" }
+        if choiceIndex == selectedIndex { return "\(base), réponse choisie incorrecte" }
+        return base
     }
 
     private func icon(for index: Int) -> String {

@@ -21,8 +21,8 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
             RevisionSection(title: "Pièges fréquents", body: "Vérifier les unités, les hypothèses implicites et les exemples qui semblent contredire la règle générale.", fidelity: .hypothesis),
             RevisionSection(title: "Questions de révision", body: "• Quelle est l'idée centrale ?\n• Quel exemple du cours l'illustre ?\n• Quelle partie reste incertaine ?", fidelity: .generatedExplanation)
         ]
-        let cards = keyIdeas.prefix(5).map {
-            Flashcard(front: "À retenir : \(Self.preview($0))", back: $0)
+        let cards = keyIdeas.prefix(5).enumerated().map { index, idea in
+            Flashcard(front: "À retenir : passage \(index + 1)", back: idea)
         }
         let quiz = keyIdeas.prefix(3).enumerated().map { index, idea in
             let choices = [idea, "Une affirmation absente du cours", "L'inverse de l'idée présentée"].shuffled()
@@ -42,13 +42,6 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
             flashcards: Array(cards),
             quiz: Array(quiz)
         )
-    }
-
-    private static func preview(_ text: String, limit: Int = 64) -> String {
-        guard text.count > limit else { return text }
-        let excerpt = String(text.prefix(limit))
-        let wordSafe = excerpt.lastIndex(of: " ").map { String(excerpt[..<$0]) } ?? excerpt
-        return wordSafe.trimmingCharacters(in: .whitespacesAndNewlines) + "…"
     }
 
     /// Splits after sentence punctuation only when whitespace follows it, so
