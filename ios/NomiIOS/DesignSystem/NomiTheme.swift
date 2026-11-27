@@ -263,6 +263,7 @@ extension View {
 }
 
 public struct NomiPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
     public init() {}
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -271,22 +272,23 @@ public struct NomiPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .frame(minHeight: 44)
-            .background(NomiTheme.ink, in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
+            .background(NomiTheme.ink.opacity(isEnabled ? 1 : 0.30), in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
             .opacity(configuration.isPressed ? 0.76 : 1)
     }
 }
 
 public struct NomiSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
     public init() {}
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.nomi(.subheadline, weight: .semibold))
-            .foregroundStyle(NomiTheme.ink)
+            .foregroundStyle(NomiTheme.ink.opacity(isEnabled ? 1 : 0.46))
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
             .frame(minHeight: 44)
-            .background(NomiTheme.surface2.opacity(0.52), in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous).strokeBorder(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+            .background(NomiTheme.surface2.opacity(isEnabled ? 0.52 : 0.28), in: RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: NomiTheme.radiusSmall, style: .continuous).strokeBorder(NomiTheme.line.opacity(isEnabled ? 0.82 : 0.48), lineWidth: 0.8))
             .opacity(configuration.isPressed ? 0.68 : 1)
     }
 }
