@@ -17,11 +17,17 @@ struct HomeView: View {
                         commandBar
                             .padding(.top, 14)
                         if geometry.size.width >= 680 {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
-                                nextAction.gridCellColumns(2)
-                                prioritySection
-                                trajectorySection
-                                focusSection.gridCellColumns(2)
+                            HStack(alignment: .top, spacing: 14) {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    nextAction
+                                    trajectorySection
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                VStack(alignment: .leading, spacing: 14) {
+                                    prioritySection
+                                    focusSection
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .padding(.top, 18)
                         } else {
