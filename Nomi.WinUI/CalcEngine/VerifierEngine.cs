@@ -37,17 +37,17 @@ public sealed partial class VerifierEngine
         {
             var character = text[index];
             if (char.IsWhiteSpace(character)) { index++; continue; }
-            if (char.IsDigit(character) || character == '.')
+            if ((character >= '0' && character <= '9') || character == '.')
             {
                 var start = index;
-                while (index < text.Length && (char.IsDigit(text[index]) || text[index] is '.' or ',')) index++;
+                while (index < text.Length && ((text[index] >= '0' && text[index] <= '9') || text[index] is '.' or ',')) index++;
                 tokens.Add(new Scanned(ScanKind.Number, text[start..index]));
                 continue;
             }
-            if (char.IsLetter(character) || character == '_')
+            if ((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '_')
             {
                 var start = index;
-                while (index < text.Length && (char.IsLetterOrDigit(text[index]) || text[index] == '_')) index++;
+                while (index < text.Length && ((text[index] >= 'a' && text[index] <= 'z') || (text[index] >= 'A' && text[index] <= 'Z') || (text[index] >= '0' && text[index] <= '9') || text[index] == '_')) index++;
                 tokens.Add(new Scanned(ScanKind.Identifier, text[start..index]));
                 continue;
             }
@@ -91,7 +91,9 @@ public sealed partial class VerifierEngine
             if (op is '~' or '%')
             {
                 if (output.Count == 0 || output.Pop() is not { Kind: SymbolKind.Value } top) throw new CalculationException("parse-error");
-                output.Push(new Symbol(SymbolKind.Value, op == '~' ? -top.Value : top.Value / new Rational(100, 1), '\0'));
+                var unaryResult = op == '~' ? -top.Value : top.Value / new Rational(100, 1);
+                if (unaryResult.ExceedsLimits) throw new CalculationException("overflow");
+                output.Push(new Symbol(SymbolKind.Value, unaryResult, '\0'));
                 return;
             }
             if (output.Count < 2) throw new CalculationException("parse-error");
@@ -135,6 +137,8 @@ public sealed partial class VerifierEngine
                 }
                 case ScanKind.Identifier:
                     if (!expectValue) throw new CalculationException("trailing");
+                    if (token.Text.Length > 32 || token.Text[0] is < 'a' or > 'z' && token.Text[0] is < 'A' or > 'Z')
+                        throw new CalculationException("parse-error");
                     if (!names.TryGetValue(token.Text, out var named)) throw new CalculationException("unknown-identifier");
                     output.Push(new Symbol(SymbolKind.Value, named, '\0'));
                     expectValue = false;
@@ -148,8 +152,11 @@ public sealed partial class VerifierEngine
                     break;
                 case ScanKind.RightParen:
                     depth--;
-                    while (operators.Count > 0 && operators.Peek() != '(') ApplyTop();
-                    if (operators.Count == 0 || operators.Pop() != '(') throw new CalculationException("parenthesis");
+                    // SPEC 2.1 : une fermante sans ouvrante est `parenthesis` — vérifié
+                    // avant d'appliquer les opérateurs en attente (`2+)` reste `parenthesis`).
+                    if (!operators.Contains('(')) throw new CalculationException("parenthesis");
+                    while (operators.Peek() != '(') ApplyTop();
+                    operators.Pop();
                     expectValue = false;
                     break;
                 case ScanKind.Operator:

@@ -36,8 +36,9 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
         if (body.Length == 0) return null;
         var dot = body.IndexOf('.');
         if (dot != body.LastIndexOf('.')) return null;
+        if (body.StartsWith('.') || body.EndsWith('.')) return null;
         var digits = body.Replace(".", "");
-        if (digits.Length == 0 || !digits.All(char.IsDigit)) return null;
+        if (digits.Length == 0 || !digits.All(c => c >= '0' && c <= '9')) return null;
         var numerator = BigInteger.Parse(digits);
         if (negative) numerator = -numerator;
         var denominator = BigInteger.One;

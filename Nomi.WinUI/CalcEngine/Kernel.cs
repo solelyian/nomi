@@ -42,17 +42,17 @@ public sealed partial class Kernel
         {
             var character = expression[index];
             if (char.IsWhiteSpace(character)) { index++; continue; }
-            if (char.IsDigit(character) || character == '.')
+            if (character >= '0' && character <= '9')
             {
                 var start = index;
-                while (index < expression.Length && (char.IsDigit(expression[index]) || expression[index] is '.' or ',')) index++;
+                while (index < expression.Length && ((expression[index] >= '0' && expression[index] <= '9') || expression[index] is '.' or ',')) index++;
                 tokens.Add(new Token(TokenKind.Number, expression[start..index], start));
                 continue;
             }
-            if (char.IsLetter(character) || character == '_')
+            if ((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '_')
             {
                 var start = index;
-                while (index < expression.Length && (char.IsLetterOrDigit(expression[index]) || expression[index] == '_')) index++;
+                while (index < expression.Length && ((expression[index] >= 'a' && expression[index] <= 'z') || (expression[index] >= 'A' && expression[index] <= 'Z') || (expression[index] >= '0' && expression[index] <= '9') || expression[index] == '_')) index++;
                 tokens.Add(new Token(TokenKind.Identifier, expression[start..index], start));
                 continue;
             }
@@ -83,6 +83,19 @@ public sealed partial class Kernel
 
         public Rational Parse()
         {
+            // SPEC 2.1 : toute fermante sans ouvrante et toute ouvrante non fermée
+            // sont `parenthesis` — détectées structurellement avant l'évaluation.
+            var balance = 0;
+            foreach (var token in tokens)
+            {
+                if (token is { Kind: TokenKind.Operator, Text: "(" }) balance++;
+                if (token is { Kind: TokenKind.Operator, Text: ")" })
+                {
+                    balance--;
+                    if (balance < 0) throw new CalculationException("parenthesis");
+                }
+            }
+            if (balance > 0) throw new CalculationException("parenthesis");
             var value = Expression(0);
             if (Peek.Kind != TokenKind.End)
             {
@@ -150,6 +163,7 @@ public sealed partial class Kernel
             {
                 at++;
                 value /= new Rational(100, 1);
+                CheckOverflow(value);
             }
             return value;
         }
@@ -164,11 +178,18 @@ public sealed partial class Kernel
                 case TokenKind.Number:
                     return ParseNumber(token.Text);
                 case TokenKind.Identifier:
+                    // SPEC : identificateur = lettre (lettre|chiffre|"_")*, 32 caractères au plus.
+                    if (token.Text.Length > 32 || token.Text[0] is < 'a' or > 'z' && token.Text[0] is < 'A' or > 'Z')
+                        throw new CalculationException("parse-error");
                     if (names.TryGetValue(token.Text, out var value)) return value;
                     throw new CalculationException("unknown-identifier");
                 case TokenKind.Operator when token.Text == "(":
                 {
                     var inner = Expression(depth + 1);
+                    // Juxtaposition dans les parenthèses (`(3 4)`) : `trailing`, pas `parenthesis`.
+                    if (Peek.Kind is TokenKind.Number or TokenKind.Identifier
+                        || Peek is { Kind: TokenKind.Operator, Text: "(" })
+                        throw new CalculationException("trailing");
                     if (Peek is not { Kind: TokenKind.Operator, Text: ")" }) throw new CalculationException("parenthesis");
                     at++;
                     return inner;
