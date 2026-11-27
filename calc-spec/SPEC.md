@@ -60,7 +60,11 @@ n'intervient qu'à deux frontières, jamais entre les deux :
 
 1. **lecture** — normalisation des entrées utilisateur (section 3.3) ;
 2. **affichage** — `format` rend le séparateur décimal de la locale et groupe les
-   milliers par espaces insécables fines en français, selon la locale en anglais.
+   milliers en français selon la règle exacte suivante : la partie entière est
+   groupée par trois chiffres avec l'espace fine insécable U+202F dès qu'elle
+   comporte **plus de 3 chiffres** (`1500` → `1 500`, `1000000` → `1 000 000`,
+   `500` → `500` inchangé) ; en anglais, la virgule est le séparateur de milliers.
+   La partie fractionnaire n'est jamais groupée.
 
 ---
 
@@ -220,3 +224,4 @@ des champs supplémentaires documentés dans le corpus.
 | Version | Date | Changement |
 |---|---|---|
 | 1.0 | 2026-11-27 | Spécification initiale figée |
+| 1.0.1 | 2026-11-27 | Précision normative du groupement des milliers français (seuil, caractère U+202F, partie fractionnaire non groupée) — clarification sans changement de comportement attendu |

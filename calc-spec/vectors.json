@@ -308,7 +308,7 @@
       "expect": {
         "status": "ok",
         "rational": "1024/1",
-        "display_fr": "1024"
+        "display_fr": "1 024"
       }
     },
     {
@@ -328,7 +328,7 @@
       "expect": {
         "status": "ok",
         "rational": "1000000/1",
-        "display_fr": "1000000"
+        "display_fr": "1 000 000"
       }
     },
     {
@@ -348,7 +348,7 @@
       "expect": {
         "status": "ok",
         "rational": "18446744073709551616/1",
-        "display_fr": "18446744073709551616"
+        "display_fr": "18 446 744 073 709 551 616"
       }
     },
     {
@@ -408,7 +408,7 @@
       "expect": {
         "status": "ok",
         "rational": "1000000000000000000/1",
-        "display_fr": "1000000000000000000"
+        "display_fr": "1 000 000 000 000 000 000"
       }
     },
     {
@@ -428,7 +428,7 @@
       "expect": {
         "status": "ok",
         "rational": "123456789123456789/1000000000",
-        "display_fr": "123456789,1235"
+        "display_fr": "123 456 789,1235"
       }
     },
     {
@@ -737,7 +737,7 @@
       "expect": {
         "status": "ok",
         "rational": "1500/1",
-        "display_fr": "1500"
+        "display_fr": "1 500"
       }
     },
     {
@@ -747,7 +747,7 @@
       "expect": {
         "status": "ok",
         "rational": "18446744073709551615/1",
-        "display_fr": "18446744073709551615"
+        "display_fr": "18 446 744 073 709 551 615"
       }
     },
     {

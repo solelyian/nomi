@@ -204,6 +204,18 @@ def round_half_up(fr, places):
     return Fraction(floor, 10 ** places)
 
 
+def group_thousands(intpart):
+    """French display rule (SPEC 1.4): group integer part by three with U+202F
+    narrow no-break spaces whenever it has more than 3 digits."""
+    if len(intpart) <= 3:
+        return intpart
+    groups = []
+    while intpart:
+        groups.append(intpart[-3:])
+        intpart = intpart[:-3]
+    return "\u202f".join(reversed(groups))
+
+
 def format_fr(fr, places=4):
     rounded = round_half_up(fr, places)
     sign = "-" if rounded < 0 else ""
@@ -217,6 +229,7 @@ def format_fr(fr, places=4):
     q, r = divmod(scaled_num, den)
     digits = str(q).rjust(places + 1, "0")
     intpart, fracpart = digits[:-places] or "0", digits[-places:]
+    intpart = group_thousands(intpart)
     fracpart = fracpart.rstrip("0")
     if not fracpart:
         return sign + intpart
@@ -259,7 +272,7 @@ def check_vector(vec):
 
 def main():
     path = Path(__file__).parent / "vectors.json"
-    corpus = json.loads(path.read_text())
+    corpus = json.loads(path.read_text(encoding="utf-8"))
     total, failed = 0, 0
     for vec in corpus["vectors"]:
         total += 1
