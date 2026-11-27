@@ -46,7 +46,11 @@ public struct MockRevisionService: RevisionService, AIServiceStatusProviding {
 
     private static func recallCue(_ text: String, wordCount: Int = 4) -> String {
         let words = text.split(whereSeparator: { $0.isWhitespace })
-        let cue = words.prefix(wordCount).joined(separator: " ")
+        let visibleCount = min(wordCount, max(1, words.count / 2))
+        guard visibleCount < words.count else {
+            return "« \(text.prefix(12))… »"
+        }
+        let cue = words.prefix(visibleCount).joined(separator: " ")
         return "« \(cue)… »"
     }
 
