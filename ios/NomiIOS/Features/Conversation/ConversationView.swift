@@ -8,7 +8,6 @@ struct ConversationView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var input = ""
-    @State private var drafts: [UUID: String] = [:]
     @State private var threadLibraryPresented = false
     @State private var threadSearch = ""
 
@@ -75,14 +74,17 @@ struct ConversationView: View {
                         withAnimation { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                     .onAppear {
+                        if let threadID = state.activeThreadID {
+                            input = state.conversationDrafts[threadID] ?? ""
+                        }
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
                     .onChange(of: state.activeThreadID) { oldID, newID in
                         if let oldID, oldID != newID {
-                            drafts[oldID] = input
+                            state.conversationDrafts[oldID] = input
                         }
                         if let newID {
-                            input = drafts[newID] ?? ""
+                            input = state.conversationDrafts[newID] ?? ""
                         }
                         DispatchQueue.main.async { proxy.scrollTo("conversation-bottom", anchor: .bottom) }
                     }
@@ -97,6 +99,11 @@ struct ConversationView: View {
                 }
             }
             composer
+        }
+        .onDisappear {
+            if let threadID = state.activeThreadID {
+                state.conversationDrafts[threadID] = input
+            }
         }
     }
 
@@ -286,6 +293,9 @@ struct ConversationView: View {
     private var sendButton: some View {
         Button {
             state.sendMessage(input)
+            if let threadID = state.activeThreadID {
+                state.conversationDrafts.removeValue(forKey: threadID)
+            }
             input = ""
         } label: {
             Image(systemName: "arrow.up")

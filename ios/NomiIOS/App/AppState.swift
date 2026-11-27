@@ -43,6 +43,7 @@ final class AppState: ObservableObject {
     @Published var focusHistory: [FocusSession] = [] { didSet { persist() } }
     @Published var threads: [ChatThread] { didSet { persist() } }
     @Published var activeThreadID: ChatThread.ID? { didSet { persist() } }
+    var conversationDrafts: [UUID: String] = [:]
     @Published var dayStartHour = 8
     @Published var dayEndHour = 18
     @Published var isGeneratingReply = false
