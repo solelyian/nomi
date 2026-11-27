@@ -21,6 +21,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Authenticate git for public GitHub clones
+        # SwiftPM clone les dépendances en https anonyme ; les runners partagés
+        # se font refuser par les limites anti-abus de GitHub ("could not read
+        # Username"). Le GITHUB_TOKEN authentifie ces clones en lecture.
+        run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project
