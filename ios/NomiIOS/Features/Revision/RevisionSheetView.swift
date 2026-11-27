@@ -43,7 +43,7 @@ struct RevisionSheetView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Source, explication et hypothèse explicitement distinguées")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -58,7 +58,7 @@ struct RevisionSheetView: View {
                     .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(sourceTitle)
-                        .font(.subheadline.weight(.medium))
+                        .font(.nomi(.subheadline, weight: .medium))
                         .foregroundStyle(NomiTheme.ink)
                         .lineLimit(1)
                     Text("\(sourceText.count) caractères")
@@ -67,7 +67,7 @@ struct RevisionSheetView: View {
                 }
                 Spacer()
                 Button(showingSource ? "Masquer" : "Source") { showingSource.toggle() }
-                    .font(.caption.weight(.semibold))
+                    .font(.nomi(.caption, weight: .semibold))
                     .foregroundStyle(NomiTheme.ink2)
                     .frame(minWidth: 44, minHeight: 32)
             }
@@ -76,7 +76,7 @@ struct RevisionSheetView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("NIVEAU")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.0)
                     .foregroundStyle(NomiTheme.ink3)
                 Picker("Niveau", selection: $state.preferredDetailLevel) {
@@ -90,7 +90,7 @@ struct RevisionSheetView: View {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("FORMAT")
-                        .font(.caption2.weight(.bold))
+                        .font(.nomi(.caption2, weight: .bold))
                         .tracking(1.0)
                         .foregroundStyle(NomiTheme.ink3)
                     Picker("Format", selection: $state.preferredFormat) {
@@ -114,7 +114,7 @@ struct RevisionSheetView: View {
 
             if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -127,11 +127,11 @@ struct RevisionSheetView: View {
     private var sourcePanel: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text("SOURCE IMPORTÉE")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.0)
                 .foregroundStyle(NomiTheme.ink3)
             Text(sourceText)
-                .font(.footnote)
+                .font(.nomi(.footnote))
                 .foregroundStyle(NomiTheme.ink2)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
@@ -145,10 +145,10 @@ struct RevisionSheetView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Aucune fiche générée")
-                .font(.subheadline.weight(.medium))
+                .font(.nomi(.subheadline, weight: .medium))
                 .foregroundStyle(NomiTheme.ink)
             Text("Choisissez le niveau et le format, puis lancez la génération. Sans Gemma installé, Nomi utilise un repli extractif hors ligne.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink3)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -167,7 +167,7 @@ struct RevisionSheetView: View {
                         .tracking(-0.4)
                         .foregroundStyle(NomiTheme.ink)
                     Text("\(sheet.level.frenchTitle) · \(sheet.format.frenchTitle)")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink2)
                 }
                 Spacer()
@@ -214,7 +214,7 @@ struct RevisionSheetView: View {
     private func supplementaryTitle(_ title: String, count: Int) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.0)
                 .foregroundStyle(NomiTheme.ink3)
             Spacer()
@@ -232,13 +232,13 @@ struct RevisionSheetView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(section.title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                         Spacer()
                         fidelityBadge(section.fidelity)
                     }
                     Text(section.body)
-                        .font(.subheadline)
+                        .font(.nomi(.subheadline))
                         .foregroundStyle(NomiTheme.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
@@ -260,11 +260,11 @@ struct RevisionSheetView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(flippedCards.contains(card.id) ? "RÉPONSE" : "QUESTION")
-                            .font(.caption2.weight(.bold))
+                            .font(.nomi(.caption2, weight: .bold))
                             .tracking(0.8)
                             .foregroundStyle(flippedCards.contains(card.id) ? NomiTheme.success : NomiTheme.accent)
                         Text(flippedCards.contains(card.id) ? card.back : card.front)
-                            .font(.subheadline)
+                            .font(.nomi(.subheadline))
                             .foregroundStyle(NomiTheme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .fixedSize(horizontal: false, vertical: true)
@@ -285,7 +285,7 @@ struct RevisionSheetView: View {
             ForEach(sheet.quiz) { question in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(question.question)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.nomi(.subheadline, weight: .semibold))
                         .foregroundStyle(NomiTheme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
@@ -299,7 +299,7 @@ struct RevisionSheetView: View {
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundStyle(quizAnswers[question.id] == index ? NomiTheme.accent : NomiTheme.ink3)
                                 Text(choice)
-                                    .font(.subheadline)
+                                    .font(.nomi(.subheadline))
                                     .foregroundStyle(NomiTheme.ink)
                                     .multilineTextAlignment(.leading)
                                 Spacer()
@@ -316,10 +316,10 @@ struct RevisionSheetView: View {
                     }
                     if submittedQuizIDs.contains(question.id) {
                         Text(quizAnswers[question.id] == question.correctIndex ? "Bonne réponse." : "Réponse à revoir.")
-                            .font(.caption.weight(.semibold))
+                            .font(.nomi(.caption, weight: .semibold))
                             .foregroundStyle(quizAnswers[question.id] == question.correctIndex ? NomiTheme.success : .orange)
                         Text(question.explanation)
-                            .font(.caption)
+                            .font(.nomi(.caption))
                             .foregroundStyle(NomiTheme.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     } else {

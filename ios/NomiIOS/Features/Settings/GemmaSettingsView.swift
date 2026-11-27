@@ -26,7 +26,7 @@ struct GemmaSettingsView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Modèle open model exécuté sur appareil")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -42,10 +42,10 @@ struct GemmaSettingsView: View {
                 .background((selectedState == .downloaded ? NomiTheme.success.opacity(0.12) : NomiTheme.accentSoft), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(selectedState == .downloaded ? "Modèle actif installé" : "Installation requise")
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                 Text(state.gemmaManager.runtimeNotice ?? "\(selected.title) · \(GemmaModelManager.formattedBytes(selected.expectedBytes))")
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(2)
             }
@@ -60,7 +60,7 @@ struct GemmaSettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text("MODÈLES")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
@@ -100,7 +100,7 @@ struct GemmaSettingsView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(model.title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                         Spacer()
                         Text(GemmaModelManager.formattedBytes(model.expectedBytes))
@@ -108,11 +108,11 @@ struct GemmaSettingsView: View {
                             .foregroundStyle(NomiTheme.ink3)
                     }
                     Text(model.subtitle)
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink2)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Apache 2.0 · \(modelState.label)")
-                        .font(.caption2)
+                        .font(.nomi(.caption2))
                         .foregroundStyle(modelState == .downloaded ? NomiTheme.success : NomiTheme.ink3)
                 }
             }
@@ -159,7 +159,7 @@ struct GemmaSettingsView: View {
 
             if case .failed(let message) = modelState {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.leading, 33)
@@ -172,15 +172,15 @@ struct GemmaSettingsView: View {
     private var privacyPanel: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text("CONFIDENTIALITÉ")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Text("Le téléchargement contacte Hugging Face uniquement pour récupérer le modèle. La génération s’effectue ensuite localement dans LiteRT-LM. E4B peut être trop lourd pour certains iPhone.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Le premier chargement peut prendre une dizaine de secondes ; les calculs sensibles continuent d’utiliser le vérificateur déterministe.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }

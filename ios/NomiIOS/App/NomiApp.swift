@@ -13,6 +13,7 @@ struct NomiApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(state)
+                .font(.nomi(.body))
                 .tint(NomiTheme.accent)
         }
     }
@@ -286,7 +287,7 @@ struct OnboardingView: View {
                 .tracking(-0.8)
                 .foregroundStyle(NomiTheme.ink)
             Text("Un espace de commande personnel pour décider, agir et réviser — local d’abord, sans automatisation silencieuse.")
-                .font(.subheadline)
+                .font(.nomi(.subheadline))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -295,7 +296,7 @@ struct OnboardingView: View {
     private var principles: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("PRINCIPES")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
                 .padding(.horizontal, 1)
@@ -320,11 +321,11 @@ struct OnboardingView: View {
     private var languagePanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("TRANSCRIPTION")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Text("Langue de reconnaissance vocale")
-                .font(.subheadline.weight(.medium))
+                .font(.nomi(.subheadline, weight: .medium))
                 .foregroundStyle(NomiTheme.ink)
             Picker("Langue de transcription", selection: $state.transcriptionLanguage) {
                 Text("Français").tag("fr-FR")
@@ -332,7 +333,7 @@ struct OnboardingView: View {
             }
             .pickerStyle(.segmented)
             Text("L’interface complète reste francophone dans cette itération ; la langue concerne la reconnaissance vocale.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -351,10 +352,10 @@ struct OnboardingView: View {
                 .background((index == 0 ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                 Text(detail)
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }

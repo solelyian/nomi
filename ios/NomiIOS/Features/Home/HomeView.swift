@@ -76,7 +76,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if verticalSizeClass != .compact {
                     Text(Date.now.formatted(date: .complete, time: .omitted).uppercased())
-                        .font(.caption2.weight(.bold))
+                        .font(.nomi(.caption2, weight: .bold))
                         .tracking(1.1)
                         .foregroundStyle(NomiTheme.ink3)
                 }
@@ -85,7 +85,7 @@ struct HomeView: View {
                     .tracking(-0.8)
                     .foregroundStyle(NomiTheme.ink)
                 Text("\(state.openTasks.count) intention(s) ouverte(s) · \(state.focusHistory.count) focus terminé(s)")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
             }
             Spacer()
@@ -99,7 +99,7 @@ struct HomeView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(NomiTheme.ink2)
                 Text("Créer, chercher ou demander…")
-                    .font(.subheadline)
+                    .font(.nomi(.subheadline))
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
                 Text("⌘K")
@@ -123,16 +123,16 @@ struct HomeView: View {
     private var nextAction: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("PROCHAINE ACTION")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.0)
                 .foregroundStyle(NomiTheme.accent)
             if let task = rankedTasks.first {
                 Text(task.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.nomi(.subheadline, weight: .semibold))
                     .foregroundStyle(NomiTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Priorité \(task.priority.frenchTitle.lowercased()) · \(task.estimateMinutes.map { "\($0) min" } ?? "durée libre")")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
                 ViewThatFits {
                     HStack(spacing: 7) {
@@ -157,14 +157,14 @@ struct HomeView: View {
                 }
                 if !rescueSummary.isEmpty {
                     Text(rescueSummary)
-                        .font(.caption2)
+                        .font(.nomi(.caption2))
                         .foregroundStyle(NomiTheme.ink2)
                 }
             } else {
                 Text("Aucune tâche ouverte")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.nomi(.subheadline, weight: .semibold))
                 Text("Utilisez la commande ou le tableau pour créer une intention concrète.")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
             }
         }
@@ -184,7 +184,7 @@ struct HomeView: View {
                 }
                 if rankedTasks.isEmpty {
                     Text("Aucune priorité ouverte.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -209,9 +209,9 @@ struct HomeView: View {
                             .frame(width: 23, height: 23)
                             .background(NomiTheme.surface2.opacity(0.55), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(event.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                            Text(event.title).font(.nomi(.subheadline, weight: .medium)).lineLimit(1)
                             Text("\(event.start.formatted(date: .omitted, time: .shortened))–\(event.end.formatted(date: .omitted, time: .shortened)) · \(event.location ?? "sans lieu")")
-                                .font(.caption2)
+                                .font(.nomi(.caption2))
                                 .foregroundStyle(NomiTheme.ink3)
                                 .lineLimit(1)
                         }
@@ -225,7 +225,7 @@ struct HomeView: View {
                 }
                 if events.isEmpty {
                     Text("Aucun événement à venir aujourd’hui.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -248,7 +248,7 @@ struct HomeView: View {
                                 .tracking(-1.2)
                                 .foregroundStyle(NomiTheme.ink)
                             Text(session.objective)
-                                .font(.caption)
+                                .font(.nomi(.caption))
                                 .foregroundStyle(NomiTheme.ink2)
                                 .lineLimit(1)
                         }
@@ -271,7 +271,7 @@ struct HomeView: View {
                 }
             } else {
                 Text("Aucun focus actif. Démarrez depuis la prochaine action ou la commande.")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink3)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -284,7 +284,7 @@ struct HomeView: View {
     private func sectionHeader(_ title: String, detail: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title.uppercased())
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Spacer()
@@ -321,12 +321,12 @@ private struct HomeTaskRow: View {
             .accessibilityLabel("Terminer \(task.title)")
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(task.estimateMinutes.map { "\($0) min" } ?? "Durée libre")
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
             }

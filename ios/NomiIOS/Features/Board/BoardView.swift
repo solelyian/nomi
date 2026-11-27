@@ -38,7 +38,7 @@ struct BoardView: View {
                     .tracking(-0.7)
                     .foregroundStyle(NomiTheme.ink)
                 Text("\(state.openTasks.count) ouverte(s) · tri par colonne")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
             }
             Spacer()
@@ -63,7 +63,7 @@ struct BoardView: View {
                 .foregroundStyle(NomiTheme.ink3)
             TextField(dynamicTypeSize.isAccessibilitySize ? "Nouvelle tâche…" : "Ex. Envoyer le compte rendu demain 30 min important", text: $phrase)
                 .textFieldStyle(.plain)
-                .font(.subheadline)
+                .font(.nomi(.subheadline))
                 .foregroundStyle(NomiTheme.ink)
                 .submitLabel(.done)
                 .onSubmit(add)
@@ -88,7 +88,7 @@ struct BoardView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(selectedColumn.frenchTitle.uppercased())
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
@@ -114,10 +114,10 @@ struct BoardView: View {
                 if visibleTasks.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Aucune tâche")
-                            .font(.subheadline.weight(.semibold))
+                            .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                         Text("Les tâches \(selectedColumn.frenchTitle.lowercased()) apparaîtront ici.")
-                            .font(.caption)
+                            .font(.nomi(.caption))
                             .foregroundStyle(NomiTheme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -168,11 +168,11 @@ private struct BoardTaskRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                     .lineLimit(1)
                 Text(metadata)
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(1)
             }

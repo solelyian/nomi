@@ -28,7 +28,7 @@ struct FocusView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Minuteur local · objectif, pause et notes explicites")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -50,7 +50,7 @@ struct FocusView: View {
                                 .foregroundStyle(session.status == .running ? NomiTheme.accent : NomiTheme.warning)
                         }
                         Text(session.objective)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Rectangle()
@@ -64,7 +64,7 @@ struct FocusView: View {
                             .clipShape(Capsule())
                         TextField("Notes de contexte à conserver", text: $notes, axis: .vertical)
                             .textFieldStyle(.plain)
-                            .font(.subheadline)
+                            .font(.nomi(.subheadline))
                             .padding(.horizontal, 11)
                             .frame(minHeight: 44)
                             .background(NomiTheme.surface2.opacity(0.45), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -95,7 +95,7 @@ struct FocusView: View {
                         .foregroundStyle(NomiTheme.ink3)
                     TextField("Objectif du focus", text: $objective)
                         .textFieldStyle(.plain)
-                        .font(.subheadline)
+                        .font(.nomi(.subheadline))
                         .submitLabel(.go)
                         .onSubmit(start)
                     Button("Démarrer", action: start)
@@ -129,7 +129,7 @@ struct FocusView: View {
                                         .frame(width: 22, height: 22)
                                         .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                                     Text(task.title)
-                                        .font(.subheadline.weight(.medium))
+                                        .font(.nomi(.subheadline, weight: .medium))
                                         .foregroundStyle(NomiTheme.ink)
                                         .lineLimit(1)
                                     Spacer()
@@ -164,12 +164,12 @@ struct FocusView: View {
                             .background(NomiTheme.successSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(session.objective)
-                                .font(.subheadline.weight(.medium))
+                                .font(.nomi(.subheadline, weight: .medium))
                                 .foregroundStyle(NomiTheme.ink)
                                 .lineLimit(1)
                             if !session.notes.isEmpty {
                                 Text(session.notes)
-                                    .font(.caption2)
+                                    .font(.nomi(.caption2))
                                     .foregroundStyle(NomiTheme.ink3)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -184,7 +184,7 @@ struct FocusView: View {
                 }
                 if state.focusHistory.isEmpty {
                     Text("Aucune session terminée. Le prochain focus apparaîtra ici.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -198,7 +198,7 @@ struct FocusView: View {
     private func sectionLabel(_ title: String, detail: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title.uppercased())
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Spacer()

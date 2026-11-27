@@ -29,7 +29,7 @@ struct SettingsView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Modèle local, confidentialité et intégrations")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -44,10 +44,10 @@ struct SettingsView: View {
                     .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Gemma 4 local")
-                        .font(.subheadline.weight(.medium))
+                        .font(.nomi(.subheadline, weight: .medium))
                         .foregroundStyle(NomiTheme.ink)
                     Text(state.gemmaManager.state(for: state.gemmaManager.selectedModel).label)
-                        .font(.caption2)
+                        .font(.nomi(.caption2))
                         .foregroundStyle(NomiTheme.ink3)
                         .lineLimit(1)
                 }
@@ -68,16 +68,16 @@ struct SettingsView: View {
     private var privacyPanel: some View {
         panel(title: "IA ET CONFIDENTIALITÉ") {
             Toggle("Autoriser l’IA distante", isOn: $state.allowRemoteAI)
-                .font(.subheadline.weight(.medium))
+                .font(.nomi(.subheadline, weight: .medium))
                 .tint(NomiTheme.accent)
             Text("Désactivé par défaut et inutile pour Gemma local. Aucune clé API n’est embarquée ; toute IA distante future devra demander un consentement explicite.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
             Divider().overlay(NomiTheme.line.opacity(0.6))
             HStack {
                 Text("Langue de transcription")
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                 Spacer()
                 Picker("Langue de transcription", selection: $state.transcriptionLanguage) {
@@ -125,7 +125,7 @@ struct SettingsView: View {
     private func panel<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
                 .padding(.horizontal, 1)
@@ -140,10 +140,10 @@ struct SettingsView: View {
     private func settingLine(_ title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.subheadline.weight(.medium))
+                .font(.nomi(.subheadline, weight: .medium))
                 .foregroundStyle(NomiTheme.ink)
             Text(detail)
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -157,10 +157,10 @@ struct SettingsView: View {
                 .frame(width: 24, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                 Text(detail)
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -169,7 +169,7 @@ struct SettingsView: View {
 
     private func stateLine(_ available: Bool, _ text: String) -> some View {
         Label(text, systemImage: available ? "checkmark.circle" : "circle.dashed")
-            .font(.caption)
+            .font(.nomi(.caption))
             .foregroundStyle(available ? NomiTheme.ink2 : NomiTheme.ink3)
             .fixedSize(horizontal: false, vertical: true)
     }

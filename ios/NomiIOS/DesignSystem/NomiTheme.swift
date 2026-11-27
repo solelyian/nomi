@@ -42,6 +42,47 @@ public enum NomiTheme {
 }
 
 
+
+public enum NomiTypography {
+    public static let regularName = "AtkinsonHyperlegible-Regular"
+    public static let boldName = "AtkinsonHyperlegible-Bold"
+    public static let italicName = "AtkinsonHyperlegible-Italic"
+    public static let boldItalicName = "AtkinsonHyperlegible-BoldItalic"
+
+    public static func pointSize(for style: Font.TextStyle) -> CGFloat {
+        switch style {
+        case .largeTitle: return 34
+        case .title: return 28
+        case .title2: return 22
+        case .title3: return 20
+        case .headline: return 17
+        case .body: return 17
+        case .callout: return 16
+        case .subheadline: return 15
+        case .footnote: return 13
+        case .caption: return 12
+        case .caption2: return 11
+        default: return 17
+        }
+    }
+}
+
+public extension Font {
+    /// Atkinson Hyperlegible is Nomi's working sans. It intentionally has only
+    /// Regular and Bold cuts; medium is kept regular while semibold and heavier use Bold.
+    static func nomi(_ style: Font.TextStyle = .body, weight: Font.Weight = .regular, italic: Bool = false) -> Font {
+        let useBold = weight == .semibold || weight == .bold || weight == .heavy || weight == .black
+        let name: String
+        switch (useBold, italic) {
+        case (true, true): name = NomiTypography.boldItalicName
+        case (true, false): name = NomiTypography.boldName
+        case (false, true): name = NomiTypography.italicName
+        case (false, false): name = NomiTypography.regularName
+        }
+        return .custom(name, size: NomiTypography.pointSize(for: style), relativeTo: style)
+    }
+}
+
 public enum NomiLiquidShape {
     case capsule
     case circle
@@ -225,7 +266,7 @@ public struct NomiPrimaryButtonStyle: ButtonStyle {
     public init() {}
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(.nomi(.subheadline, weight: .semibold))
             .foregroundStyle(NomiTheme.canvas)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -239,7 +280,7 @@ public struct NomiSecondaryButtonStyle: ButtonStyle {
     public init() {}
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(.nomi(.subheadline, weight: .semibold))
             .foregroundStyle(NomiTheme.ink)
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
@@ -302,7 +343,7 @@ public struct NomiBadge: View {
 
     public var body: some View {
         Text(text)
-            .font(.caption.weight(.bold))
+            .font(.nomi(.caption, weight: .bold))
             .foregroundStyle(tint)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
@@ -324,11 +365,11 @@ public struct NomiSectionTitle: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.headline.weight(.semibold))
+                .font(.nomi(.headline, weight: .semibold))
                 .foregroundStyle(NomiTheme.ink)
             if let subtitle {
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(.nomi(.subheadline))
                     .foregroundStyle(NomiTheme.ink2)
             }
         }
@@ -351,7 +392,7 @@ public struct NomiScreenTitle: View {
         VStack(alignment: .leading, spacing: 6) {
             if let kicker {
                 Text(kicker)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.nomi(.subheadline, weight: .semibold))
                     .foregroundStyle(NomiTheme.ink2)
             }
             Text(title)
@@ -360,7 +401,7 @@ public struct NomiScreenTitle: View {
                 .minimumScaleFactor(0.75)
             if let subtitle {
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(.nomi(.subheadline))
                     .foregroundStyle(NomiTheme.ink2)
             }
         }
@@ -428,7 +469,7 @@ private struct NomiChildNavigationModifier: ViewModifier {
                             dismiss()
                         } label: {
                             Label("Retour", systemImage: "chevron.left")
-                                .font(.subheadline.weight(.bold))
+                                .font(.nomi(.subheadline, weight: .bold))
                                 .foregroundStyle(NomiTheme.ink)
                                 .padding(.horizontal, 13)
                                 .padding(.vertical, 9)

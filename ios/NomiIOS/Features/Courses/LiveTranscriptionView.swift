@@ -41,7 +41,7 @@ private struct LiveTranscriptionContent: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Enregistrement explicite · horodatage local")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -51,7 +51,7 @@ private struct LiveTranscriptionContent: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("ENREGISTREMENT")
-                        .font(.caption2.weight(.bold))
+                        .font(.nomi(.caption2, weight: .bold))
                         .tracking(1.1)
                         .foregroundStyle(NomiTheme.ink3)
                     TimelineView(.periodic(from: .now, by: 0.5)) { _ in
@@ -97,17 +97,17 @@ private struct LiveTranscriptionContent: View {
 
             if !model.consentAcknowledged, model.state != .recording, model.state != .paused {
                 Text("Confirmez le consentement avant de démarrer.")
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
             }
             if case .error(let message) = model.state {
                 Label(message, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(.orange)
             }
             if let interruption = model.interruptionMessage {
                 Label(interruption, systemImage: "bell.slash")
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.warning)
             }
         }
@@ -119,10 +119,10 @@ private struct LiveTranscriptionContent: View {
     private var consentPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             Toggle("Enregistrement autorisé", isOn: Binding(get: { model.consentAcknowledged }, set: { model.consentAcknowledged = $0 }))
-                .font(.subheadline.weight(.medium))
+                .font(.nomi(.subheadline, weight: .medium))
                 .tint(NomiTheme.accent)
             Text("Apple Speech n’expose pas de diarisation fiable ; les segments restent regroupés sous « Enseignant/Locuteur ».")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -135,7 +135,7 @@ private struct LiveTranscriptionContent: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text("SEGMENTS")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
@@ -146,7 +146,7 @@ private struct LiveTranscriptionContent: View {
                     NavigationLink("Fiche") {
                         RevisionSheetView(sourceText: model.transcript.plainText, sourceTitle: model.transcript.title)
                     }
-                    .font(.caption.weight(.semibold))
+                    .font(.nomi(.caption, weight: .semibold))
                 }
             }
             .padding(.horizontal, 1)
@@ -159,10 +159,10 @@ private struct LiveTranscriptionContent: View {
                 if model.segments.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Aucun segment")
-                            .font(.subheadline.weight(.medium))
+                            .font(.nomi(.subheadline, weight: .medium))
                             .foregroundStyle(NomiTheme.ink)
                         Text("Démarrez une démonstration sur simulateur ou le microphone sur appareil.")
-                            .font(.caption)
+                            .font(.nomi(.caption))
                             .foregroundStyle(NomiTheme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -184,7 +184,7 @@ private struct LiveTranscriptionContent: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(segment.speaker ?? "Locuteur")
-                        .font(.caption2.weight(.semibold))
+                        .font(.nomi(.caption2, weight: .semibold))
                         .foregroundStyle(NomiTheme.ink2)
                     if !segment.isFinal {
                         Text("EN COURS")
@@ -194,7 +194,7 @@ private struct LiveTranscriptionContent: View {
                     }
                 }
                 Text(segment.text)
-                    .font(.subheadline)
+                    .font(.nomi(.subheadline))
                     .foregroundStyle(NomiTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -213,7 +213,7 @@ private struct LiveTranscriptionContent: View {
                 .frame(width: 23, height: 23)
                 .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             Text("Le résumé est généré après arrêt, plutôt qu’en continu, pour limiter batterie et traitement local.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
         }

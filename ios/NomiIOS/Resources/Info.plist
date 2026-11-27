@@ -28,6 +28,13 @@
     <string>Nomi utilise la reconnaissance vocale pour transcrire le cours sur l'appareil lorsque c'est possible.</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <key>UIAppFonts</key>
+    <array>
+        <string>AtkinsonHyperlegible-Regular.ttf</string>
+        <string>AtkinsonHyperlegible-Bold.ttf</string>
+        <string>AtkinsonHyperlegible-Italic.ttf</string>
+        <string>AtkinsonHyperlegible-BoldItalic.ttf</string>
+    </array>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>

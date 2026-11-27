@@ -59,11 +59,11 @@ struct ConversationView: View {
                         Button(thread.title) { state.activeThreadID = thread.id }
                     }
                 }
-                .font(.subheadline.weight(.semibold))
+                .font(.nomi(.subheadline, weight: .semibold))
                 .foregroundStyle(NomiTheme.ink2)
                 if verticalSizeClass != .compact {
                     Text(state.gemmaManager.selectedModelURL == nil ? "Gemma 4 à installer" : "Gemma 4 local prêt")
-                        .font(.caption.weight(.bold))
+                        .font(.nomi(.caption, weight: .bold))
                         .foregroundStyle(state.gemmaManager.selectedModelURL == nil ? NomiTheme.warning : NomiTheme.success)
                 }
             }
@@ -81,7 +81,7 @@ struct ConversationView: View {
             if message.role == .user { Spacer(minLength: 58) }
             VStack(alignment: .leading, spacing: 7) {
                 Text(message.role == .assistant ? markdownAttributed(message.text) : AttributedString(message.text))
-                    .font(.body)
+                    .font(.nomi(.body))
                     .foregroundStyle(NomiTheme.ink)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
@@ -89,7 +89,7 @@ struct ConversationView: View {
                     NomiBadge(verification.status == .verified ? "calcul vérifié localement" : "calcul non vérifié", tint: verification.status == .verified ? NomiTheme.success : NomiTheme.warning)
                 }
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
             }
             .padding(.horizontal, 13)
@@ -115,7 +115,7 @@ struct ConversationView: View {
                 .tracking(-0.7)
                 .multilineTextAlignment(.center)
             Text(state.gemmaManager.selectedModelURL == nil ? "Installe Gemma 4 pour une génération locale complète ; le repli déterministe reste disponible." : "Gemma 4 fonctionne sur cet appareil. Aucune clé API n’est requise.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 290)
@@ -132,7 +132,7 @@ struct ConversationView: View {
 
     private func suggestion(_ text: String) -> some View {
         Button(text) { input = input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? text : input + " " + text }
-            .font(.caption)
+            .font(.nomi(.caption))
             .foregroundStyle(NomiTheme.ink2)
             .padding(.horizontal, 9)
             .padding(.vertical, 7)
@@ -159,7 +159,7 @@ struct ConversationView: View {
                     input = ""
                 } label: {
                     Image(systemName: "arrow.up")
-                        .font(.headline.weight(.bold))
+                        .font(.nomi(.headline, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: 44, height: 44)
                         .nomiLiquidGlass(shape: .circle, tint: NomiTheme.accent, tintStrength: 0.92, interactive: true)

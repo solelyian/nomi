@@ -33,7 +33,7 @@ struct RoutinesView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Automatisations visibles, modifiables et contrôlées")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -45,7 +45,7 @@ struct RoutinesView: View {
                 .foregroundStyle(NomiTheme.ink3)
             TextField("Ex. Chaque matin, priorités", text: $phrase)
                 .textFieldStyle(.plain)
-                .font(.subheadline)
+                .font(.nomi(.subheadline))
                 .submitLabel(.done)
                 .onSubmit(add)
             Button("Créer", action: add)
@@ -61,14 +61,14 @@ struct RoutinesView: View {
     private func readyRow(_ routine: NomiRoutine) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             Text("ROUTINE PRÊTE")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.0)
                 .foregroundStyle(NomiTheme.accent)
             Text(routine.name)
-                .font(.subheadline.weight(.semibold))
+                .font(.nomi(.subheadline, weight: .semibold))
                 .foregroundStyle(NomiTheme.ink)
             Text("Aucune exécution silencieuse : choisissez explicitement la suite.")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
             HStack(spacing: 7) {
                 Button("Exécuter") { state.runRoutine(routine) }.buttonStyle(.nomiPrimary)
@@ -86,7 +86,7 @@ struct RoutinesView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text("TOUTES")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
@@ -102,7 +102,7 @@ struct RoutinesView: View {
                 }
                 if state.routines.isEmpty {
                     Text("Aucune routine. Créez une règle simple en langage naturel.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -125,11 +125,11 @@ struct RoutinesView: View {
             .accessibilityLabel("Activer la routine \(routine.name)")
             VStack(alignment: .leading, spacing: 2) {
                 Text(routine.name)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                     .lineLimit(1)
                 Text(metadata(routine))
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(1)
             }

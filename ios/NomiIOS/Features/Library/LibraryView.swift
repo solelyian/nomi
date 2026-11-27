@@ -34,7 +34,7 @@ struct LibraryView: View {
                 .tracking(-0.7)
                 .foregroundStyle(NomiTheme.ink)
             Text("Sources transformées en supports révisables")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -48,10 +48,10 @@ struct LibraryView: View {
                 .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Créer une fiche")
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                 Text("Collez une source ; Gemma local si installé")
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(1)
             }
@@ -69,7 +69,7 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text("SUPPORTS")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(NomiTheme.ink3)
                 Spacer()
@@ -94,7 +94,7 @@ struct LibraryView: View {
                 }
                 if state.revisionSheets.isEmpty {
                     Text("Aucune fiche. La première peut être créée depuis une transcription ou un texte source.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -114,11 +114,11 @@ struct LibraryView: View {
                 .background(NomiTheme.accentSoft, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(sheet.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.nomi(.subheadline, weight: .medium))
                     .foregroundStyle(NomiTheme.ink)
                     .lineLimit(1)
                 Text("\(sheet.format.frenchTitle) · \(sheet.level.frenchTitle) · \(sheet.createdAt.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.caption2)
+                    .font(.nomi(.caption2))
                     .foregroundStyle(NomiTheme.ink3)
                     .lineLimit(1)
             }
@@ -134,14 +134,14 @@ struct LibraryView: View {
     private var honestyPanel: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("ÉTAT DE GÉNÉRATION")
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Label(state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? "Gemma 4 local actif pour les nouvelles fiches" : "Repli extractif hors ligne tant que Gemma n’est pas installé", systemImage: state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? "checkmark.circle" : "info.circle")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(state.gemmaManager.state(for: state.gemmaManager.selectedModel) == .downloaded ? NomiTheme.success : NomiTheme.ink2)
             Label("Flashcards et quiz consultables hors ligne", systemImage: "checkmark.circle")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -181,7 +181,7 @@ private struct NewRevisionSourceView: View {
                     }
                     .disabled(!canContinue)
                     Text("Collez au moins 80 caractères. La génération utilise Gemma 4 localement quand le modèle est installé.")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -224,7 +224,7 @@ struct StoredSheetDetail: View {
                 .foregroundStyle(NomiTheme.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Text("\(sheet.level.frenchTitle) · \(sheet.format.frenchTitle) · \(sheet.createdAt.formatted(date: .abbreviated, time: .omitted))")
-                .font(.caption)
+                .font(.nomi(.caption))
                 .foregroundStyle(NomiTheme.ink2)
         }
     }
@@ -238,13 +238,13 @@ struct StoredSheetDetail: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(section.title)
-                                .font(.subheadline.weight(.semibold))
+                                .font(.nomi(.subheadline, weight: .semibold))
                                 .foregroundStyle(NomiTheme.ink)
                             Spacer()
                             fidelityLabel(section.fidelity)
                         }
                         Text(section.body)
-                            .font(.subheadline)
+                            .font(.nomi(.subheadline))
                             .foregroundStyle(NomiTheme.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
@@ -266,11 +266,11 @@ struct StoredSheetDetail: View {
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
                     VStack(alignment: .leading, spacing: 5) {
                         Text(card.front)
-                            .font(.subheadline.weight(.medium))
+                            .font(.nomi(.subheadline, weight: .medium))
                             .foregroundStyle(NomiTheme.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(card.back)
-                            .font(.caption)
+                            .font(.nomi(.caption))
                             .foregroundStyle(NomiTheme.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -292,7 +292,7 @@ struct StoredSheetDetail: View {
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
                     VStack(alignment: .leading, spacing: 7) {
                         Text(question.question)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.nomi(.subheadline, weight: .semibold))
                             .foregroundStyle(NomiTheme.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         ForEach(Array(question.choices.enumerated()), id: \.offset) { choiceIndex, choice in
@@ -301,13 +301,13 @@ struct StoredSheetDetail: View {
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.success : NomiTheme.ink3)
                                 Text(choice)
-                                    .font(.caption)
+                                    .font(.nomi(.caption))
                                     .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.ink : NomiTheme.ink2)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         Text(question.explanation)
-                            .font(.caption)
+                            .font(.nomi(.caption))
                             .foregroundStyle(NomiTheme.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -324,7 +324,7 @@ struct StoredSheetDetail: View {
     private func sectionTitle(_ title: String, count: Int) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Spacer()

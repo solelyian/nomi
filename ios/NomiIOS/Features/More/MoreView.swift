@@ -10,7 +10,7 @@ struct MoreView: View {
                         .tracking(-0.7)
                         .foregroundStyle(NomiTheme.ink)
                     Text("Apprentissage, automatisations et réglages")
-                        .font(.caption)
+                        .font(.nomi(.caption))
                         .foregroundStyle(NomiTheme.ink2)
                 }
 
@@ -35,7 +35,7 @@ struct MoreView: View {
                         Label("Gemma 4 est téléchargé à la demande et fonctionne sur appareil.", systemImage: "cpu")
                         Label("Les fonctions non disponibles restent marquées comme prévues ou simulées.", systemImage: "checkmark.shield")
                     }
-                    .font(.caption)
+                    .font(.nomi(.caption))
                     .foregroundStyle(NomiTheme.ink2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
@@ -57,7 +57,7 @@ struct MoreView: View {
     private func sectionLabel(_ title: String, detail: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title.uppercased())
-                .font(.caption2.weight(.bold))
+                .font(.nomi(.caption2, weight: .bold))
                 .tracking(1.1)
                 .foregroundStyle(NomiTheme.ink3)
             Spacer()
@@ -78,16 +78,16 @@ struct MoreView: View {
                     .background((index == 3 ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.subheadline.weight(.medium))
+                        .font(.nomi(.subheadline, weight: .medium))
                         .foregroundStyle(NomiTheme.ink)
                     Text(subtitle)
-                        .font(.caption2)
+                        .font(.nomi(.caption2))
                         .foregroundStyle(NomiTheme.ink3)
                         .lineLimit(1)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
+                    .font(.nomi(.caption2, weight: .bold))
                     .foregroundStyle(NomiTheme.ink3)
             }
             .padding(.horizontal, 10)

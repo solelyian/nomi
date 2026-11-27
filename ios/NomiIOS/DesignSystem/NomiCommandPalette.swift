@@ -30,7 +30,7 @@ struct NomiCommandPalette: View {
                         .background(NomiTheme.accent, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                     TextField("Créer, chercher ou demander…", text: $query)
                         .textFieldStyle(.plain)
-                        .font(.subheadline)
+                        .font(.nomi(.subheadline))
                         .foregroundStyle(NomiTheme.ink)
                         .focused($focused)
                         .submitLabel(.go)
@@ -164,11 +164,11 @@ struct NomiCommandPalette: View {
                     .background(selected ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.subheadline.weight(.medium))
+                        .font(.nomi(.subheadline, weight: .medium))
                         .foregroundStyle(NomiTheme.ink)
                         .lineLimit(1)
                     Text(detail)
-                        .font(.caption2)
+                        .font(.nomi(.caption2))
                         .foregroundStyle(NomiTheme.ink3)
                         .lineLimit(1)
                 }

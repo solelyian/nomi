@@ -133,9 +133,10 @@ Le logotype interne est `n.` : un `n` bas de casse et un point corail. Il rempla
 
 ### 6.1 Familles iOS
 
-- Sans : SF Pro / `.system`.
-- Serif éditorial : New York / `.serif` si disponible, sinon serif système.
-- Mono : SF Mono / `.monospaced`.
+- Sans : **Atkinson Hyperlegible** pour le texte de travail, les contrôles, les listes et les formulaires. Elle remplace SF Pro dans l’interface Nomi afin de renforcer la lisibilité, la distinction des caractères et l’identité produit. Les fichiers sont embarqués sous licence SIL Open Font License 1.1.
+- Serif éditorial : New York / `.serif` si disponible, sinon serif système, réservé aux moments humains et documentaires.
+- Mono : SF Mono / `.monospaced` pour les instruments, durées, compteurs, raccourcis et métadonnées tabulaires.
+- Atkinson ne possède que les graisses Regular et Bold : les niveaux `medium` restent en Regular avec hiérarchie par couleur/taille ; `semibold` et au-delà utilisent Bold. Ne pas simuler de graisses intermédiaires.
 
 ### 6.2 Échelle iPhone
 
