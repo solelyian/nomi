@@ -46,19 +46,6 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
         return new Rational(numerator, denominator);
     }
 
-    /// <summary>Précontrôle de capacité avant exponentiation — SPEC 1.2.
-    /// Surestime les chiffres via la longueur binaire (log10(2) &lt; 0,30103) :
-    /// conservateur, jamais laxiste — aucune puissance hors borne n'est calculée.</summary>
-    public static bool PowerExceedsLimits(BigInteger numeratorMagnitude, BigInteger denominator, int exponent)
-    {
-        var magnitude = Math.Abs(exponent);
-        if (magnitude == 0) return false;
-        static long DigitUpperBound(BigInteger value) =>
-            value.IsZero ? 1 : (long)(value.GetBitLength() * 30103 / 100000 + 1);
-        return magnitude * DigitUpperBound(BigInteger.Abs(numeratorMagnitude)) > DigitLimit
-            || magnitude * DigitUpperBound(denominator) > DigitLimit;
-    }
-
     public bool IsZero => Numerator.IsZero;
 
     public bool ExceedsLimits =>
@@ -93,13 +80,36 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
     public static bool operator !=(Rational a, Rational b) => !a.Equals(b);
 
     /// <summary>Puissance exacte, exposant entier borné par le noyau avant appel.</summary>
+    private static readonly BigInteger DecimalOverflowMagnitude = BigInteger.Pow(10, DigitLimit);
+
+    /// <summary>Exponentiation exacte avec coupure de capacité EXACTE : l'accumulateur
+    /// ne fait que croître — dès qu'il atteint 10^10000, le dépassement est certain.
+    /// Jamais de faux positif ; jamais de calcul sans fin sur puissances imbriquées.</summary>
+    private static BigInteger PowLimited(BigInteger baseValue, int exponent)
+    {
+        var result = BigInteger.One;
+        var factor = baseValue;
+        var remaining = exponent;
+        while (remaining > 0)
+        {
+            if (remaining % 2 == 1)
+            {
+                result *= factor;
+                if (BigInteger.Abs(result) >= DecimalOverflowMagnitude) throw new CalculationException("overflow");
+            }
+            remaining /= 2;
+            if (remaining > 0) factor *= factor;
+        }
+        return result;
+    }
+
     public Rational RaisedTo(int exponent)
     {
         if (exponent >= 0)
-            return new Rational(BigInteger.Pow(Numerator, exponent), BigInteger.Pow(Denominator, exponent));
+            return new Rational(PowLimited(Numerator, exponent), PowLimited(Denominator, exponent));
         if (IsZero) throw new CalculationException("division-by-zero");
         var positive = -exponent;
-        return new Rational(BigInteger.Pow(Denominator, positive), BigInteger.Pow(Numerator, positive));
+        return new Rational(PowLimited(Denominator, positive), PowLimited(Numerator, positive));
     }
 
     /// <summary>Arrondi half-up (away from zero) exact à <paramref name="places"/> décimales — SPEC 1.3.</summary>

@@ -128,8 +128,6 @@ public sealed partial class VerifierEngine
                         || right.Numerator > Kernel.MaxExponent
                         || right.Numerator < -Kernel.MaxExponent)
                         throw new CalculationException("exponent");
-                    if (Rational.PowerExceedsLimits(BigInteger.Abs(left.Numerator), left.Denominator, (int)right.Numerator))
-                        throw new CalculationException("overflow");
                     result = left.RaisedTo((int)right.Numerator);
                     break;
                 default: throw new CalculationException("parse-error");

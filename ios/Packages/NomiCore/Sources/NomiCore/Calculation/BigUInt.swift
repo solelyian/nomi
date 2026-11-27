@@ -187,6 +187,29 @@ struct BigUInt: Equatable, Comparable, Sendable {
         return x
     }
 
+    /// Première valeur à `limit + 1` chiffres décimaux — la borne de la spec.
+    static let decimalOverflowMagnitude = BigUInt.pow(BigUInt(10), 10_000)
+
+    /// Exponentiation exacte avec coupure de capacité EXACTE : l'accumulateur ne
+    /// fait que croître (facteurs ≥ 1) — dès qu'il atteint 10^10000, le résultat
+    /// final est certainement hors borne et l'erreur `overflow` est légitime.
+    /// Jamais de faux positif : sans dépassement certain, le calcul est mené exactement.
+    static func powLimited(_ base: BigUInt, _ exponent: Int) throws -> BigUInt {
+        precondition(exponent >= 0)
+        var result = BigUInt(1)
+        var factor = base
+        var remaining = exponent
+        while remaining > 0 {
+            if remaining % 2 == 1 {
+                result = result * factor
+                if result >= decimalOverflowMagnitude { throw CalcError.overflow }
+            }
+            remaining /= 2
+            if remaining > 0 { factor = factor * factor }
+        }
+        return result
+    }
+
     static func pow(_ base: BigUInt, _ exponent: Int) -> BigUInt {
         precondition(exponent >= 0)
         // L'exactitude est exigée ici : le dépassement de capacité est précontrôlé

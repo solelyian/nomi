@@ -136,10 +136,7 @@ struct CalcVerifierEngine: Sendable {
                 let exponent = right.numerator.isNegative ? -magnitude : magnitude
                 guard abs(exponent) <= CalcKernel.maxExponent else { throw CalcError.exponent }
                 if exponent < 0, left.isZero { throw CalcError.divisionByZero }
-                if Rational.powerExceedsLimits(numeratorMagnitude: left.numerator.magnitude, denominator: left.denominator, exponent: exponent) {
-                    throw CalcError.overflow
-                }
-                result = left.raised(to: exponent)
+                result = try left.raised(to: exponent)
             default: throw CalcError.parseError(position: 0)
             }
             if result.exceedsLimits { throw CalcError.overflow }
