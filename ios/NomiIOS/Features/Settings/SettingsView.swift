@@ -57,7 +57,8 @@ struct SettingsView: View {
                     .foregroundStyle(NomiTheme.ink3)
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: 50)
+            .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
