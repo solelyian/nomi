@@ -352,7 +352,7 @@ struct RevisionSheetView: View {
             tint = NomiTheme.warning
         }
         return Text(label)
-            .font(.system(size: 8, weight: .bold, design: .monospaced))
+            .font(.system(.caption2, design: .monospaced).weight(.bold))
             .tracking(0.6)
             .foregroundStyle(tint)
     }

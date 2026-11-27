@@ -189,7 +189,7 @@ private struct LiveTranscriptionContent: View {
                         .foregroundStyle(NomiTheme.ink2)
                     if !segment.isFinal {
                         Text("EN COURS")
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .font(.system(.caption2, design: .monospaced).weight(.bold))
                             .tracking(0.5)
                             .foregroundStyle(NomiTheme.warning)
                     }

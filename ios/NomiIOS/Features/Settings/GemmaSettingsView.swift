@@ -144,7 +144,7 @@ struct GemmaSettingsView: View {
                 case .downloaded:
                     if isSelected {
                         Text("ACTIF")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .font(.system(.caption2, design: .monospaced).weight(.bold))
                             .tracking(0.8)
                             .foregroundStyle(NomiTheme.success)
                     }

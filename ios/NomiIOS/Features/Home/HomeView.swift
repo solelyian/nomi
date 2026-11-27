@@ -260,7 +260,7 @@ struct HomeView: View {
                     HStack(spacing: 13) {
                         VStack(alignment: .leading, spacing: 5) {
                             Text(duration(session, at: context.date))
-                                .font(.system(size: 29, weight: .light, design: .monospaced))
+                                .font(.system(.title, design: .monospaced).weight(.light))
                                 .tracking(-1.2)
                                 .foregroundStyle(NomiTheme.ink)
                             Text(session.objective)
