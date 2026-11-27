@@ -87,7 +87,10 @@ Notes normatives :
 - `×` et `÷` Unicode sont des alias exacts de `*` et `/` ; `−` (U+2212) est un
   alias exact de `-`. La normalisation a lieu avant toute tokenisation.
 - La multiplication implicite (`2(3+4)`, `2x`) est **refusée** : erreur de
-  grammaire. L'ambiguïté n'est jamais résolue par devinette.
+  grammaire. La juxtaposition — un nombre, un identificateur ou `(` immédiatement
+  après une valeur complète — est structuralement une expression terminée suivie
+  de jetons résiduels : le code est **`trailing`**, détecté avant toute
+  résolution d'identificateur (`1e3 + 1` est `trailing`, pas `unknown-identifier`).
 - `^` est associatif à droite : `2^3^2` = `2^(3^2)` = 512.
 - Les opérateurs `+`/`-` unaires se chaînent : `--3` = 3.
 - `%` postfixe s'applique à l'atome ou au groupe qui précède immédiatement :
@@ -104,8 +107,8 @@ Notes normatives :
 | Code | Condition |
 |---|---|
 | `parse-error` | entrée hors grammaire, avec position du premier caractère fautif |
-| `parenthesis` | parenthèse ouvrante/fermante non appariée |
-| `trailing` | tokens résiduels après une expression complète |
+| `parenthesis` | parenthèse ouvrante/fermante non appariée — y compris toute fermante sans ouvrante, même en fin d'expression (`1 + 2)` est `parenthesis`, pas `trailing`) |
+| `trailing` | tokens résiduels autres qu'une fermante après une expression complète |
 | `division-by-zero` | diviseur exactement nul |
 | `exponent` | exposant non entier ou hors `[-64, 64]` |
 | `unknown-identifier` | référence inconnue ou postérieure |

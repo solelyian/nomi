@@ -624,7 +624,7 @@
       "input": "1 + 2)",
       "expect": {
         "status": "error",
-        "error": "trailing"
+        "error": "parenthesis"
       }
     },
     {

@@ -1,0 +1,36 @@
+name: calc-spec
+
+on:
+  pull_request:
+    paths:
+      - "calc-spec/**"
+      - "Nomi.WinUI/CalcEngine/**"
+      - "ios/Packages/NomiCore/Sources/NomiCore/Calculation/**"
+      - "checks/calc-conformance/**"
+      - ".github/workflows/calc.yml"
+  push:
+    branches: [main]
+    paths:
+      - "calc-spec/**"
+      - "Nomi.WinUI/CalcEngine/**"
+      - "ios/Packages/NomiCore/Sources/NomiCore/Calculation/**"
+      - "checks/calc-conformance/**"
+      - ".github/workflows/calc.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate corpus internal consistency (oracle)
+        run: python3 calc-spec/oracle.py
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Run Windows kernel against corpus
+        working-directory: checks/calc-conformance
+        run: dotnet run ../../calc-spec/vectors.json
