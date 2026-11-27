@@ -30,7 +30,7 @@ struct MoreView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    sectionLabel("État local", detail: "transparent")
+                    sectionLabel("État local", detail: "explicite")
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Gemma 4 est téléchargé à la demande et fonctionne sur appareil.", systemImage: "cpu")
                         Label("Les fonctions non disponibles restent marquées comme prévues ou simulées.", systemImage: "checkmark.shield")

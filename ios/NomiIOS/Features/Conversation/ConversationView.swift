@@ -101,7 +101,7 @@ struct ConversationView: View {
                 }
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
                     .font(.nomi(.caption2))
-                    .foregroundStyle(NomiTheme.ink3)
+                    .foregroundStyle(message.role == .user ? NomiTheme.ink2 : NomiTheme.ink3)
             }
             .padding(.horizontal, 13)
             .padding(.vertical, 11)

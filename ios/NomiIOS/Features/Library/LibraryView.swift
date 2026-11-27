@@ -24,6 +24,7 @@ struct LibraryView: View {
         .sheet(isPresented: $creatingSheet) { NewRevisionSourceView() }
         .sheet(item: $selectedSheet) { sheet in
             NavigationStack { StoredSheetDetail(sheet: sheet) }
+                .modifier(NomiPageSheetSizing())
         }
     }
 
@@ -459,5 +460,16 @@ private struct QuizStudyRow: View {
         if index == question.correctIndex { return NomiTheme.success.opacity(0.35) }
         if index == selectedIndex { return NomiTheme.warning.opacity(0.35) }
         return NomiTheme.line.opacity(0.25)
+    }
+}
+
+
+private struct NomiPageSheetSizing: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.presentationSizing(.page)
+        } else {
+            content
+        }
     }
 }
