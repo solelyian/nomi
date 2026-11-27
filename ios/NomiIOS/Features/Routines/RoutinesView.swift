@@ -6,6 +6,18 @@ struct RoutinesView: View {
     @State private var phrase = ""
     @State private var editingRoutine: NomiRoutine?
 
+    private var trimmedPhrase: String {
+        phrase.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var composerHint: String {
+        guard !trimmedPhrase.isEmpty else { return "Ex. « Chaque matin, préparer mes priorités »" }
+        let parsed = RoutinePhraseParser.parse(trimmedPhrase)
+        var parts = [parsed.trigger.frenchTitle]
+        if parsed.trigger == .time { parts.append(String(format: "%02d:%02d", parsed.hour, parsed.minute)) }
+        return parts.joined(separator: " · ")
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -39,23 +51,30 @@ struct RoutinesView: View {
     }
 
     private var composer: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "repeat")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(NomiTheme.ink3)
-            TextField("Ex. Chaque matin, priorités", text: $phrase)
-                .textFieldStyle(.plain)
-                .font(.nomi(.subheadline))
-                .submitLabel(.done)
-                .onSubmit(add)
-            Button("Créer", action: add)
-                .buttonStyle(.nomiPrimary)
-                .disabled(phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 9) {
+                Image(systemName: "repeat")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(NomiTheme.ink3)
+                TextField("Nouvelle routine…", text: $phrase)
+                    .textFieldStyle(.plain)
+                    .font(.nomi(.subheadline))
+                    .submitLabel(.done)
+                    .onSubmit(add)
+                if !trimmedPhrase.isEmpty {
+                    Button("Créer", action: add)
+                        .buttonStyle(.nomiCompact)
+                }
+            }
+            .padding(.horizontal, 11)
+            .frame(minHeight: 46)
+            .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
+            Text(composerHint)
+                .font(.nomi(.caption2))
+                .foregroundStyle(trimmedPhrase.isEmpty ? NomiTheme.ink3 : NomiTheme.accent)
+                .padding(.leading, 34)
         }
-        .padding(.horizontal, 11)
-        .frame(height: 48)
-        .background(NomiTheme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(NomiTheme.line.opacity(0.82), lineWidth: 0.8))
     }
 
     private func readyRow(_ routine: NomiRoutine) -> some View {

@@ -56,8 +56,9 @@ private struct LiveTranscriptionContent: View {
                         .foregroundStyle(NomiTheme.ink3)
                     TimelineView(.periodic(from: .now, by: 0.5)) { _ in
                         Text(formatDuration(model.elapsed))
-                            .font(.system(size: 42, weight: .light, design: .monospaced))
-                            .tracking(-1.6)
+                            .font(.system(.largeTitle, design: .monospaced).weight(.light))
+                            .tracking(-1.2)
+                            .minimumScaleFactor(0.72)
                             .foregroundStyle(NomiTheme.ink)
                     }
                 }

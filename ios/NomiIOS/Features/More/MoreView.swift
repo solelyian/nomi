@@ -30,7 +30,7 @@ struct MoreView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    sectionLabel("État local", detail: "HONNÊTE")
+                    sectionLabel("État local", detail: "transparent")
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Gemma 4 est téléchargé à la demande et fonctionne sur appareil.", systemImage: "cpu")
                         Label("Les fonctions non disponibles restent marquées comme prévues ou simulées.", systemImage: "checkmark.shield")
@@ -73,9 +73,9 @@ struct MoreView: View {
             HStack(spacing: 9) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(index == 3 ? NomiTheme.accent : NomiTheme.ink2)
+                    .foregroundStyle(NomiTheme.ink2)
                     .frame(width: 23, height: 23)
-                    .background((index == 3 ? NomiTheme.accentSoft : NomiTheme.surface2.opacity(0.55)), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .background(NomiTheme.surface2.opacity(0.55), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.nomi(.subheadline, weight: .medium))
@@ -91,7 +91,8 @@ struct MoreView: View {
                     .foregroundStyle(NomiTheme.ink3)
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

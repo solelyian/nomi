@@ -57,7 +57,7 @@ struct LibraryView: View {
             }
             Spacer()
             Button("Nouvelle") { creatingSheet = true }
-                .buttonStyle(.nomiPrimary)
+                .buttonStyle(.nomiCompact)
         }
         .padding(.horizontal, 10)
         .frame(minHeight: 54)
@@ -264,19 +264,7 @@ struct StoredSheetDetail: View {
             VStack(spacing: 0) {
                 ForEach(Array(sheet.flashcards.enumerated()), id: \.element.id) { index, card in
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(card.front)
-                            .font(.nomi(.subheadline, weight: .medium))
-                            .foregroundStyle(NomiTheme.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(card.back)
-                            .font(.nomi(.caption))
-                            .foregroundStyle(NomiTheme.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
+                    FlashcardStudyRow(card: card)
                 }
             }
             .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -290,30 +278,7 @@ struct StoredSheetDetail: View {
             VStack(spacing: 0) {
                 ForEach(Array(sheet.quiz.enumerated()), id: \.element.id) { index, question in
                     if index > 0 { Divider().overlay(NomiTheme.line.opacity(0.6)).padding(.leading, 10) }
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(question.question)
-                            .font(.nomi(.subheadline, weight: .semibold))
-                            .foregroundStyle(NomiTheme.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        ForEach(Array(question.choices.enumerated()), id: \.offset) { choiceIndex, choice in
-                            HStack(alignment: .top, spacing: 7) {
-                                Image(systemName: choiceIndex == question.correctIndex ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.success : NomiTheme.ink3)
-                                Text(choice)
-                                    .font(.nomi(.caption))
-                                    .foregroundStyle(choiceIndex == question.correctIndex ? NomiTheme.ink : NomiTheme.ink2)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                        Text(question.explanation)
-                            .font(.nomi(.caption))
-                            .foregroundStyle(NomiTheme.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
+                    QuizStudyRow(question: question)
                 }
             }
             .background(NomiTheme.surface.opacity(0.93), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -353,5 +318,138 @@ struct StoredSheetDetail: View {
             .font(.system(size: 8, weight: .bold, design: .monospaced))
             .tracking(0.6)
             .foregroundStyle(tint)
+    }
+}
+
+
+private struct FlashcardStudyRow: View {
+    let card: Flashcard
+    @State private var revealed = false
+
+    var body: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.16)) { revealed.toggle() }
+        } label: {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(card.front)
+                        .font(.nomi(.subheadline, weight: .medium))
+                        .foregroundStyle(NomiTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Image(systemName: revealed ? "eye.slash" : "eye")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(NomiTheme.ink3)
+                }
+                if revealed {
+                    Text(card.back)
+                        .font(.nomi(.caption))
+                        .foregroundStyle(NomiTheme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                } else {
+                    Text("Afficher la réponse")
+                        .font(.nomi(.caption2, weight: .semibold))
+                        .foregroundStyle(NomiTheme.accent)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(revealed ? "Masquer la réponse" : "Afficher la réponse")
+    }
+}
+
+private struct QuizStudyRow: View {
+    let question: QuizQuestion
+    @State private var selectedIndex: Int?
+
+    private var answered: Bool { selectedIndex != nil }
+    private var isCorrect: Bool { selectedIndex == question.correctIndex }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(question.question)
+                .font(.nomi(.subheadline, weight: .semibold))
+                .foregroundStyle(NomiTheme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 5) {
+                ForEach(Array(question.choices.enumerated()), id: \.offset) { choiceIndex, choice in
+                    Button {
+                        guard !answered else { return }
+                        selectedIndex = choiceIndex
+                    } label: {
+                        HStack(alignment: .center, spacing: 8) {
+                            Image(systemName: icon(for: choiceIndex))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(tint(for: choiceIndex))
+                            Text(choice)
+                                .font(.nomi(.caption))
+                                .foregroundStyle(textTint(for: choiceIndex))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 8)
+                        }
+                        .padding(.horizontal, 9)
+                        .frame(minHeight: 34)
+                        .background(background(for: choiceIndex), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(border(for: choiceIndex), lineWidth: 0.7))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(answered)
+                    .accessibilityLabel("Réponse \(choiceIndex + 1) : \(choice)")
+                }
+            }
+            if answered {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isCorrect ? "Bonne réponse" : "À revoir")
+                        .font(.nomi(.caption, weight: .semibold))
+                        .foregroundStyle(isCorrect ? NomiTheme.success : NomiTheme.warning)
+                    Text(question.explanation)
+                        .font(.nomi(.caption))
+                        .foregroundStyle(NomiTheme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+    }
+
+    private func icon(for index: Int) -> String {
+        guard answered else { return "circle" }
+        if index == question.correctIndex { return "checkmark.circle.fill" }
+        if index == selectedIndex { return "xmark.circle.fill" }
+        return "circle"
+    }
+
+    private func tint(for index: Int) -> Color {
+        guard answered else { return NomiTheme.ink3 }
+        if index == question.correctIndex { return NomiTheme.success }
+        if index == selectedIndex { return NomiTheme.warning }
+        return NomiTheme.ink3.opacity(0.55)
+    }
+
+    private func textTint(for index: Int) -> Color {
+        guard answered else { return NomiTheme.ink }
+        if index == question.correctIndex || index == selectedIndex { return NomiTheme.ink }
+        return NomiTheme.ink2.opacity(0.72)
+    }
+
+    private func background(for index: Int) -> Color {
+        guard answered else { return NomiTheme.surface2.opacity(0.30) }
+        if index == question.correctIndex { return NomiTheme.successSoft.opacity(0.82) }
+        if index == selectedIndex { return NomiTheme.warningSoft.opacity(0.82) }
+        return Color.clear
+    }
+
+    private func border(for index: Int) -> Color {
+        guard answered else { return NomiTheme.line.opacity(0.55) }
+        if index == question.correctIndex { return NomiTheme.success.opacity(0.35) }
+        if index == selectedIndex { return NomiTheme.warning.opacity(0.35) }
+        return NomiTheme.line.opacity(0.25)
     }
 }
