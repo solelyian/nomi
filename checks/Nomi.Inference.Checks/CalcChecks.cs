@@ -31,7 +31,7 @@ static class CalcChecks
         Check(Calc.Unverified("Étape 2 : 1260,00 €", allowed).Count == 0, "small step numbers and decimals pass");
         Check(!Calc.Run([new CalcStep("x", "1,200 * 3")]).Single().Verified, "an ambiguous thousands comma is refused, not read as 1.2");
         Check(Calc.Evaluate("1,234.56 * 2") == 2469.12m && Calc.Evaluate("1.234,56 * 2") == 2469.12m && Calc.Evaluate("0,004 * 1000") == 4m, "grouped and small decimals");
-        Check(!Calc.Run([new CalcStep("x", "100 + 20%")]).Single().Verified && Calc.Evaluate("100 * (1 + 20%)") == 120m && Calc.Evaluate("15% + 5%") == 0.2m, "a rate is not added to an amount");
+        Check(Calc.Run([new CalcStep("x", "100 + 20%")]).Single().Value == 100.2m && Calc.Evaluate("100 * (1 + 20%)") == 120m && Calc.Evaluate("15% + 5%") == 0.2m, "percent is postfix exact arithmetic (SPEC 2)");
         Check(Calc.ParsePlan("{\"steps\":[{\"id\":\"_t\",\"expr\":\"1+1\"}]}").Count == 0, "step ids start with a letter");
         var masked = Calc.Mask("Le total est 120 € pour 12 mois, soit 1 250,50 € le 12/11/2026 à 14:30.", [120m, 1250.5m], out var hidden);
         Check(hidden == 1 && masked == "Le total est 120 € pour … mois, soit 1 250,50 € le 12/11/2026 à 14:30.", "only the unverified figure is hidden, dates and times stay");
@@ -47,7 +47,7 @@ static class CalcChecks
         Check(!grounded[2].Verified, "a number that is not in the request is not verified");
         var reply = "{\"steps\":[],\"answer\":\"Le total TTC est de {ttc} €.\"}";
         Check(Calc.Run(Calc.ParsePlan("""{"steps":[{"id":"a","expr":"80 * 0.15"},{"id":"b","expr":"80 - {a}"}]}"""))[1].Value == 68m, "ids written in braces still refer to earlier steps");
-        Check(Calc.Run(Calc.ParsePlan("""{"steps":[{"id":"tâches","expr":"3 * 20"},{"id":"reste","expr":"90 - tâches"}]}"""))[1].Value == 30m, "step ids may have accents");
+        Check(Calc.ParsePlan("""{"steps":[{"id":"tâches","expr":"3 * 20"}]}""").Count == 0, "step ids are ascii (SPEC 2)");
         Check(Calc.PlanAnswer(reply) == "Le total TTC est de {ttc} €." && Calc.PlanAnswer("rien") == "", "the answer sentence is read from the plan");
         Check(Calc.Compose(Calc.PlanAnswer(reply), grounded, fr) == $"Le total TTC est de {Calc.Format(1512m, fr)} €.", "the engine's figure fills the sentence");
         Check(Calc.Compose("Soit {odd} €.", grounded, fr) is null && Calc.Compose("Soit {nope}.", grounded, fr) is null, "an unverified or unknown step leaves no sentence");
