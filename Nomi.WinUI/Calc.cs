@@ -40,26 +40,69 @@ public static partial class Calc
 
     public static IReadOnlyList<CalcResult> Run(IEnumerable<CalcStep> plan, bool? decimalComma = null)
     {
-        var exact = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        var check = new Dictionary<string, double>(StringComparer.Ordinal);
+        // Noyau exact recoupé par le vérificateur indépendant — CalcEngine :
+        // l'accord est l'égalité exacte des fractions réduites, pas une approximation.
+        var kernel = new CalcEngine.Kernel();
+        var verifier = new CalcEngine.VerifierEngine();
+        var bindings = new Dictionary<string, CalcEngine.Rational>(StringComparer.Ordinal);
         var results = new List<CalcResult>();
         foreach (var step in plan.Take(MaxSteps))
         {
             try
             {
-                var value = new Exact(step.Expression, exact, decimalComma).Parse();
-                var again = Recheck(step.Expression, check, decimalComma);
-                var verified = Math.Abs((double)value - again) <= 1e-9 * Math.Max(1, Math.Abs(again));
-                exact[step.Id] = value;
-                check[step.Id] = again;
-                results.Add(new CalcResult(step.Id, step.Expression, value, step.Unit, verified));
+                // Normalisation frontière (SPEC 3.3) : les littéraux sont traduits
+                // en forme canonique avant le noyau — la locale explicite tranche
+                // les formes ambiguës (« 1,200 »), refusées sans elle.
+                var canonical = Canonical(step.Expression, decimalComma);
+                var kernelValue = kernel.Evaluate(canonical, bindings);
+                var verifierValue = verifier.Evaluate(canonical, bindings);
+                var verified = kernelValue == verifierValue;
+                if (verified) bindings[step.Id] = kernelValue;
+                results.Add(new CalcResult(step.Id, step.Expression, verified ? ToDecimal(kernelValue) : 0, step.Unit, verified));
             }
-            catch (Exception error) when (error is CalcException or OverflowException or DivideByZeroException or FormatException)
+            catch (Exception error) when (error is CalcException or CalcEngine.CalculationException or OverflowException or DivideByZeroException or FormatException)
             {
                 results.Add(new CalcResult(step.Id, step.Expression, 0, step.Unit, false));
             }
         }
         return results;
+    }
+
+    // Traduit chaque littéral numérique en forme canonique invariante (point
+    // décimal, sans groupement) en préservant le reste de l'expression.
+    private static string Canonical(string expression, bool? decimalComma)
+    {
+        var text = Normalize(expression);
+        var builder = new System.Text.StringBuilder(text.Length);
+        for (var i = 0; i < text.Length;)
+        {
+            var c = text[i];
+            if (char.IsDigit(c) || c == '.')
+            {
+                var start = i;
+                while (i < text.Length && (char.IsDigit(text[i]) || text[i] is '.' or ',')) i++;
+                builder.Append(Literal(text[start..i], decimalComma));
+                continue;
+            }
+            builder.Append(c);
+            i++;
+        }
+        return builder.ToString();
+    }
+
+    // Conversion d'affichage uniquement : l'exactitude vit dans le rationnel,
+    // le decimal ne sert qu'au formatage et au masquage — jamais au calcul.
+    private static decimal ToDecimal(CalcEngine.Rational value)
+    {
+        try
+        {
+            return (decimal)value.Numerator / (decimal)value.Denominator;
+        }
+        catch (OverflowException)
+        {
+            return decimal.Parse(value.DisplayFrench().Replace("\u202F", "").Replace(',', '.'),
+                System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture);
+        }
     }
 
     // Numbers a plan may use without finding them in the request: counts and the usual units of time and percent.
@@ -123,7 +166,11 @@ public static partial class Calc
     private static string Pretty(string expression) =>
         expression.Replace("*", " × ").Replace("/", " ÷ ").Replace("  ", " ").Trim();
 
-    public static decimal Evaluate(string expression) => new Exact(expression, new Dictionary<string, decimal>()).Parse();
+    public static decimal Evaluate(string expression, bool? decimalComma = null)
+    {
+        var canonical = Canonical(expression, decimalComma);
+        return ToDecimal(new CalcEngine.Kernel().Evaluate(canonical, new Dictionary<string, CalcEngine.Rational>()));
+    }
 
     public static string Format(decimal value, CultureInfo culture)
     {
@@ -215,71 +262,6 @@ public static partial class Calc
     private static string Literal(string token, bool? comma) =>
         Readings(token, true, comma) is [var number] ? number.ToString(CultureInfo.InvariantCulture) : throw new CalcException($"number {token}");
 
-    private static double Recheck(string expression, IReadOnlyDictionary<string, double> names, bool? comma)
-    {
-        var output = new Stack<double>();
-        var operators = new Stack<char>();
-        var tokens = Tokens(expression, comma).ToList();
-        var expectValue = true;
-        void Apply()
-        {
-            var op = operators.Pop();
-            if (op == '~') { output.Push(-output.Pop()); return; }
-            if (op == '%') { output.Push(output.Pop() / 100); return; }
-            var right = output.Pop();
-            var left = output.Pop();
-            output.Push(op switch
-            {
-                '+' => left + right,
-                '-' => left - right,
-                '*' => left * right,
-                '/' => right == 0 ? throw new DivideByZeroException() : left / right,
-                '^' => Math.Pow(left, right),
-                _ => throw new CalcException("operator")
-            });
-        }
-        static int Rank(char op) => op switch { '+' or '-' => 1, '*' or '/' => 2, '~' => 3, '^' => 4, _ => 0 };
-        foreach (var token in tokens)
-        {
-            if (char.IsDigit(token[0]) || token[0] == '.')
-            {
-                output.Push(double.Parse(token, CultureInfo.InvariantCulture));
-                expectValue = false;
-            }
-            else if (char.IsLetter(token[0]))
-            {
-                output.Push(names.TryGetValue(token, out var value) ? value : throw new CalcException($"unknown {token}"));
-                expectValue = false;
-            }
-            else if (token == "(") { operators.Push('('); expectValue = true; }
-            else if (token == ")")
-            {
-                while (operators.Count > 0 && operators.Peek() != '(') Apply();
-                if (operators.Count == 0) throw new CalcException("parenthesis");
-                operators.Pop();
-                expectValue = false;
-            }
-            else if (token == "%") { operators.Push('%'); Apply(); }
-            else
-            {
-                var op = token[0];
-                if (expectValue && op == '-') op = '~';
-                else if (expectValue && op == '+') continue;
-                while (operators.Count > 0 && operators.Peek() != '(' && op != '~'
-                    && (Rank(operators.Peek()) > Rank(op) || Rank(operators.Peek()) == Rank(op) && op != '^')) Apply();
-                operators.Push(op);
-                expectValue = true;
-            }
-        }
-        while (operators.Count > 0)
-        {
-            if (operators.Peek() == '(') throw new CalcException("parenthesis");
-            Apply();
-        }
-        if (output.Count != 1 || double.IsNaN(output.Peek()) || double.IsInfinity(output.Peek())) throw new CalcException("expression");
-        return output.Pop();
-    }
-
     private static IEnumerable<string> Tokens(string expression, bool? comma = null)
     {
         var text = Normalize(expression);
@@ -313,98 +295,10 @@ public static partial class Calc
         return ThousandsSpace().Replace(text, "$1");
     }
 
-    private sealed class Exact(string expression, IReadOnlyDictionary<string, decimal> names, bool? comma = null)
-    {
-        private readonly List<string> tokens = [.. Tokens(expression, comma)];
-        private int at;
-
-        public decimal Parse()
-        {
-            var value = Sum();
-            if (at != tokens.Count) throw new CalcException("trailing");
-            return value;
-        }
-
-        private string? Peek => at < tokens.Count ? tokens[at] : null;
-
-        private decimal Sum()
-        {
-            var start = at;
-            var value = Product();
-            var ratio = Rate(start) || value == 1;
-            while (Peek is "+" or "-")
-            {
-                var add = tokens[at++] == "+";
-                start = at;
-                var right = Product();
-                if (!Rate(start)) ratio = false;
-                else if (!ratio) throw new CalcException("percent");
-                value = add ? value + right : value - right;
-            }
-            return value;
-        }
-
-        private bool Rate(int start) => at == start + 2 && tokens[start + 1] == "%";
-
-        private decimal Product()
-        {
-            var value = Unary();
-            while (Peek is "*" or "/")
-            {
-                var op = tokens[at++];
-                var right = Unary();
-                value = op == "*" ? value * right : right == 0 ? throw new DivideByZeroException() : value / right;
-            }
-            return value;
-        }
-
-        private decimal Unary()
-        {
-            if (Peek == "-") { at++; return -Unary(); }
-            if (Peek == "+") { at++; return Unary(); }
-            return Power();
-        }
-
-        private decimal Power()
-        {
-            var value = Postfix();
-            if (Peek != "^") return value;
-            at++;
-            var exponent = Unary();
-            if (exponent != Math.Truncate(exponent) || Math.Abs(exponent) > 64) throw new CalcException("exponent");
-            var result = 1m;
-            for (var i = 0; i < Math.Abs(exponent); i++) result *= value;
-            return exponent < 0 ? 1 / result : result;
-        }
-
-        private decimal Postfix()
-        {
-            var value = Atom();
-            while (Peek == "%") { at++; value /= 100; }
-            return value;
-        }
-
-        private decimal Atom()
-        {
-            var token = Peek ?? throw new CalcException("end");
-            at++;
-            if (token == "(")
-            {
-                var value = Sum();
-                if (Peek != ")") throw new CalcException("parenthesis");
-                at++;
-                return value;
-            }
-            if (char.IsDigit(token[0]) || token[0] == '.') return decimal.Parse(token, NumberStyles.Number, CultureInfo.InvariantCulture);
-            if (char.IsLetter(token[0]) && names.TryGetValue(token, out var named)) return named;
-            throw new CalcException($"token {token}");
-        }
-    }
-
     [GeneratedRegex(@"[{]([\p{L}][\p{L}\p{N}_]{0,31})[}]")]
     private static partial Regex PlaceholderPattern();
 
-    [GeneratedRegex(@"^[\p{L}][\p{L}\p{N}_]{0,31}$")]
+    [GeneratedRegex(@"^[a-z][a-z0-9_]{0,31}$")]
     private static partial Regex IdPattern();
 
     [GeneratedRegex(@"(?<![\w.,])\d{1,3}(?:[\u202F\u00A0 ]\d{3})+(?:[.,]\d+)?|(?<![\w.,])\d+(?:[.,]\d+)*")]

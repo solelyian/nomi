@@ -3,7 +3,7 @@ import Foundation
 // Rationnel exact : numérateur signé / dénominateur strictement positif,
 // toujours réduit (pgcd = 1). Zéro est 0/1. Aucun arrondi n'existe ici —
 // l'arrondi n'intervient qu'à l'affichage. Référence : calc-spec/SPEC.md section 1.
-struct Rational: Equatable, Comparable, Sendable {
+public struct Rational: Equatable, Comparable, Sendable {
     private(set) var numerator: BigInt
     private(set) var denominator: BigUInt // toujours >= 1
 
@@ -47,6 +47,11 @@ struct Rational: Equatable, Comparable, Sendable {
 
     var isZero: Bool { numerator.isZero }
 
+    /// Valeur absolue.
+    var magnitude: Rational {
+        Rational(numerator: BigInt(magnitude: numerator.magnitude, negative: false), denominator: denominator)
+    }
+
     /// Dépassement de la borne de ressources (SPEC 1.2).
     /// Première magnitude à `digitLimit + 1` chiffres : le dépassement est une
     /// comparaison directe — jamais de conversion décimale complète (coûteuse).
@@ -89,7 +94,7 @@ struct Rational: Equatable, Comparable, Sendable {
         return Rational(numerator: signedNumerator, denominator: denominatorMagnitude)
     }
 
-    static func < (lhs: Rational, rhs: Rational) -> Bool {
+    public static func < (lhs: Rational, rhs: Rational) -> Bool {
         let left = lhs.numerator * BigInt(magnitude: rhs.denominator, negative: false)
         let right = rhs.numerator * BigInt(magnitude: lhs.denominator, negative: false)
         return left < right
@@ -134,7 +139,7 @@ struct Rational: Equatable, Comparable, Sendable {
 
     /// Affichage français conforme SPEC 1.3/1.4 : half-up à `places` décimales,
     /// zéros terminaux supprimés, virgule décimale, milliers groupés U+202F.
-    func displayFrench(places: Int = 4) -> String {
+    public func displayFrench(places: Int = 4) -> String {
         let rounded = roundedHalfUp(places: places)
         let scale = BigUInt.pow(BigUInt(10), places)
         // Expansion décimale exacte sur `places` chiffres.
