@@ -1,7 +1,7 @@
 import Foundation
 
 // Entier signé de précision arbitraire — signe + magnitude.
-struct BigInt: Equatable, Comparable, Sendable {
+struct BigInt: Equatable, Comparable, Hashable, Sendable {
     enum Sign: Sendable { case positive, zero, negative }
 
     private(set) var magnitude: BigUInt

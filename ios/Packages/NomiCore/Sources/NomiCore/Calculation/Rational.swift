@@ -3,7 +3,7 @@ import Foundation
 // Rationnel exact : numérateur signé / dénominateur strictement positif,
 // toujours réduit (pgcd = 1). Zéro est 0/1. Aucun arrondi n'existe ici —
 // l'arrondi n'intervient qu'à l'affichage. Référence : calc-spec/SPEC.md section 1.
-public struct Rational: Equatable, Comparable, Sendable {
+public struct Rational: Equatable, Comparable, Hashable, Sendable {
     private(set) var numerator: BigInt
     private(set) var denominator: BigUInt // toujours >= 1
 
