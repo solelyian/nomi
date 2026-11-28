@@ -94,6 +94,10 @@ public struct Rational: Equatable, Comparable, Sendable {
         return Rational(numerator: signedNumerator, denominator: denominatorMagnitude)
     }
 
+    public static func <= (lhs: Rational, rhs: Rational) -> Bool { lhs < rhs || lhs == rhs }
+    public static func > (lhs: Rational, rhs: Rational) -> Bool { !(lhs <= rhs) }
+    public static func >= (lhs: Rational, rhs: Rational) -> Bool { !(lhs < rhs) }
+
     public static func < (lhs: Rational, rhs: Rational) -> Bool {
         let left = lhs.numerator * BigInt(magnitude: rhs.denominator, negative: false)
         let right = rhs.numerator * BigInt(magnitude: lhs.denominator, negative: false)

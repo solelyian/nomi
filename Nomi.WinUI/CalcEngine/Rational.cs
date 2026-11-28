@@ -76,6 +76,11 @@ public readonly struct Rational : IEquatable<Rational>, IComparable<Rational>
     public bool Equals(Rational other) => Numerator == other.Numerator && Denominator == other.Denominator;
     public override bool Equals(object? obj) => obj is Rational other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(Numerator, Denominator);
+    public static bool operator <(Rational a, Rational b) => a.Numerator * b.Denominator < b.Numerator * a.Denominator;
+    public static bool operator <=(Rational a, Rational b) => a < b || a == b;
+    public static bool operator >(Rational a, Rational b) => !(a <= b);
+    public static bool operator >=(Rational a, Rational b) => !(a < b);
+
     public static bool operator ==(Rational a, Rational b) => a.Equals(b);
     public static bool operator !=(Rational a, Rational b) => !a.Equals(b);
 
