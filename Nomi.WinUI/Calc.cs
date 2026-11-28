@@ -6,7 +6,17 @@ namespace Nomi;
 
 public sealed record CalcStep(string Id, string Expression, string Unit = "");
 
-public sealed record CalcResult(string Id, string Expression, decimal Value, string Unit, bool Verified);
+public sealed record CalcResult(string Id, string Expression, decimal Value, string Unit, bool Verified, string Dimension = "");
+
+/// <summary>Certificat de calcul — structure vérifiable, jamais du texte libre (SPEC 7.3).</summary>
+public sealed record CalcCertificate(
+    string Engine,
+    IReadOnlyList<CalcCertificateStep> Steps,
+    string Grounding,
+    string Verifier,
+    string Status);
+
+public sealed record CalcCertificateStep(string Id, string Expression, string Value, string Unit, string Dimension);
 
 public sealed class CalcException(string message) : Exception(message);
 
@@ -44,7 +54,9 @@ public static partial class Calc
         // l'accord est l'égalité exacte des fractions réduites, pas une approximation.
         var kernel = new CalcEngine.Kernel();
         var verifier = new CalcEngine.VerifierEngine();
-        var bindings = new Dictionary<string, CalcEngine.Rational>(StringComparer.Ordinal);
+        // SPEC 3.1 : les dimensions se propagent par les identificateurs —
+        // « remise » référencé dans une étape suivante porte sa dimension monétaire.
+        var bindings = new Dictionary<string, CalcEngine.Measured>(StringComparer.Ordinal);
         var results = new List<CalcResult>();
         foreach (var step in plan.Take(MaxSteps))
         {
@@ -54,11 +66,12 @@ public static partial class Calc
                 // en forme canonique avant le noyau — la locale explicite tranche
                 // les formes ambiguës (« 1,200 »), refusées sans elle.
                 var canonical = Canonical(step.Expression, decimalComma);
-                var kernelValue = kernel.Evaluate(canonical, bindings);
-                var verifierValue = verifier.Evaluate(canonical, bindings);
+                var kernelValue = kernel.EvaluateDimensional(canonical, bindings);
+                var verifierValue = verifier.EvaluateDimensional(canonical, bindings);
                 var verified = kernelValue == verifierValue;
                 if (verified) bindings[step.Id] = kernelValue;
-                results.Add(new CalcResult(step.Id, step.Expression, verified ? ToDecimal(kernelValue) : 0, step.Unit, verified));
+                var dimension = kernelValue.Dim.Kind == CalcEngine.DimKind.Currency ? kernelValue.Dim.Code : "";
+                results.Add(new CalcResult(step.Id, step.Expression, verified ? ToDecimal(kernelValue.Value) : 0, step.Unit, verified, dimension));
             }
             catch (Exception error) when (error is CalcException or CalcEngine.CalculationException or OverflowException or DivideByZeroException or FormatException)
             {
@@ -126,6 +139,20 @@ public static partial class Calc
             }
             catch (Exception error) when (error is CalcException or FormatException or OverflowException) { return result with { Verified = false }; }
         }).ToList();
+    }
+
+    /// <summary>Assemble le certificat de calcul d'une réponse — la structure
+    /// affichée et consignée, que le texte généré ne peut pas imiter (SPEC 7.3).</summary>
+    public static CalcCertificate Certify(IReadOnlyList<CalcResult> results, bool grounded, string engineVersion = "nomi-calc/1.1")
+    {
+        var steps = results.Where(result => result.Verified)
+            .Select(result => new CalcCertificateStep(
+                result.Id, result.Expression,
+                result.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                result.Unit, result.Dimension))
+            .ToList();
+        var status = results.Count > 0 && results.All(result => result.Verified) && grounded ? "verified" : "ungrounded";
+        return new CalcCertificate(engineVersion, steps, grounded ? "anchored" : "unanchored", "agree", status);
     }
 
     // The sentence the model writes around the figures, with {id} where each verified result goes.

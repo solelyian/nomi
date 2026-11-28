@@ -78,6 +78,11 @@ public sealed partial class MainWindow
                     results = Calc.Ground(planned, known, comma);
                     entry.Verified = results.Count > 0 && results.All(result => result.Verified);
                     entry.Calculation = entry.Verified == true ? [.. Calc.Posed(results, CultureInfo.CurrentCulture)] : [];
+                    if (entry.Verified == true)
+                    {
+                        var certificate = Calc.Certify(results, grounded: true);
+                        entry.Certificate = System.Text.Json.JsonSerializer.Serialize(certificate);
+                    }
                     // One generation: the model's sentence with the engine's figures, when it holds no other figure.
                     if (entry.Verified == true && Calc.Compose(template, results, CultureInfo.CurrentCulture) is { } composed
                         && ResponsePolicy.Apply(composed, "summary") is { Accepted: true } checkedText)
