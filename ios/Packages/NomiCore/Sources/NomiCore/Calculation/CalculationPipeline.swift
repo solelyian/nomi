@@ -337,9 +337,50 @@ public enum CalcPipeline {
             }
             if !traceable { blocked.append(range) }
         }
+        // Nombres en toutes lettres — SPEC 7.2 : un chiffre écrit en lettres ne
+        // doit pas passer le masquage quand il est intraçable. Couverture bornée
+        // au français usuel (0–999 999) ; la composition structurée rend ce
+        // chemin marginal, mais il est fermé.
+        for wordRange in untraceableNumberWords(in: answer, allowed: allowed, excluding: blocked) {
+            blocked.append(wordRange)
+        }
         var text = answer
-        for range in blocked.reversed() { text.replaceSubrange(range, with: "…") }
+        for range in blocked.sorted(by: { $0.lowerBound > $1.lowerBound }) { text.replaceSubrange(range, with: "…") }
         return (text, blocked.count)
+    }
+
+    /// Balaye les séquences de mots-nombres français ; chaque séquence reconnue
+    /// dont la valeur n'est pas traçable est masquée. Les mots couverts par des
+    /// plages déjà bloquées (chiffres) sont ignorés.
+    private static func untraceableNumberWords(in answer: String, allowed: [Rational], excluding: [Range<String.Index>]) -> [Range<String.Index>] {
+        let wordPattern = try! NSRegularExpression(pattern: #"[A-Za-zÀ-ÿ]+(?:-[A-Za-zÀ-ÿ]+)*"#)
+        let matches = wordPattern.matches(in: answer, range: NSRange(answer.startIndex..., in: answer))
+        let words = matches.compactMap { match -> (word: String, range: Range<String.Index>)? in
+            guard let range = Range(match.range, in: answer) else { return nil }
+            return (String(answer[range]), range)
+        }
+        var blocked: [Range<String.Index>] = []
+        var index = 0
+        while index < words.count {
+            let remaining = words[index...].map(\.word)
+            if let parsed = NumberWords.parseSequence(remaining), parsed.consumed > 0 {
+                let start = words[index].range.lowerBound
+                let end = words[index + parsed.consumed - 1].range.upperBound
+                let sequenceRange = start..<end
+                // Jamais de masquage dans « un » article-like isolé hors contexte :
+                // 0 et 1 sont des constantes de la liste blanche — traçables.
+                let value = Rational(integer: BigInt(magnitude: BigUInt(UInt64(parsed.value)), negative: false))
+                let traceable = allowed.contains { sameAsDisplayed($0, value) }
+                    || constants.contains { $0 == value }
+                if !traceable, !excluding.contains(where: { $0.overlaps(sequenceRange) }) {
+                    blocked.append(sequenceRange)
+                }
+                index += parsed.consumed
+            } else {
+                index += 1
+            }
+        }
+        return blocked
     }
 
     /// Le texte affiche des valeurs arrondies : la comparaison se fait à l'échelle
