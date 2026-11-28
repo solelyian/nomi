@@ -103,8 +103,12 @@ class Parser:
 
     def parse(self, depth=0):
         value = self.expr(depth)
-        kind, _, pos = self.peek()
+        kind, val, pos = self.peek()
         if kind != "end":
+            # SPEC 2.1 : une fermante sans ouvrante est `parenthesis` ;
+            # `trailing` ne concerne que les autres jetons résiduels.
+            if kind == "op" and val == ")":
+                raise CalcError("parenthesis", pos)
             raise CalcError("trailing", pos)
         return value
 
