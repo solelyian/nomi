@@ -768,6 +768,216 @@
         "status": "error",
         "error": "too-deep"
       }
+    },
+    {
+      "id": "dim-001",
+      "category": "dimension",
+      "input": "80€ * 15%",
+      "expect": {
+        "status": "ok",
+        "rational": "12/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-002",
+      "category": "dimension",
+      "input": "80 € * 15%",
+      "expect": {
+        "status": "ok",
+        "rational": "12/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-003",
+      "category": "dimension",
+      "input": "€80 * 15%",
+      "expect": {
+        "status": "ok",
+        "rational": "12/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-004",
+      "category": "dimension",
+      "input": "$10 + $5",
+      "expect": {
+        "status": "ok",
+        "rational": "15/1",
+        "dimension": {
+          "currency": "USD"
+        }
+      }
+    },
+    {
+      "id": "dim-005",
+      "category": "dimension",
+      "input": "10€ + 5$",
+      "expect": {
+        "status": "error",
+        "error": "currency-mixing"
+      }
+    },
+    {
+      "id": "dim-006",
+      "category": "dimension",
+      "input": "10€ + 5",
+      "expect": {
+        "status": "error",
+        "error": "dimension-mismatch"
+      }
+    },
+    {
+      "id": "dim-007",
+      "category": "dimension",
+      "input": "100€ + 20%",
+      "expect": {
+        "status": "error",
+        "error": "dimension-mismatch"
+      }
+    },
+    {
+      "id": "dim-008",
+      "category": "dimension",
+      "input": "10€ * 2€",
+      "expect": {
+        "status": "error",
+        "error": "dimension-mismatch"
+      }
+    },
+    {
+      "id": "dim-009",
+      "category": "dimension",
+      "input": "10€ / 2€",
+      "expect": {
+        "status": "ok",
+        "rational": "5/1",
+        "dimension": "none"
+      }
+    },
+    {
+      "id": "dim-010",
+      "category": "dimension",
+      "input": "10€ / 2",
+      "expect": {
+        "status": "ok",
+        "rational": "5/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-011",
+      "category": "dimension",
+      "input": "5 / 2€",
+      "expect": {
+        "status": "error",
+        "error": "dimension-mismatch"
+      }
+    },
+    {
+      "id": "dim-012",
+      "category": "dimension",
+      "input": "12€50",
+      "expect": {
+        "status": "error",
+        "error": "unsupported"
+      }
+    },
+    {
+      "id": "dim-013",
+      "category": "dimension",
+      "input": "(10€)^2",
+      "expect": {
+        "status": "error",
+        "error": "dimension-mismatch"
+      }
+    },
+    {
+      "id": "dim-014",
+      "category": "dimension",
+      "input": "80€ * (1 + 20%)",
+      "expect": {
+        "status": "ok",
+        "rational": "96/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-015",
+      "category": "dimension",
+      "input": "80€ - 80€ * 15%",
+      "expect": {
+        "status": "ok",
+        "rational": "68/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "id": "dim-016",
+      "category": "dimension",
+      "input": "1 + 20%",
+      "expect": {
+        "status": "ok",
+        "rational": "6/5",
+        "dimension": "none"
+      }
+    },
+    {
+      "id": "dim-017",
+      "category": "dimension",
+      "input": "15% + 5%",
+      "expect": {
+        "status": "ok",
+        "rational": "1/5",
+        "dimension": "none"
+      }
+    },
+    {
+      "id": "dim-018",
+      "category": "dimension",
+      "input": "€",
+      "expect": {
+        "status": "error",
+        "error": "parse-error"
+      }
+    },
+    {
+      "id": "dim-019",
+      "category": "dimension",
+      "input": "£50 + £25",
+      "expect": {
+        "status": "ok",
+        "rational": "75/1",
+        "dimension": {
+          "currency": "GBP"
+        }
+      }
+    },
+    {
+      "id": "dim-020",
+      "category": "dimension",
+      "input": "(80€ + 20€)%",
+      "expect": {
+        "status": "ok",
+        "rational": "1/1",
+        "dimension": {
+          "currency": "EUR"
+        }
+      }
     }
   ]
 }

@@ -10,17 +10,18 @@ struct CalcVerifierEngine: Sendable {
     init() {}
 
     private enum Symbol: Equatable {
-        case value(Rational)
+        case value(Measured)
         case op(Character)
         case leftParen
     }
 
     private enum Token: Equatable {
-        case number(String)
+        case number(String, currency: String = "")
         case identifier(String)
         case op(Character)
         case leftParen
         case rightParen
+        case currencySymbol(Character)
     }
 
     /// Tokenise indépendamment du noyau : pas de fonction partagée.
@@ -60,6 +61,11 @@ struct CalcVerifierEngine: Sendable {
                 index = end
                 continue
             }
+            if character == "€" || character == "$" || character == "£" {
+                tokens.append(.currencySymbol(character))
+                index = text.index(after: index)
+                continue
+            }
             switch character {
             case "(": tokens.append(.leftParen)
             case ")": tokens.append(.rightParen)
@@ -68,11 +74,44 @@ struct CalcVerifierEngine: Sendable {
             }
             index = text.index(after: index)
         }
-        return tokens
+        // Attache les symboles monétaires au nombre adjacent (SPEC 3.2) —
+        // écrit indépendamment du noyau : symbole entre deux nombres =
+        // unsupported, symbole isolé = parse-error.
+        var attached: [Token] = []
+        var ahead = tokens
+        for index in tokens.indices {
+            let token = ahead[index]
+            guard case .currencySymbol(let symbol) = token else { attached.append(token); continue }
+            var before = false
+            if let last = attached.last, case .number(_, _) = last { before = true }
+            var after = false
+            if index + 1 < ahead.count, case .number(_, _) = ahead[index + 1] { after = true }
+            if before && after { throw CalcError.unsupported(position: 0) }
+            if !before && !after { throw CalcError.parseError(position: 0) }
+            let code = try CalcDimension.currency(of: symbol).code
+            if before {
+                guard case .number(let raw, let existing) = attached[attached.count - 1], existing.isEmpty else {
+                    throw CalcError.parseError(position: 0)
+                }
+                attached[attached.count - 1] = .number(raw, currency: code)
+            } else {
+                guard case .number(let raw, let existing) = ahead[index + 1], existing.isEmpty else {
+                    throw CalcError.parseError(position: 0)
+                }
+                ahead[index + 1] = .number(raw, currency: code)
+            }
+        }
+        return attached
     }
 
     /// Évalue par machine à pile. Lève les mêmes erreurs typées que la spec.
     func evaluate(_ input: String, names: [String: Rational] = [:]) throws -> Rational {
+        let lifted = names.mapValues { Measured.plain($0) }
+        return try evaluateDimensional(input, names: lifted).value
+    }
+
+    /// Évalue en valeur dimensionnée — SPEC 3.1, machine à pile.
+    func evaluateDimensional(_ input: String, names: [String: Measured] = [:]) throws -> Measured {
         let tokens = try scan(input)
         // SPEC 2.1 : l'équilibre des parenthèses est structurel — vérifié avant
         // toute évaluation, comme dans le noyau (`(1/0` est `parenthesis`).
@@ -104,48 +143,52 @@ struct CalcVerifierEngine: Sendable {
             guard let op = operators.popLast() else { throw CalcError.parseError(position: 0) }
             if op == "~" {
                 guard case .value(let top) = output.popLast() else { throw CalcError.parseError(position: 0) }
-                output.append(.value(-top))
+                output.append(.value(Measured(value: -top.value, dim: top.dim)))
                 return
             }
             if op == "%" {
                 guard case .value(let top) = output.popLast() else { throw CalcError.parseError(position: 0) }
-                let percentResult = top / Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
+                let percentResult = top.value / Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
                 if percentResult.exceedsLimits { throw CalcError.overflow }
-                output.append(.value(percentResult))
+                // SPEC v1.1 : % est une mise à l'échelle sans dimension — dim conservée.
+                output.append(.value(Measured(value: percentResult, dim: top.dim)))
                 return
             }
             guard case .value(let right) = output.popLast(),
                   case .value(let left) = output.popLast() else {
                 throw CalcError.parseError(position: 0)
             }
-            let result: Rational
+            let result: Measured
             switch op {
-            case "+": result = left + right
-            case "-": result = left - right
-            case "*": result = left * right
-            case "/":
-                guard !right.isZero else { throw CalcError.divisionByZero }
-                result = left / right
+            case "+": result = try Measured.add(left, right, adding: true)
+            case "-": result = try Measured.add(left, right, adding: false)
+            case "*": result = try Measured.multiply(left, right)
+            case "/": result = try Measured.divide(left, right)
             case "^":
-                guard right.denominator == BigUInt(1),
-                      right.numerator.magnitude.decimalDigitCount <= 2,
-                      let magnitude = Int(right.numerator.magnitude.decimalString),
+                guard left.dim.isNone, right.dim.isNone else { throw CalcError.dimensionMismatch }
+                guard right.value.denominator == BigUInt(1),
+                      right.value.numerator.magnitude.decimalDigitCount <= 2,
+                      let magnitude = Int(right.value.numerator.magnitude.decimalString),
                       magnitude <= CalcKernel.maxExponent else {
                     throw CalcError.exponent
                 }
-                let exponent = right.numerator.isNegative ? -magnitude : magnitude
+                let exponent = right.value.numerator.isNegative ? -magnitude : magnitude
                 guard abs(exponent) <= CalcKernel.maxExponent else { throw CalcError.exponent }
-                if exponent < 0, left.isZero { throw CalcError.divisionByZero }
-                result = try left.raised(to: exponent)
+                if exponent < 0, left.value.isZero { throw CalcError.divisionByZero }
+                result = Measured.plain(try left.value.raised(to: exponent))
             default: throw CalcError.parseError(position: 0)
             }
-            if result.exceedsLimits { throw CalcError.overflow }
+            if result.value.exceedsLimits { throw CalcError.overflow }
             output.append(.value(result))
         }
 
         for token in tokens {
             switch token {
-            case .number(let raw):
+            case .currencySymbol:
+                // Tous les symboles monétaires sont fusionnés au scan — aucun ne
+                // doit subsister ici ; un reliquat est une entrée hors grammaire.
+                throw CalcError.parseError(position: 0)
+            case .number(let raw, let currency):
                 // Juxtaposition : une valeur complète suivie d'un nombre est
                 // `trailing` — SPEC grammaire, avant toute évaluation.
                 if !expectValue { throw CalcError.trailing(position: 0) }
@@ -154,7 +197,8 @@ struct CalcVerifierEngine: Sendable {
                       let value = Rational(decimalLiteral: normalized) else {
                     throw CalcError.parseError(position: 0)
                 }
-                output.append(.value(value))
+                let dim = currency.isEmpty ? CalcDimension.none : CalcDimension(kind: .currency, code: currency)
+                output.append(.value(Measured(value: value, dim: dim)))
                 expectValue = false
             case .identifier(let name):
                 if !expectValue { throw CalcError.trailing(position: 0) }
