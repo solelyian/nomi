@@ -290,29 +290,57 @@ public static partial class Calc
     }
 
     public static IReadOnlyList<string> Unverified(string answer, IEnumerable<decimal> allowed) =>
-        Blocked(answer, allowed).Select(match => match.Value.Trim()).ToList();
+        Blocked(answer, allowed).Select(span => span.Text.Trim()).ToList();
 
     public static string Mask(string answer, IEnumerable<decimal> allowed, out int hidden)
     {
         var blocked = Blocked(answer, allowed);
         hidden = blocked.Count;
         var text = new System.Text.StringBuilder(answer);
-        foreach (var match in blocked.OrderByDescending(match => match.Index))
-            text.Remove(match.Index, match.Length).Insert(match.Index, '…');
+        foreach (var span in blocked.OrderByDescending(span => span.Index))
+            text.Remove(span.Index, span.Length).Insert(span.Index, '…');
         return text.ToString();
     }
 
-    private static List<Match> Blocked(string answer, IEnumerable<decimal> allowed)
+    private readonly record struct Span(int Index, int Length, string Text);
+
+    private static List<Span> Blocked(string answer, IEnumerable<decimal> allowed)
     {
         var known = allowed.Select(Math.Abs).Distinct().ToArray();
-        var blocked = new List<Match>();
+        var blocked = new List<Span>();
         foreach (Match match in NumberPattern().Matches(answer))
         {
             if (Dated(answer, match)) continue;
             var readings = Readings(match.Value, false);
             if (readings.Count == 0) continue;
             if (match.Value.All(char.IsDigit) && readings[0] <= 10) continue;
-            if (!readings.Any(number => known.Any(value => Same(value, number)))) blocked.Add(match);
+            if (!readings.Any(number => known.Any(value => Same(value, number))))
+                blocked.Add(new Span(match.Index, match.Length, match.Value));
+        }
+        // Nombres en toutes lettres — SPEC 7.2 : couverture bornée au français
+        // usuel ; toute séquence reconnue et intraçable est masquée.
+        var wordMatches = WordPattern().Matches(answer);
+        var words = wordMatches.Select(match => (match.Value, Index: match.Index, Length: match.Length)).ToList();
+        var at = 0;
+        while (at < words.Count)
+        {
+            var remaining = words.Skip(at).Select(word => word.Value).ToArray();
+            if (CalcEngine.NumberWords.ParseSequence(remaining) is { } parsed && parsed.Consumed > 0)
+            {
+                var first = words[at];
+                var last = words[at + parsed.Consumed - 1];
+                var value = (decimal)parsed.Value;
+                // 0–10 sont des constantes structurelles — traçables sans provenance.
+                var traceable = value <= 10 || known.Any(knownValue => Same(knownValue, value));
+                var overlaps = blocked.Any(span => first.Index < span.Index + span.Length && span.Index < first.Index + (last.Index + last.Length - first.Index));
+                if (!traceable && !overlaps)
+                {
+                    var length = last.Index + last.Length - first.Index;
+                    blocked.Add(new Span(first.Index, length, answer.Substring(first.Index, length)));
+                }
+                at += parsed.Consumed;
+            }
+            else at++;
         }
         return blocked;
     }
@@ -423,4 +451,7 @@ public static partial class Calc
 
     [GeneratedRegex(@"^\d{1,3}(?:[.,]\d{3})+$")]
     private static partial Regex Grouped();
+
+    [GeneratedRegex(@"[A-Za-zÀ-ÖØ-öø-ÿ]+(?:-[A-Za-zÀ-ÖØ-öø-ÿ]+)*")]
+    private static partial Regex WordPattern();
 }
