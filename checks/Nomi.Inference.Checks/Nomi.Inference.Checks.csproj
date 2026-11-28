@@ -36,6 +36,9 @@
     <Compile Include="../../Nomi.WinUI/Conversation.cs" Link="Conversation.cs" />
     <Compile Include="../../Nomi.WinUI/Router.cs" Link="Router.cs" />
     <Compile Include="../../Nomi.WinUI/Calc.cs" Link="Calc.cs" />
+    <Compile Include="../../Nomi.WinUI/CalcEngine/Rational.cs" Link="CalcEngine/Rational.cs" />
+    <Compile Include="../../Nomi.WinUI/CalcEngine/Kernel.cs" Link="CalcEngine/Kernel.cs" />
+    <Compile Include="../../Nomi.WinUI/CalcEngine/VerifierEngine.cs" Link="CalcEngine/VerifierEngine.cs" />
     <Compile Include="../../Nomi.WinUI/RoutingLog.cs" Link="RoutingLog.cs" />
     <Content Include="../documents/*" Link="documents/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../vision/*" Link="vision/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
