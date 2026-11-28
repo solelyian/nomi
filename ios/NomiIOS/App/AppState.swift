@@ -304,14 +304,15 @@ final class AppState: ObservableObject {
         guard !trimmed.isEmpty, !isGeneratingReply else { return }
         let priorMessages = thread.messages
         thread.messages.append(ChatMessage(role: .user, text: trimmed))
-        let verification = trimmed.contains("=") ? CalculationVerifier().verify(trimmed) : nil
         if thread.title == "Nouvelle conversation" {
             thread.title = String(trimmed.prefix(42))
         }
 
-        if let verification {
-            let answer = "\(verification.message)\n\nCette réponse est produite localement par le vérificateur déterministe, sans IA générative."
-            thread.messages.append(ChatMessage(role: .assistant, text: answer, verification: verification))
+        // Expression directe (`80*15/100` ou `… =`) : réponse entièrement mécanique,
+        // recoupée noyau/vérificateur — jamais de passage par le modèle.
+        if let direct = CalcPipeline.verifyUserExpression(trimmed), direct.verified {
+            let answer = "\(direct.expression) = \(direct.display)\n\nCalcul exact vérifié localement par deux moteurs indépendants, sans IA générative."
+            thread.messages.append(ChatMessage(role: .assistant, text: answer, verification: nil))
             replaceThread(thread)
             return
         }
@@ -329,15 +330,58 @@ final class AppState: ObservableObject {
                 guard let modelURL = self.gemmaManager.selectedModelURL else {
                     throw GemmaAvailabilityError.modelNotInstalled
                 }
-                let answer = try await self.gemmaRuntime.generateResponse(
-                    userText: trimmed,
-                    history: priorMessages,
-                    productivityContext: context,
-                    modelURL: modelURL
-                ) { partial in
-                    self.updateAssistantMessage(partial, id: assistantID, threadID: threadID, persistUpdate: false)
+
+                // Pipeline de calcul déterministe — deterministic_calculation_system.md :
+                // la demande chiffrée passe d'abord par un plan JSON contraint ; les
+                // chiffres sont calculés par le noyau exact, recoupés, puis composés
+                // mécaniquement. Le texte libre du modèle ne porte jamais de résultat.
+                let questionNumbers = CalcPipeline.extractNumbers(trimmed)
+                var answered = false
+                if trimmed.contains(where: { $0 >= "0" && $0 <= "9" }),
+                   let planText = try? await self.gemmaRuntime.generateCalculationPlan(
+                       userText: trimmed,
+                       contextNumbers: questionNumbers.map { $0.displayFrench() }.joined(separator: ", "),
+                       modelURL: modelURL) {
+                    let plan = CalcPipeline.parsePlan(planText)
+                    if plan.calculates {
+                        let results = CalcPipeline.run(plan.steps, known: questionNumbers)
+                        if !results.isEmpty, results.allSatisfy(\.verified),
+                           let composed = CalcPipeline.compose(plan.answer, results: results) {
+                            let posed = CalcPipeline.posed(results)
+                            let audit = posed.isEmpty ? "" : "\n\n" + posed.joined(separator: "\n")
+                            let verified = CalculationVerification(
+                                expression: results.map(\.expression).joined(separator: "; "),
+                                expected: nil, computed: nil, status: .verified,
+                                message: "calcul vérifié localement")
+                            self.updateAssistantMessage(
+                                composed + audit + "\n\nChiffres calculés et vérifiés localement par deux moteurs indépendants — le texte est de Gemma, les nombres non.",
+                                id: assistantID, threadID: threadID)
+                            self.setVerification(verified, id: assistantID, threadID: threadID)
+                            answered = true
+                        }
+                        // Plan non ancré, désaccord de recoupement ou composition impossible :
+                        // repli sur la génération libre, dont les chiffres seront masqués.
+                    }
                 }
-                self.updateAssistantMessage(answer, id: assistantID, threadID: threadID)
+
+                if !answered {
+                    let answer = try await self.gemmaRuntime.generateResponse(
+                        userText: trimmed,
+                        history: priorMessages,
+                        productivityContext: context,
+                        modelURL: modelURL
+                    ) { partial in
+                        self.updateAssistantMessage(partial, id: assistantID, threadID: threadID, persistUpdate: false)
+                    }
+                    // Masquage final : tout chiffre intraçable (ni demande, ni petit
+                    // entier structural, ni date) est remplacé — borne inférieure de
+                    // sécurité même hors chemin de calcul vérifié.
+                    let masked = CalcPipeline.mask(answer, allowed: questionNumbers)
+                    let finalText = masked.hidden == 0
+                        ? answer
+                        : masked.text + "\n\n\(masked.hidden) nombre\(masked.hidden > 1 ? "s" : "") masqué\(masked.hidden > 1 ? "s" : "") : non vérifiable\(masked.hidden > 1 ? "s" : "") localement."
+                    self.updateAssistantMessage(finalText, id: assistantID, threadID: threadID)
+                }
             } catch {
                 let explanation: String
                 if let availability = error as? GemmaAvailabilityError {
@@ -354,6 +398,12 @@ final class AppState: ObservableObject {
         guard let index = threads.firstIndex(where: { $0.id == thread.id }) else { return }
         threads[index] = thread
         activeThreadID = thread.id
+    }
+
+    private func setVerification(_ verification: CalculationVerification, id: UUID, threadID: UUID) {
+        guard let threadIndex = threads.firstIndex(where: { $0.id == threadID }),
+              let messageIndex = threads[threadIndex].messages.firstIndex(where: { $0.id == id }) else { return }
+        threads[threadIndex].messages[messageIndex].verification = verification
     }
 
     private func updateAssistantMessage(_ text: String, id: UUID, threadID: UUID, persistUpdate: Bool = true) {

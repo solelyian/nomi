@@ -103,6 +103,46 @@ actor GemmaRuntime {
         return data
     }
 
+    /// Génère un plan de calcul CONTRAINT — deterministic_calculation_system.md section 5.
+    /// Le modèle ne calcule jamais : il produit uniquement des expressions dans la
+    /// grammaire du noyau, avec les nombres de la demande, et une réponse à marqueurs.
+    func generateCalculationPlan(userText: String, contextNumbers: String, modelURL: URL) async throws -> String {
+        let schema: [String: Any] = [
+            "type": "object",
+            "properties": [
+                "calculation": ["type": "boolean"],
+                "steps": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "id": ["type": "string"],
+                            "expr": ["type": "string"],
+                            "unit": ["type": "string"],
+                        ],
+                        "required": ["id", "expr"],
+                    ] as [String: Any],
+                ] as [String: Any],
+                "answer": ["type": "string"],
+            ],
+            "required": ["calculation", "steps", "answer"],
+        ]
+        let prompt = """
+        Demande de l'utilisateur : « \(userText) »
+
+        Si cette demande exige un calcul, produis un plan JSON. Règles strictes :
+        - Tu ne calcules JAMAIS le résultat. Tu écris seulement les expressions.
+        - Chaque expression utilise uniquement les opérateurs + - * / ^ % ( ) et des nombres PRÉSENTS dans la demande (ou les constantes usuelles : comptages, 24, 60, 365…).
+        - Jamais de multiplication implicite : écris 80*15/100, pas 80(15/100).
+        - Les identifiants (id) sont des mots simples en minuscules ; une étape peut réutiliser l'identifiant d'une étape précédente dans son expression.
+        - « answer » est ta réponse en français, SANS AUCUN CHIFFRE sauf les marqueurs {id} là où les résultats seront insérés mécaniquement.
+        - Si la demande n'exige aucun calcul, réponds {"calculation": false, "steps": [], "answer": ""}.
+        Nombres extraits de la demande (référence) : \(contextNumbers.isEmpty ? "aucun" : contextNumbers)
+        """
+        let data = try await generateStructuredJSON(prompt: prompt, schema: schema, modelURL: modelURL, maxOutputTokens: 700)
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
     func generateResponse(userText: String, history: [ChatMessage], productivityContext: String, modelURL: URL, onPartial: @escaping @MainActor @Sendable (String) -> Void) async throws -> String {
         try await prepare(modelURL: modelURL)
         guard let engine else { throw GemmaRuntimeError.emptyResponse }

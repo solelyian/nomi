@@ -40,26 +40,43 @@ public static partial class Calc
 
     public static IReadOnlyList<CalcResult> Run(IEnumerable<CalcStep> plan, bool? decimalComma = null)
     {
-        var exact = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        var check = new Dictionary<string, double>(StringComparer.Ordinal);
+        // Noyau exact recoupé par le vérificateur indépendant — CalcEngine :
+        // l'accord est l'égalité exacte des fractions réduites, pas une approximation.
+        var kernel = new CalcEngine.Kernel();
+        var verifier = new CalcEngine.VerifierEngine();
+        var bindings = new Dictionary<string, CalcEngine.Rational>(StringComparer.Ordinal);
         var results = new List<CalcResult>();
         foreach (var step in plan.Take(MaxSteps))
         {
             try
             {
-                var value = new Exact(step.Expression, exact, decimalComma).Parse();
-                var again = Recheck(step.Expression, check, decimalComma);
-                var verified = Math.Abs((double)value - again) <= 1e-9 * Math.Max(1, Math.Abs(again));
-                exact[step.Id] = value;
-                check[step.Id] = again;
-                results.Add(new CalcResult(step.Id, step.Expression, value, step.Unit, verified));
+                var kernelValue = kernel.Evaluate(step.Expression, bindings);
+                var verifierValue = verifier.Evaluate(step.Expression, bindings);
+                var verified = kernelValue == verifierValue;
+                if (verified) bindings[step.Id] = kernelValue;
+                results.Add(new CalcResult(step.Id, step.Expression, verified ? ToDecimal(kernelValue) : 0, step.Unit, verified));
             }
-            catch (Exception error) when (error is CalcException or OverflowException or DivideByZeroException or FormatException)
+            catch (Exception error) when (error is CalcException or CalcEngine.CalculationException or OverflowException or DivideByZeroException or FormatException)
             {
                 results.Add(new CalcResult(step.Id, step.Expression, 0, step.Unit, false));
             }
         }
         return results;
+    }
+
+    // Conversion d'affichage uniquement : l'exactitude vit dans le rationnel,
+    // le decimal ne sert qu'au formatage et au masquage — jamais au calcul.
+    private static decimal ToDecimal(CalcEngine.Rational value)
+    {
+        try
+        {
+            return (decimal)value.Numerator / (decimal)value.Denominator;
+        }
+        catch (OverflowException)
+        {
+            return decimal.Parse(value.DisplayFrench().Replace("\u202F", "").Replace(',', '.'),
+                System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture);
+        }
     }
 
     // Numbers a plan may use without finding them in the request: counts and the usual units of time and percent.
