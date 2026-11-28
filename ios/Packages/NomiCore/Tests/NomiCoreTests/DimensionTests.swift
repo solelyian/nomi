@@ -142,7 +142,7 @@ final class DimensionTests: XCTestCase {
         let results = CalcPipeline.run(steps, known: known([80, 15]))
         let certificate = CalcPipeline.certify(results, grounded: true)
         XCTAssertEqual(certificate.engine, "nomi-calc/1.1")
-        XCTAssertEqual(certificate.status, "verified")
+        XCTAssertEqual(certificate.status, "interpreted")
         XCTAssertEqual(certificate.verifier, "agree")
         XCTAssertEqual(certificate.grounding, "anchored")
         XCTAssertEqual(certificate.steps.count, 1)

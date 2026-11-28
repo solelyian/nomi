@@ -105,6 +105,46 @@ final class CalcSchemasTests: XCTestCase {
         XCTAssertTrue(outcome.inverseVerified)
     }
 
+    // MARK: Voie pipeline — parsing, ancrage, application
+
+    func testSchemaPlanParsingEtApplication() throws {
+        let text = #"{"schema":"remise","slots":{"prix":"80","taux":"0.15"},"answer":"Le prix final est {final} €."}"#
+        let plan = CalcPipeline.parseSchemaPlan(text)
+        XCTAssertNotNil(plan)
+        XCTAssertEqual(plan?.schema, "remise")
+        XCTAssertEqual(plan?.slots.count, 2)
+        let outcome = CalcPipeline.runSchema(plan!, known: slots([("prix", rat(80)), ("taux", rat(15))]).values.map { $0 } + [rat(80), rat(15)])
+        XCTAssertNotNil(outcome)
+        XCTAssertEqual(outcome?.values["final"], rat(68))
+    }
+
+    func testSchemaPlanSlotNonAncreBloque() {
+        let text = #"{"schema":"remise","slots":{"prix":"80","taux":"0.15"},"answer":"x"}"#
+        let plan = CalcPipeline.parseSchemaPlan(text)!
+        // 80 connu mais pas 15 ni ses variantes : tout le plan est bloqué.
+        XCTAssertNil(CalcPipeline.runSchema(plan, known: [rat(80)]))
+        // Variante de taux : 0,15 dérive de 15 dans la demande — ancré.
+        XCTAssertNotNil(CalcPipeline.runSchema(plan, known: [rat(80), rat(15)]))
+    }
+
+    func testSchemaPlanInvalide() {
+        XCTAssertNil(CalcPipeline.parseSchemaPlan("pas de json"))
+        XCTAssertNil(CalcPipeline.parseSchemaPlan(#"{"schema":"remise","slots":{"prix":"abc"},"answer":""}"#))
+        // Schéma hors catalogue : runSchema refuse même si le parsing passe.
+        let horsCatalogue = CalcPipeline.parseSchemaPlan(#"{"schema":"invente","slots":{},"answer":""}"#)
+        if let horsCatalogue {
+            XCTAssertNil(CalcPipeline.runSchema(horsCatalogue, known: []))
+        }
+    }
+
+    func testCertificatSchemaVerified() throws {
+        let outcome = try CalcSchemas.apply("remise", slots: slots([("prix", rat(80)), ("taux", rat(15, 100))]))
+        let certificate = CalcPipeline.certifySchema(outcome, slots: [:])
+        XCTAssertEqual(certificate.status, "verified")
+        XCTAssertEqual(certificate.verifier, "inverse")
+        XCTAssertNotNil(certificate.jsonString())
+    }
+
     func testSchemaInconnuEtSlotManquant() {
         XCTAssertThrowsError(try CalcSchemas.apply("inexistant", slots: [:])) { error in
             XCTAssertEqual(error as? SchemaError, .unknownSchema("inexistant"))
