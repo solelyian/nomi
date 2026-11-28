@@ -111,6 +111,8 @@ actor GemmaRuntime {
             "type": "object",
             "properties": [
                 "calculation": ["type": "boolean"],
+                "schema": ["type": "string"],
+                "slots": ["type": "object"],
                 "steps": [
                     "type": "array",
                     "items": [
@@ -131,11 +133,15 @@ actor GemmaRuntime {
         Demande de l'utilisateur : « \(userText) »
 
         Si cette demande exige un calcul, produis un plan JSON. Règles strictes :
-        - Tu ne calcules JAMAIS le résultat. Tu écris seulement les expressions.
+        - Tu ne calcules JAMAIS le résultat. Tu remplis seulement des cases.
+        - D'ABORD, classe la demande : si elle correspond à un des schémas du catalogue ci-dessous, remplis « schema » et « slots » — c'est la voie privilégiée, sans aucune formule.
+          Catalogue : remise(prix, taux), tva(montant, taux, sens=1 ajouter ou 0 retirer), heures_travail(durees_total, taux_horaire), repartition(total, part_<nom> pour chaque ratio), regle_de_trois(a, b, c), moyenne(somme, n, min, max), variation(avant, apres).
+          Les taux en slots sont des fractions : 15% s'écrit 0.15.
+        - SINON, si le calcul n'entre dans aucun schéma, écris les étapes dans « steps » — ce calcul sera marqué « interprété, à contrôler », jamais « vérifié ».
         - Chaque expression utilise uniquement les opérateurs + - * / ^ % ( ) et des nombres PRÉSENTS dans la demande (ou les constantes usuelles : comptages, 24, 60, 365…).
         - Jamais de multiplication implicite : écris 80*15/100, pas 80(15/100).
         - Les identifiants (id) sont des mots simples en minuscules ; une étape peut réutiliser l'identifiant d'une étape précédente dans son expression.
-        - « answer » est ta réponse en français, SANS AUCUN CHIFFRE sauf les marqueurs {id} là où les résultats seront insérés mécaniquement.
+        - « answer » est ta réponse en français, SANS AUCUN CHIFFRE sauf les marqueurs {id} là où les résultats seront insérés mécaniquement. Pour un schéma, les marqueurs sont les noms de sortie : remise/final, ht/ttc, total, x, moyenne, variation, ou les noms de parts.
         - Si la demande n'exige aucun calcul, réponds {"calculation": false, "steps": [], "answer": ""}.
         Nombres extraits de la demande (référence) : \(contextNumbers.isEmpty ? "aucun" : contextNumbers)
         """

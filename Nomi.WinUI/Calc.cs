@@ -141,6 +141,88 @@ public static partial class Calc
         }).ToList();
     }
 
+    /// <summary>Plan de classification lu depuis la réponse du modèle — strate 1 (§8.2).</summary>
+    public sealed record SchemaPlan(string Schema, IReadOnlyDictionary<string, decimal> Slots, string Answer);
+
+    public static SchemaPlan? ParseSchemaPlan(string text)
+    {
+        var start = text.IndexOf('{');
+        var end = text.LastIndexOf('}');
+        if (start < 0 || end <= start) return null;
+        try
+        {
+            using var json = JsonDocument.Parse(text[start..(end + 1)]);
+            if (!json.RootElement.TryGetProperty("schema", out var schemaElement) || schemaElement.ValueKind != JsonValueKind.String) return null;
+            if (!json.RootElement.TryGetProperty("slots", out var slotsElement) || slotsElement.ValueKind != JsonValueKind.Object) return null;
+            var slots = new Dictionary<string, decimal>();
+            foreach (var slot in slotsElement.EnumerateObject())
+            {
+                if (slot.Name.Length > 32 || !slot.Name.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '_')) return null;
+                var literal = slot.Value.ValueKind == JsonValueKind.String ? slot.Value.GetString()!
+                    : slot.Value.ValueKind == JsonValueKind.Number ? slot.Value.GetRawText() : null;
+                if (literal is null) return null;
+                if (!decimal.TryParse(literal.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)) return null;
+                slots[slot.Name] = parsed;
+            }
+            var answer = json.RootElement.TryGetProperty("answer", out var answerElement) && answerElement.ValueKind == JsonValueKind.String
+                ? answerElement.GetString() ?? "" : "";
+            return new SchemaPlan(schemaElement.GetString()!, slots, answer);
+        }
+        catch (JsonException) { return null; }
+    }
+
+    // A slot value must trace to the request, a whitelisted constant or a rate variant — same rule as expressions.
+    public static bool SlotsGrounded(IReadOnlyDictionary<string, decimal> slots, IEnumerable<decimal> known)
+    {
+        var given = known.Select(Math.Abs).Concat(Constants).ToArray();
+        var values = given.Concat(given.SelectMany(value => new[] { value / 100, 1 + value / 100, 1 - value / 100 }))
+            .Select(Math.Abs).ToHashSet();
+        return slots.Values.All(value => values.Contains(Math.Abs(value)));
+    }
+
+    /// <summary>Applique un plan de classification : ancrage exigé, calcul mécanique
+    /// du schéma avec invariants et vérification inverse — tout écart est bloquant.</summary>
+    public static CalcEngine.SchemaOutcome? RunSchema(SchemaPlan plan, IEnumerable<decimal> known)
+    {
+        if (!CalcEngine.Schemas.Catalog.Contains(plan.Schema)) return null;
+        if (!SlotsGrounded(plan.Slots, known)) return null;
+        try
+        {
+            // Les slots décimaux frontière sont convertis en rationnels exacts —
+            // decimal est un type à virgule fixe base 10, la conversion ne perd rien.
+            var exact = plan.Slots.ToDictionary(pair => pair.Key, pair => DecimalRational(pair.Value));
+            var outcome = CalcEngine.Schemas.Apply(plan.Schema, exact);
+            return outcome.InvariantsHeld && outcome.InverseVerified ? outcome : null;
+        }
+        catch (Exception error) when (error is CalcEngine.SchemaException or CalcEngine.CalculationException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    // Conversion exacte decimal -> rationnel : le decimal est un type à virgule
+    // fixe base 10, la conversion ne perd jamais rien.
+    private static CalcEngine.Rational DecimalRational(decimal value)
+    {
+        var bits = decimal.GetBits(value);
+        var scale = (bits[3] >> 16) & 0xFF;
+        // décimal 96 bits : reconstruction exacte de la mantisse par les trois mots
+        var mantissa = new System.Numerics.BigInteger(bits[2]);
+        mantissa = (mantissa << 32) | new System.Numerics.BigInteger((uint)bits[1]);
+        mantissa = (mantissa << 32) | new System.Numerics.BigInteger((uint)bits[0]);
+        if (bits[3] < 0) mantissa = -mantissa;
+        return new CalcEngine.Rational(mantissa, System.Numerics.BigInteger.Pow(10, scale));
+    }
+
+    /// <summary>Certificat de la voie catalogue — la forme la plus forte (§8).</summary>
+    public static CalcCertificate CertifySchema(CalcEngine.SchemaOutcome outcome, string engineVersion = "nomi-calc/1.1")
+    {
+        var steps = outcome.Values.OrderBy(pair => pair.Key)
+            .Select(pair => new CalcCertificateStep(pair.Key, outcome.Schema, pair.Value.DisplayFrench(), "", ""))
+            .ToList();
+        return new CalcCertificate(engineVersion, steps, "anchored", "inverse", "verified");
+    }
+
     /// <summary>Assemble le certificat de calcul d'une réponse — la structure
     /// affichée et consignée, que le texte généré ne peut pas imiter (SPEC 7.3).</summary>
     public static CalcCertificate Certify(IReadOnlyList<CalcResult> results, bool grounded, string engineVersion = "nomi-calc/1.1")
@@ -151,7 +233,9 @@ public static partial class Calc
                 result.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 result.Unit, result.Dimension))
             .ToList();
-        var status = results.Count > 0 && results.All(result => result.Verified) && grounded ? "verified" : "ungrounded";
+        // Le statut reflète la voie : `verified` exige le catalogue — la voie
+        // expressions libres ne produit que `interpreted` (strate 5, §8.6).
+        var status = results.Count > 0 && results.All(result => result.Verified) && grounded ? "interpreted" : "ungrounded";
         return new CalcCertificate(engineVersion, steps, grounded ? "anchored" : "unanchored", "agree", status);
     }
 

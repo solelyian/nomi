@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nomi Command — Conversation retravaillée</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap');
+:root{
+  --canvas:#f5efe4;
+  --canvas-deep:#eee6d8;
+  --surface:#fffdf9;
+  --surface2:#ece4d7;
+  --ink:#241e19;
+  --ink2:#6f665c;
+  --ink3:#9a9186;
+  --line:#d9cec0;
+  --accent:#b34a2d;
+  --accent-soft:#f0d8cf;
+  --success:#44785a;
+  --warning:#a65f20;
+  --dark:#171310;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#ddd6ca;
+  color:var(--ink);
+  font-family:"Atkinson Hyperlegible",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  line-height:1.35;
+}
+.page{max-width:1220px;margin:0 auto;padding:36px 32px 56px}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:New York,Georgia,serif;font-size:38px;line-height:1.05;margin:8px 0 10px;letter-spacing:-.025em}
+.lede{font-size:16px;color:var(--ink2);max-width:760px;margin:0 0 28px}
+.section-title{display:flex;align-items:baseline;gap:12px;margin:34px 0 14px}
+.section-title h2{font-family:New York,Georgia,serif;font-size:23px;margin:0;letter-spacing:-.015em}
+.section-title span{font-size:12px;color:var(--ink2)}
+.phones{display:grid;grid-template-columns:330px 330px minmax(310px,1fr);gap:26px;align-items:start}
+.phone{
+  width:330px;height:686px;border-radius:44px;padding:10px;
+  background:#1d1a17;box-shadow:0 28px 70px rgba(33,24,16,.24), inset 0 0 0 1px #5c554d;
+}
+.screen{
+  position:relative;width:100%;height:100%;overflow:hidden;border-radius:35px;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(179,74,45,.055),transparent 32%),
+    linear-gradient(180deg,var(--canvas),#f2ebdf 100%);
+}
+.status{height:35px;display:flex;align-items:end;justify-content:space-between;padding:0 23px 4px;font-size:11px;font-weight:700;color:#29231e}
+.header{padding:5px 18px 0;border-bottom:1px solid rgba(217,206,192,.55)}
+.header-top{height:42px;display:grid;grid-template-columns:minmax(0,1fr) 34px;align-items:center;gap:10px}
+.thread-title{display:inline-flex;align-items:center;gap:5px;min-width:0;font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.thread-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread-title svg{width:10px;height:10px;stroke:var(--ink3);stroke-width:2.1;fill:none;flex:none}
+.icon-button{width:34px;height:34px;border-radius:11px;border:1px solid rgba(217,206,192,.78);background:rgba(255,253,249,.76);display:grid;place-items:center;color:var(--ink)}
+.icon-button svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.thread-row{display:flex;align-items:center;min-width:0;padding:0 0 10px;gap:6px;color:var(--ink2);font-size:10.5px}
+.thread-chip{display:none}
+.thread-chip svg{width:9px;height:9px;stroke:var(--ink3);stroke-width:2;fill:none}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--warning);flex:none}
+.status-text{white-space:nowrap;color:var(--ink2);font-size:10.5px}
+.content{position:absolute;inset:92px 0 82px;overflow:hidden;padding:0 18px}
+.empty{padding-top:32px}
+.empty h3{font-family:New York,Georgia,serif;font-size:28px;line-height:1.08;margin:0 0 8px;letter-spacing:-.02em;font-weight:600}
+.empty .sub{font-size:12.5px;color:var(--ink2);margin:0 0 25px;max-width:250px}
+.starters-label{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:0 0 7px 2px}
+.starters{background:rgba(255,253,249,.78);border:1px solid rgba(217,206,192,.78);border-radius:15px;overflow:hidden;box-shadow:0 1px 2px rgba(72,54,37,.035)}
+.starter{display:grid;grid-template-columns:28px 1fr 12px;gap:9px;align-items:center;padding:11px 10px;border-bottom:1px solid rgba(217,206,192,.54)}
+.starter:last-child{border-bottom:0}
+.starter-icon{width:26px;height:26px;border-radius:8px;background:var(--surface2);display:grid;place-items:center;color:var(--ink2)}
+.starter-icon.accent{background:var(--accent-soft);color:var(--accent)}
+.starter-icon svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.starter strong{display:block;font-size:12.5px;font-weight:700;margin-bottom:1px}
+.starter small{display:block;font-size:10px;line-height:1.25;color:var(--ink2)}
+.chevron{width:8px;height:8px;border-right:1.7px solid var(--ink3);border-bottom:1.7px solid var(--ink3);transform:rotate(-45deg);opacity:.7}
+.thread{padding-top:18px}
+.daysep{text-align:center;font-size:9px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);margin:0 0 15px}
+.message{margin:0 0 18px}
+.meta{display:flex;align-items:baseline;gap:5px;margin:0 0 4px;font-size:10px;font-weight:700;color:var(--ink)}
+.meta .normal{font-weight:400;color:var(--ink3);font-size:9.5px}
+.meta .proof{color:var(--success);font-weight:700;font-size:9.5px}
+.assistant-body{max-width:282px;padding-left:10px;border-left:2px solid rgba(179,74,45,.16);font-size:13.4px;line-height:1.42;color:var(--ink)}
+.assistant-body p{margin:0 0 9px}.assistant-body p:last-child{margin-bottom:0}
+.user-message{margin:0 0 18px auto;max-width:225px;text-align:right}
+.user-meta{justify-content:flex-end}
+.user-bubble{display:inline-block;text-align:left;padding:8px 10px;border-radius:13px 13px 5px 13px;background:var(--accent-soft);border:1px solid rgba(179,74,45,.08);font-size:13px;line-height:1.32;color:var(--ink)}
+.composer{position:absolute;left:0;right:0;bottom:0;padding:10px 14px 58px;background:linear-gradient(180deg,rgba(245,239,228,0),rgba(245,239,228,.96) 20%,rgba(245,239,228,1));}
+.input-shell{height:44px;border-radius:15px;background:rgba(255,253,249,.9);border:1px solid rgba(199,187,171,.88);box-shadow:0 8px 22px rgba(70,52,35,.08);display:grid;grid-template-columns:1fr 34px;align-items:center;padding:0 5px 0 13px;backdrop-filter:blur(14px)}
+.placeholder{font-size:12.5px;color:var(--ink3)}
+.send{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;color:var(--ink3);background:var(--surface2);opacity:.72}
+.send.enabled{background:var(--accent);color:white;opacity:1;box-shadow:0 5px 12px rgba(179,74,45,.2)}
+.send svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.1;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tabbar{position:absolute;left:20px;right:20px;bottom:8px;height:49px;border-radius:23px;background:rgba(253,250,244,.9);border:1px solid rgba(217,206,192,.58);box-shadow:0 8px 22px rgba(63,47,32,.08);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 7px;backdrop-filter:blur(15px)}
+.tab{text-align:center;color:var(--ink3);font-size:8px;line-height:1}.tab .glyph{font-size:15px;line-height:18px;display:block}.tab.active{color:var(--accent);font-weight:700}
+.notes{border:1px solid rgba(179,74,45,.2);background:rgba(255,253,249,.58);border-radius:20px;padding:20px}
+.notes h3{font-family:New York,Georgia,serif;font-size:22px;margin:0 0 12px;letter-spacing:-.015em}
+.note{display:grid;grid-template-columns:22px 1fr;gap:9px;padding:10px 0;border-top:1px solid rgba(217,206,192,.6);font-size:13px;color:var(--ink2)}
+.note strong{color:var(--ink)}
+.ipad-wrap{margin-top:28px;border-radius:24px;background:rgba(255,253,249,.5);border:1px solid rgba(217,206,192,.7);padding:20px;box-shadow:0 20px 50px rgba(33,24,16,.12)}
+.ipad{height:455px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,var(--canvas),#f1eadd);border:1px solid rgba(160,147,128,.45);display:flex}
+.sidebar{width:166px;border-right:1px solid rgba(217,206,192,.55);padding:13px 12px;color:var(--ink2);font-size:10px}
+.side-logo{font-family:New York,Georgia,serif;font-weight:600;font-size:16px;color:var(--ink);text-align:center;margin-bottom:12px}
+.sideitem{height:26px;border-radius:8px;display:flex;align-items:center;padding:0 9px;gap:7px;margin-bottom:2px}.sideitem.active{background:rgba(179,74,45,.12);color:var(--accent);font-weight:700}
+.ipad-main{flex:1;display:flex;justify-content:center}
+.ipad-column{width:min(600px,100%);position:relative;padding:13px 34px 0;border-left:1px solid rgba(255,255,255,.22)}
+.ipad-column .header{padding:0 0 0;border-bottom:0}.ipad-thread-content{padding-top:8px}
+.ipad-composer{position:absolute;left:34px;right:34px;bottom:18px;padding:0;background:none}
+.specs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
+.spec{background:rgba(255,253,249,.62);border:1px solid rgba(217,206,192,.75);border-radius:14px;padding:12px;font-size:12px;color:var(--ink2)}
+.spec b{display:block;color:var(--ink);font-size:12px;margin-bottom:3px}
+
+.header-lab{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0 8px}
+.lab-card{border:1px solid rgba(217,206,192,.78);background:rgba(255,253,249,.62);border-radius:20px;padding:16px;box-shadow:0 10px 28px rgba(42,31,21,.06)}
+.lab-tag{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.lab-screen{border-radius:18px;border:1px solid rgba(190,176,156,.65);background:linear-gradient(180deg,var(--canvas),#f2ebdf);overflow:hidden;padding:18px 16px 16px;min-height:132px}
+.lab-copy{font-size:12px;color:var(--ink2);line-height:1.38;margin:10px 2px 0}
+.native-nav{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;min-height:39px}
+.native-title{text-align:center;font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:4px;min-width:0}
+.native-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.native-title svg{width:9px;height:9px;stroke:var(--ink3);stroke-width:2.2;fill:none}
+.native-sub{text-align:center;font-size:10px;color:var(--ink2);margin-top:2px}
+.native-demo .rule{height:1px;background:rgba(217,206,192,.7);margin:12px -16px 0}
+.command-nav{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:10px;align-items:center}
+.thread-control{height:40px;border-radius:13px;background:rgba(255,253,249,.86);border:1px solid rgba(199,187,171,.86);display:flex;align-items:center;justify-content:space-between;padding:0 11px;box-shadow:0 4px 14px rgba(70,52,35,.055)}
+.thread-control strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.thread-control svg{width:10px;height:10px;stroke:var(--ink3);stroke-width:2;fill:none}
+.command-status{display:flex;align-items:center;gap:5px;padding:7px 2px 0;font-size:10px;color:var(--ink2)}
+@media(max-width:760px){.header-lab{grid-template-columns:1fr}}
+
+@media(max-width:1080px){.phones{grid-template-columns:330px 330px}.notes{grid-column:1/-1}}
+@media(max-width:760px){.page{padding:24px 16px}.phones{grid-template-columns:1fr}.phone{margin:auto}.specs{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="kicker">Nomi Command · proposition de refonte</div>
+  <h1>Conversation — flux documentaire, input stable.</h1>
+  <p class="lede">Objectif : remplacer l’écran actuel — trop vertical, bubbles imposantes, état vide promotionnel — par un espace de travail compact et crédible. L’en-tête devient fonctionnel, les messages respirent sans sur-surfacage, et le composer reste stable dans tous les états.</p>
+
+
+  <div class="section-title"><h2>Variantes d’en-tête</h2><span>seul ce composant est encore ouvert</span></div>
+  <div class="header-lab">
+    <div class="lab-card"><div class="lab-tag">A · navigation native recommandée</div><div class="lab-screen native-demo"><div class="native-nav"><span></span><div><div class="native-title"><span>Nouvelle conversation</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div><div class="native-sub">Gemma à installer · réponses locales</div></div><div class="icon-button"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div><div class="rule"></div></div><p class="lab-copy">Le titre de conversation devient le titre de navigation, centré comme dans une app iOS native. L’état Gemma est une ligne de contexte, pas un élément promotionnel. C’est la variante la plus discrète et la plus crédible système.</p></div>
+    <div class="lab-card"><div class="lab-tag">B · barre de conversation outil</div><div class="lab-screen"><div class="command-nav"><div class="thread-control"><strong>Nouvelle conversation</strong><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div><div class="icon-button"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div><div class="command-status"><i class="dot"></i><span>Gemma à installer · réponses locales</span></div></div><p class="lab-copy">La conversation est présentée comme un objet manipulable dans une barre de contrôle plus proche de Raycast/Linear. L’affordance de sélection est plus forte, mais le composant est visuellement plus présent.</p></div>
+  </div>
+
+  <div class="section-title"><h2>iPhone — états principaux</h2><span>mesures relatives à 393 pt de large</span></div>
+  <div class="phones">
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="header">
+        <div class="header-top"><div class="thread-title"><span>Nouvelle conversation</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div><div class="icon-button" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div>
+        <div class="thread-row"><i class="dot"></i><span class="status-text">Gemma à installer · réponses locales</span></div>
+      </div>
+      <div class="content empty">
+        <h3>Par quoi commence-t-on&nbsp;?</h3>
+        <p class="sub">Demandez, planifiez ou vérifiez. Les réponses indiquent leur provenance.</p>
+        <div class="starters-label">Points de départ</div>
+        <div class="starters">
+          <div class="starter"><div class="starter-icon accent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg></div><div><strong>Planifier ma soirée</strong><small>Organiser les intentions ouvertes autour du temps restant</small></div><div class="chevron"></div></div>
+          <div class="starter"><div class="starter-icon"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><div><strong>Créer une fiche</strong><small>Transformer une source en support de révision exploitable</small></div><div class="chevron"></div></div>
+          <div class="starter"><div class="starter-icon"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></div><div><strong>Vérifier un calcul</strong><small>Recalculer localement avant de faire confiance au résultat</small></div><div class="chevron"></div></div>
+        </div>
+      </div>
+      <div class="composer"><div class="input-shell"><div class="placeholder">Message à Nomi…</div><div class="send"><svg viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></div></div></div>
+      <div class="tabbar"><div class="tab"><span class="glyph">☼</span>Aujourd’hui</div><div class="tab"><span class="glyph">☷</span>Tableau</div><div class="tab"><span class="glyph">◔</span>Focus</div><div class="tab active"><span class="glyph">⌘</span>Nomi</div><div class="tab"><span class="glyph">•••</span>Plus</div></div>
+    </div></div>
+
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="header">
+        <div class="header-top"><div class="thread-title"><span>2+2=4</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div><div class="icon-button"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div>
+        <div class="thread-row"><i class="dot" style="background:var(--success)"></i><span class="status-text">repli déterministe · local</span></div>
+      </div>
+      <div class="content thread">
+        <div class="daysep">Aujourd’hui</div>
+        <div class="message"><div class="meta"><span>Nomi</span><span class="normal">· 8:29</span></div><div class="assistant-body"><p>Bonjour, je peux planifier, vérifier, apprendre et résumer. Installez Gemma 4 local dans Réglages pour activer la génération IA sur appareil&nbsp;; aucun contenu ne quitte alors votre iPhone.</p></div></div>
+        <div class="message user-message"><div class="meta user-meta"><span class="normal">9:15</span></div><div class="user-bubble">2+2=4</div></div>
+        <div class="message"><div class="meta"><span>Nomi</span><span class="normal">· 9:15</span><span class="proof">· calcul vérifié</span></div><div class="assistant-body"><p>Calcul vérifié par le moteur déterministe.</p><p>Cette réponse est produite localement par le vérificateur, sans IA générative.</p></div></div>
+      </div>
+      <div class="composer"><div class="input-shell"><div class="placeholder">Message à Nomi…</div><div class="send enabled"><svg viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></div></div></div>
+      <div class="tabbar"><div class="tab"><span class="glyph">☼</span>Aujourd’hui</div><div class="tab"><span class="glyph">☷</span>Tableau</div><div class="tab"><span class="glyph">◔</span>Focus</div><div class="tab active"><span class="glyph">⌘</span>Nomi</div><div class="tab"><span class="glyph">•••</span>Plus</div></div>
+    </div></div>
+
+    <div class="notes">
+      <h3>Corrections structurelles</h3>
+      <div class="note"><b>01</b><span><strong>En-tête utilitaire.</strong> Le titre de marque disparaît : la conversation elle-même devient le titre, avec un bouton de création iconique et un état Gemma discret.</span></div>
+      <div class="note"><b>02</b><span><strong>État vide utile.</strong> Plus de logo répété ni de grande zone morte&nbsp;: trois actions réelles de niveau produit remplacent les chips génériques.</span></div>
+      <div class="note"><b>03</b><span><strong>Flux documentaire.</strong> Les réponses Nomi abandonnent les cartes géantes et les étiquettes techniques en capitales&nbsp;: attribution sobre, filet vertical discret et texte directement lisible.</span></div>
+      <div class="note"><b>04</b><span><strong>Composer unifié.</strong> Champ et bouton forment un seul contrôle flottant, plus proche de Raycast/Linear que deux éléments séparés.</span></div>
+      <div class="note"><b>05</b><span><strong>Preuves discrètes.</strong> « calcul vérifié » reste visible dans la ligne d’attribution, sans badge décoratif ni répétition du rôle utilisateur.</span></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h2>iPad — colonne de lecture</h2><span>largeur de contenu bornée, background continu</span></div>
+  <div class="ipad-wrap"><div class="ipad">
+    <div class="sidebar"><div class="side-logo">n.</div><div class="sideitem">☼ Aujourd’hui</div><div class="sideitem">☷ Tableau</div><div class="sideitem">◔ Focus</div><div class="sideitem active">⌘ Nomi</div><div class="sideitem">↻ Routines</div><div class="sideitem">◉ Transcription</div><div class="sideitem">▤ Fiches</div><div class="sideitem">⚙ Réglages</div></div>
+    <div class="ipad-main"><div class="ipad-column">
+      <div class="header">
+        <div class="header-top"><div class="wordmark">Nomi</div><div class="icon-button"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div></div>
+        <div class="thread-row"><div class="thread-chip">2+2=4 <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div><span>·</span><i class="dot" style="background:var(--success)"></i><span class="status-text">Gemma local prêt</span></div>
+      </div>
+      <div class="ipad-thread-content">
+        <div class="message"><div class="meta"><span>Nomi</span><span class="normal">· 8:29</span></div><div class="assistant-body" style="max-width:520px"><p>Bonjour, je peux planifier, vérifier, apprendre et résumer. Installez Gemma 4 local dans Réglages pour activer la génération IA sur appareil.</p></div></div>
+        <div class="message user-message" style="max-width:390px"><div class="meta user-meta"><span class="normal">9:15</span></div><div class="user-bubble">2+2=4</div></div>
+        <div class="message"><div class="meta"><span>Nomi</span><span class="normal">· 9:15</span><span class="proof">· calcul vérifié</span></div><div class="assistant-body" style="max-width:520px"><p>Calcul vérifié par le moteur déterministe.</p><p>Cette réponse est produite localement par le vérificateur, sans IA générative.</p></div></div>
+      </div>
+      <div class="ipad-composer"><div class="input-shell"><div class="placeholder">Message à Nomi…</div><div class="send enabled"><svg viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></div></div></div>
+    </div></div>
+  </div></div>
+
+  <div class="specs">
+    <div class="spec"><b>Colonne de lecture</b>iPhone pleine largeur avec marges 18 pt ; iPad bornée à environ 680–720 pt et centrée.</div>
+    <div class="spec"><b>Typographie</b>Atkinson Hyperlegible pour le contenu ; serif seulement pour le titre et la question initiale.</div>
+    <div class="spec"><b>État Gemma</b>Visible mais non promotionnel ; la provenance d’une réponse est attachée à chaque message.</div>
+    <div class="spec"><b>Interactions</b>Nouvelle conversation en bouton iconique ; les points de départ injectent une demande réelle dans le composer.</div>
+  </div>
+</div>
+</body>
+</html>

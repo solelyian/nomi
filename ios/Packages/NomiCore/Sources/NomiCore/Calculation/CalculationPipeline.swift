@@ -67,6 +67,64 @@ public enum CalcPipeline {
 
     /// Extraction tolérante du plan : premier `{` au dernier `}`, jamais d'erreur —
     /// un plan illisible signifie simplement « pas de calcul ».
+    /// Plan de classification : le modèle nomme un schéma du catalogue et remplit
+    /// les slots — il ne pose plus de formule du tout (strate 1, §8.2).
+    public struct SchemaPlan: Equatable, Sendable {
+        public let schema: String
+        public let slots: [String: Rational]
+        public let answer: String
+    }
+
+    /// Lit un plan de classification JSON. Slots en littéraux canoniques stricts ;
+    /// tout slot illisible invalide le plan — jamais de lecture approximative.
+    public static func parseSchemaPlan(_ text: String) -> SchemaPlan? {
+        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), end > start else { return nil }
+        let slice = String(text[start...end])
+        guard let data = slice.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let schema = json["schema"] as? String,
+              let rawSlots = json["slots"] as? [String: Any] else { return nil }
+        var slots: [String: Rational] = [:]
+        for (key, value) in rawSlots {
+            guard key.count <= 32, key.allSatisfy({ ($0 >= "a" && $0 <= "z") || ($0 >= "0" && $0 <= "9") || $0 == "_" }) else { return nil }
+            let literal: String
+            if let text = value as? String { literal = text }
+            else if let number = value as? NSNumber { literal = number.stringValue }
+            else { return nil }
+            guard let parsed = Rational(decimalLiteral: literal.replacingOccurrences(of: ",", with: ".")) else { return nil }
+            slots[key] = parsed
+        }
+        let answer = (json["answer"] as? String) ?? ""
+        return SchemaPlan(schema: schema, slots: slots, answer: answer)
+    }
+
+    /// Ancrage des slots : chaque valeur doit être traçable vers la demande, une
+    /// constante autorisée ou une variante de taux — même règle que les expressions.
+    public static func slotsGrounded(_ slots: [String: Rational], known: [Rational]) -> Bool {
+        let hundred = Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
+        let one = Rational(integer: BigInt(magnitude: BigUInt(1), negative: false))
+        var values = Set(known.map { $0.magnitude })
+        for constant in constants { values.insert(constant.magnitude) }
+        for base in Array(values) {
+            values.insert(base / hundred)
+            values.insert(one + base / hundred)
+            values.insert(one - base / hundred)
+        }
+        return slots.values.allSatisfy { values.contains($0.magnitude) || $0.isZero && values.contains(zeroMagnitude) }
+    }
+
+    private static var zeroMagnitude: Rational { Rational(integer: BigInt(magnitude: BigUInt(0), negative: false)) }
+
+    /// Applique un plan de classification : ancrage des slots exigé, puis calcul
+    /// mécanique du schéma avec invariants et vérification inverse — tout écart
+    /// est bloquant, jamais de repli.
+    public static func runSchema(_ plan: SchemaPlan, known: [Rational]) -> SchemaOutcome? {
+        guard slotsGrounded(plan.slots, known: known) else { return nil }
+        guard let outcome = try? CalcSchemas.apply(plan.schema, slots: plan.slots) else { return nil }
+        guard outcome.invariantsHeld, outcome.inverseVerified else { return nil }
+        return outcome
+    }
+
     public static func parsePlan(_ text: String) -> (calculates: Bool, steps: [CalcPlanStep], answer: String) {
         guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), end > start,
               let data = String(text[start...end]).data(using: .utf8),
@@ -208,6 +266,17 @@ public enum CalcPipeline {
         return results
     }
 
+    /// Certificat d'un calcul par schéma du catalogue — la forme la plus forte :
+    /// classification + slots ancrés + invariants + vérification inverse (§8).
+    public static func certifySchema(_ outcome: SchemaOutcome, slots: [String: Rational], engineVersion: String = "nomi-calc/1.1") -> CalcCertificate {
+        let steps = outcome.values.sorted(by: { $0.key < $1.key }).map { key, value in
+            CalcCertificate.CertificateStep(
+                id: key, expression: outcome.schema,
+                value: value.displayFrench(), unit: "", dimension: "")
+        }
+        return CalcCertificate(engine: engineVersion, steps: steps, grounding: "anchored", verifier: "inverse", status: "verified")
+    }
+
     /// Assemble le certificat de calcul d'une réponse — la structure affichée et
     /// consignée, que le texte généré ne peut pas imiter (SPEC 7.3).
     public static func certify(_ results: [CalcStepResult], grounded: Bool, engineVersion: String = "nomi-calc/1.1") -> CalcCertificate {
@@ -217,7 +286,7 @@ public enum CalcPipeline {
                 value: result.value?.displayFrench() ?? "", unit: result.unit,
                 dimension: result.dimension)
         }
-        let status = !results.isEmpty && results.allSatisfy(\.verified) && grounded ? "verified" : "ungrounded"
+        let status = !results.isEmpty && results.allSatisfy(\.verified) && grounded ? "interpreted" : "ungrounded"
         return CalcCertificate(engine: engineVersion, steps: verifiedSteps, grounding: grounded ? "anchored" : "unanchored", verifier: "agree", status: status)
     }
 

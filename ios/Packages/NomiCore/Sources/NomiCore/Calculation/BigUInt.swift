@@ -3,7 +3,7 @@ import Foundation
 // Entier non signé de précision arbitraire — interne au noyau de calcul.
 // Implémentation sans dépendance : membres de 64 bits, poids faibles en tête.
 // Référence de conformité : calc-spec/SPEC.md section 1.
-struct BigUInt: Equatable, Comparable, Sendable {
+struct BigUInt: Equatable, Comparable, Hashable, Sendable {
     private(set) var limbs: [UInt64] // little-endian, sans zéros de tête ; vide = zéro
 
     init() { limbs = [] }
