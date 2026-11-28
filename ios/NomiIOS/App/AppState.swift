@@ -349,10 +349,12 @@ final class AppState: ObservableObject {
                            let composed = CalcPipeline.compose(plan.answer, results: results) {
                             let posed = CalcPipeline.posed(results)
                             let audit = posed.isEmpty ? "" : "\n\n" + posed.joined(separator: "\n")
+                            let certificate = CalcPipeline.certify(results, grounded: true)
                             let verified = CalculationVerification(
                                 expression: results.map(\.expression).joined(separator: "; "),
                                 expected: nil, computed: nil, status: .verified,
-                                message: "calcul vérifié localement")
+                                message: "calcul vérifié localement",
+                                certificate: certificate.jsonString())
                             self.updateAssistantMessage(
                                 composed + audit + "\n\nChiffres calculés et vérifiés localement par deux moteurs indépendants — le texte est de Gemma, les nombres non.",
                                 id: assistantID, threadID: threadID)

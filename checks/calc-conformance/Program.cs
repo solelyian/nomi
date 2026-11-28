@@ -25,7 +25,18 @@ foreach (var vector in vectors.EnumerateArray())
 
     try
     {
-        var result = kernel.Evaluate(input, names);
+        var measured = kernel.EvaluateDimensional(input, names.Count > 0
+            ? names.ToDictionary(pair => pair.Key, pair => Measured.Plain(pair.Value))
+            : null);
+        var result = measured.Value;
+        // Vecteurs de dimension : la dimension attendue est comparée exactement.
+        if (expect.TryGetProperty("dimension", out var wantDim))
+        {
+            var dimOk = wantDim.ValueKind == JsonValueKind.String
+                ? measured.Dim.Kind == DimKind.None
+                : measured.Dim.Kind == DimKind.Currency && measured.Dim.Code == wantDim.GetProperty("currency").GetString();
+            if (!dimOk) { fail++; failures.Add($"{id}: dimension {measured.Dim.Kind}/{measured.Dim.Code} != {wantDim.GetRawText()}"); continue; }
+        }
         if (status == "error")
         {
             fail++;

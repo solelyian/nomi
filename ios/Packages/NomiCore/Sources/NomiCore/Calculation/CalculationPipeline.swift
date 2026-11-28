@@ -14,6 +14,42 @@ public struct CalcStepResult: Equatable, Sendable {
     public let value: Rational?
     public let unit: String
     public let verified: Bool
+    /// Code monnaie si la valeur est dimensionnée (EUR/USD/GBP) — vide sinon.
+    public let dimension: String
+
+    public init(id: String, expression: String, value: Rational?, unit: String, verified: Bool, dimension: String = "") {
+        self.id = id
+        self.expression = expression
+        self.value = value
+        self.unit = unit
+        self.verified = verified
+        self.dimension = dimension
+    }
+}
+
+/// Certificat de calcul — structure vérifiable, jamais du texte libre (SPEC 7.3).
+public struct CalcCertificate: Equatable, Sendable, Codable {
+    public let engine: String
+    public let steps: [CertificateStep]
+    public let grounding: String
+    public let verifier: String
+    public let status: String
+
+    public struct CertificateStep: Equatable, Sendable, Codable {
+        public let id: String
+        public let expression: String
+        public let value: String
+        public let unit: String
+        public let dimension: String
+    }
+
+    /// Forme JSON consignée — stable, triée, sans texte libre.
+    public func jsonString() -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
 }
 
 /// Pipeline de calcul déterministe — calc-spec/SPEC.md et deterministic_calculation_system.md.
@@ -144,27 +180,45 @@ public enum CalcPipeline {
     public static func run(_ steps: [CalcPlanStep], known: [Rational]) -> [CalcStepResult] {
         let kernel = CalcKernel()
         let verifier = CalcVerifierEngine()
-        var bindings: [String: Rational] = [:]
+        // SPEC 3.1 : les dimensions se propagent par les identificateurs —
+        // une étape référencée porte sa dimension monétaire dans les suivantes.
+        var bindings: [String: Measured] = [:]
         var results: [CalcStepResult] = []
         for step in steps.prefix(maxSteps) {
             var verified = false
             var value: Rational?
-            if isGrounded(step.expression, known: known + Array(bindings.values)) {
+            var dimension = ""
+            if isGrounded(step.expression, known: known + bindings.values.map(\.value)) {
                 do {
-                    let kernelValue = try kernel.evaluate(step.expression, names: bindings)
-                    let verifierValue = try verifier.evaluate(step.expression, names: bindings)
+                    let kernelValue = try kernel.evaluateDimensional(step.expression, names: bindings)
+                    let verifierValue = try verifier.evaluateDimensional(step.expression, names: bindings)
                     if kernelValue == verifierValue {
-                        value = kernelValue
+                        value = kernelValue.value
                         verified = true
                         bindings[step.id] = kernelValue
+                        if kernelValue.dim.kind == .currency { dimension = kernelValue.dim.code }
                     }
                 } catch {
-                    // expression invalide ou borne dépassée : étape non vérifiée, jamais de repli
+                    // expression invalide, contresens dimensionnel ou borne dépassée :
+                    // étape non vérifiée, jamais de repli
                 }
             }
-            results.append(CalcStepResult(id: step.id, expression: step.expression, value: value, unit: step.unit, verified: verified))
+            results.append(CalcStepResult(id: step.id, expression: step.expression, value: value, unit: step.unit, verified: verified, dimension: dimension))
         }
         return results
+    }
+
+    /// Assemble le certificat de calcul d'une réponse — la structure affichée et
+    /// consignée, que le texte généré ne peut pas imiter (SPEC 7.3).
+    public static func certify(_ results: [CalcStepResult], grounded: Bool, engineVersion: String = "nomi-calc/1.1") -> CalcCertificate {
+        let verifiedSteps = results.filter(\.verified).map { result in
+            CalcCertificate.CertificateStep(
+                id: result.id, expression: result.expression,
+                value: result.value?.displayFrench() ?? "", unit: result.unit,
+                dimension: result.dimension)
+        }
+        let status = !results.isEmpty && results.allSatisfy(\.verified) && grounded ? "verified" : "ungrounded"
+        return CalcCertificate(engine: engineVersion, steps: verifiedSteps, grounding: grounded ? "anchored" : "unanchored", verifier: "agree", status: status)
     }
 
     // MARK: Composition mécanique

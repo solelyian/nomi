@@ -41,13 +41,17 @@ public struct CalculationVerification: Codable, Sendable, Equatable {
     public var computed: Decimal?
     public var status: Status
     public var message: String
+    /// Certificat de calcul encodé en JSON — structure consignée, jamais imitable
+    /// par le texte généré (SPEC 7.3). Vide pour les vérifications héritées.
+    public var certificate: String?
 
-    public init(expression: String, expected: Decimal?, computed: Decimal?, status: Status, message: String) {
+    public init(expression: String, expected: Decimal?, computed: Decimal?, status: Status, message: String, certificate: String? = nil) {
         self.expression = expression
         self.expected = expected
         self.computed = computed
         self.status = status
         self.message = message
+        self.certificate = certificate
     }
 }
 
