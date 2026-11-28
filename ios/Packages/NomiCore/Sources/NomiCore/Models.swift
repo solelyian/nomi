@@ -33,7 +33,7 @@ public struct CodeDiagnostic: Identifiable, Codable, Sendable, Equatable {
 
 public struct CalculationVerification: Codable, Sendable, Equatable {
     public enum Status: String, Codable, Sendable {
-        case verified, mismatch, unsupported, invalid
+        case verified, mismatch, unsupported, invalid, interpreted
     }
 
     public var expression: String
