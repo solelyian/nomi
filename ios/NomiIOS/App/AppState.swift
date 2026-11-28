@@ -342,25 +342,63 @@ final class AppState: ObservableObject {
                        userText: trimmed,
                        contextNumbers: questionNumbers.map { $0.displayFrench() }.joined(separator: ", "),
                        modelURL: modelURL) {
-                    let plan = CalcPipeline.parsePlan(planText)
-                    if plan.calculates {
-                        let results = CalcPipeline.run(plan.steps, known: questionNumbers)
-                        if !results.isEmpty, results.allSatisfy(\.verified),
-                           let composed = CalcPipeline.compose(plan.answer, results: results) {
-                            let posed = CalcPipeline.posed(results)
-                            let audit = posed.isEmpty ? "" : "\n\n" + posed.joined(separator: "\n")
-                            let verified = CalculationVerification(
-                                expression: results.map(\.expression).joined(separator: "; "),
+                    // Strate 1 — voie catalogue : le modèle a classé la demande dans un
+                    // schéma formel. Calcul mécanique avec invariants et vérification
+                    // inverse — statut « verified », le plus fort du système.
+                    if let schemaPlan = CalcPipeline.parseSchemaPlan(planText),
+                       CalcSchemas.catalog.contains(schemaPlan.schema),
+                       let outcome = CalcPipeline.runSchema(schemaPlan, known: questionNumbers) {
+                        var composed = schemaPlan.answer
+                        var missing = false
+                        for (key, value) in outcome.values {
+                            composed = composed.replacingOccurrences(of: "{\(key)}", with: value.displayFrench())
+                        }
+                        if composed.contains("{") { missing = true }
+                        if !missing, !composed.isEmpty {
+                            let slotsList = schemaPlan.slots.sorted(by: { $0.key < $1.key })
+                                .map { "\($0.key) = \($0.value.displayFrench())" }.joined(separator: ", ")
+                            let outputs = outcome.values.sorted(by: { $0.key < $1.key })
+                                .map { "\($0.key) = \($0.value.displayFrench())" }.joined(separator: ", ")
+                            let audit = "\n\nSchéma « \(schemaPlan.schema) » — slots : \(slotsList)\nRésultats : \(outputs)"
+                            let certificate = CalcPipeline.certifySchema(outcome, slots: schemaPlan.slots)
+                            let verification = CalculationVerification(
+                                expression: "\(schemaPlan.schema)(\(slotsList))",
                                 expected: nil, computed: nil, status: .verified,
-                                message: "calcul vérifié localement")
+                                message: "schéma du catalogue — invariants et vérification inverse exacts",
+                                certificate: certificate.jsonString())
                             self.updateAssistantMessage(
-                                composed + audit + "\n\nChiffres calculés et vérifiés localement par deux moteurs indépendants — le texte est de Gemma, les nombres non.",
+                                composed + audit + "\n\nCalcul exact vérifié par le schéma « \(schemaPlan.schema) » du catalogue fermé : invariants de domaine et vérification inverse — le texte est de Gemma, les nombres non.",
                                 id: assistantID, threadID: threadID)
-                            self.setVerification(verified, id: assistantID, threadID: threadID)
+                            self.setVerification(verification, id: assistantID, threadID: threadID)
                             answered = true
                         }
-                        // Plan non ancré, désaccord de recoupement ou composition impossible :
-                        // repli sur la génération libre, dont les chiffres seront masqués.
+                    }
+                    // Strate 5 — voie interprétée : hors catalogue, le calcul exact est
+                    // possible mais la pertinence n'est pas garantie — marqué
+                    // « interprété, à contrôler », jamais « vérifié ».
+                    if !answered {
+                        let plan = CalcPipeline.parsePlan(planText)
+                        if plan.calculates {
+                            let results = CalcPipeline.run(plan.steps, known: questionNumbers)
+                            if !results.isEmpty, results.allSatisfy(\.verified),
+                               let composed = CalcPipeline.compose(plan.answer, results: results) {
+                                let posed = CalcPipeline.posed(results)
+                                let audit = posed.isEmpty ? "" : "\n\n" + posed.joined(separator: "\n")
+                                let certificate = CalcPipeline.certify(results, grounded: true)
+                                let verification = CalculationVerification(
+                                    expression: results.map(\.expression).joined(separator: "; "),
+                                    expected: nil, computed: nil, status: .interpreted,
+                                    message: "calcul exact hors catalogue — interprété, à contrôler",
+                                    certificate: certificate.jsonString())
+                                self.updateAssistantMessage(
+                                    composed + audit + "\n\nChiffres exacts, calculés et recoupés localement — mais ce calcul ne correspond à aucun schéma vérifié du catalogue : interprété, à contrôler.",
+                                    id: assistantID, threadID: threadID)
+                                self.setVerification(verification, id: assistantID, threadID: threadID)
+                                answered = true
+                            }
+                            // Plan non ancré, désaccord de recoupement ou composition impossible :
+                            // repli sur la génération libre, dont les chiffres seront masqués.
+                        }
                     }
                 }
 

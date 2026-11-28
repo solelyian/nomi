@@ -18,6 +18,23 @@ final class CalcConformanceTests: XCTestCase {
         let display_fr: String?
         let display_places: Int?
         let error: String?
+        let dimension: DimensionExpect?
+
+        enum DimensionExpect: Decodable, Equatable {
+            case none
+            case currency(String)
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.singleValueContainer()
+                if let text = try? container.decode(String.self) {
+                    self = text == "none" ? .none : .none
+                    return
+                }
+                let object = try container.decode([String: String].self)
+                if let code = object["currency"] { self = .currency(code); return }
+                self = .none
+            }
+        }
     }
 
     struct Corpus: Decodable {
@@ -50,7 +67,20 @@ final class CalcConformanceTests: XCTestCase {
                 if let value = Rational(decimalLiteral: raw) { names[key] = value }
             }
             do {
-                let result = try kernel.evaluate(vector.input, names: names)
+                let measured = try kernel.evaluateDimensional(vector.input, names: names.mapValues { Measured.plain($0) })
+                let result = measured.value
+                // Vecteurs de dimension : la dimension attendue est comparée exactement.
+                if let wantDim = vector.expect.dimension {
+                    let dimOk: Bool
+                    switch wantDim {
+                    case .none: dimOk = measured.dim.kind == .none
+                    case .currency(let code): dimOk = measured.dim.kind == .currency && measured.dim.code == code
+                    }
+                    if !dimOk {
+                        failures.append("\(vector.id): dimension \(measured.dim.kind)/\(measured.dim.code) inattendue")
+                        continue
+                    }
+                }
                 if vector.expect.status == "error" {
                     failures.append("\(vector.id): attendait une erreur \(vector.expect.error ?? "?"), obtient \(result.displayFrench())")
                     continue

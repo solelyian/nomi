@@ -73,11 +73,43 @@ public sealed partial class MainWindow
                     liveStep = 1;
                     BuildNomi();
                     var comma = language == "fr";
-                    var (planned, template) = await PlanAsync(engine, Conversation.Single(context, question), route.Action, documents, comma, controller.Token);
+                    var (planned, template, schemaPlan) = await PlanAsync(engine, Conversation.Single(context, question), route.Action, documents, comma, controller.Token);
                     var known = Calc.Numbers(question).Concat(Calc.Numbers(context.Text)).Concat(documents.SelectMany(document => Calc.Numbers(document.Text)));
+                    // Strate 1 — voie catalogue : classification + slots, invariants et
+                    // vérification inverse exacts. C'est la seule voie « verified ».
+                    CalcEngine.SchemaOutcome? schemaOutcome = null;
+                    if (schemaPlan is not null)
+                        schemaOutcome = Calc.RunSchema(schemaPlan, known);
+                    if (schemaOutcome is not null)
+                    {
+                        entry.Verified = true;
+                        var outputs = schemaOutcome.Values.OrderBy(pair => pair.Key)
+                            .Select(pair => $"{pair.Key} = {pair.Value.DisplayFrench()}").ToArray();
+                        entry.Calculation = [$"schema = {schemaOutcome.Schema}", .. outputs];
+                        entry.Certificate = System.Text.Json.JsonSerializer.Serialize(Calc.CertifySchema(schemaOutcome));
+                        var composedSchema = template;
+                        var missingSchemaOutput = false;
+                        foreach (var (key, value) in schemaOutcome.Values)
+                            composedSchema = composedSchema.Replace("{" + key + "}", value.DisplayFrench());
+                        if (composedSchema.Contains('{')) missingSchemaOutput = true;
+                        if (!missingSchemaOutput && composedSchema.Length > 0
+                            && ResponsePolicy.Apply(composedSchema, "summary") is { Accepted: true } schemaText)
+                        {
+                            answer = schemaText.Text;
+                            actions = [];
+                            break;
+                        }
+                    }
+                    // Strate 5 — voie expressions libres : exactitude prouvée, pertinence
+                    // non garantie — certificat « interpreted », jamais « verified ».
                     results = Calc.Ground(planned, known, comma);
                     entry.Verified = results.Count > 0 && results.All(result => result.Verified);
                     entry.Calculation = entry.Verified == true ? [.. Calc.Posed(results, CultureInfo.CurrentCulture)] : [];
+                    if (entry.Verified == true)
+                    {
+                        var certificate = Calc.Certify(results, grounded: true);
+                        entry.Certificate = System.Text.Json.JsonSerializer.Serialize(certificate);
+                    }
                     // One generation: the model's sentence with the engine's figures, when it holds no other figure.
                     if (entry.Verified == true && Calc.Compose(template, results, CultureInfo.CurrentCulture) is { } composed
                         && ResponsePolicy.Apply(composed, "summary") is { Accepted: true } checkedText)
@@ -165,7 +197,7 @@ public sealed partial class MainWindow
     }
 
     // The plan is internal JSON, never shown, so it skips the answer policy; a bad plan only leaves the figures unverified.
-    private async Task<(IReadOnlyList<CalcResult> Results, string Answer)> PlanAsync(NomiInferenceClient engine, string prompt, string action,
+    private async Task<(IReadOnlyList<CalcResult> Results, string Answer, Calc.SchemaPlan? Schema)> PlanAsync(NomiInferenceClient engine, string prompt, string action,
         IReadOnlyList<AttachedDocument> documents, bool decimalComma, CancellationToken token)
     {
         var plan = new StringBuilder();
@@ -177,9 +209,9 @@ public sealed partial class MainWindow
                 if (plan.Length > 8000) throw new CalcException("plan");
             }, token, T("calcPlanInstruction"), documents.Count > 0 ? documents : null);
             var text = plan.ToString();
-            return truncated ? ([], "") : (Calc.Run(Calc.ParsePlan(text), decimalComma), Calc.PlanAnswer(text));
+            return truncated ? ([], "", null) : (Calc.Run(Calc.ParsePlan(text), decimalComma), Calc.PlanAnswer(text), Calc.ParseSchemaPlan(text));
         }
-        catch (Exception error) when (error is CalcException || error is InferenceException { Message: not "busy" }) { return ([], ""); }
+        catch (Exception error) when (error is CalcException || error is InferenceException { Message: not "busy" }) { return ([], "", null); }
     }
 
     // Rapide answers with Gemma 4 when it is installed; otherwise, or if it fails to load, Qwen3 8B answers.

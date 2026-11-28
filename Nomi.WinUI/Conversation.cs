@@ -35,6 +35,9 @@ public sealed class ChatEntry
     public string[] Steps { get; set; } = [];
     public string[] Documents { get; set; } = [];
     public string[] Calculation { get; set; } = [];
+    // Certificat de calcul encodé en JSON — structure consignée (SPEC 7.3),
+    // jamais imitable par le texte généré.
+    public string Certificate { get; set; } = "";
     public double Seconds { get; set; }
     public bool Stopped { get; set; }
     public bool Failed { get; set; }

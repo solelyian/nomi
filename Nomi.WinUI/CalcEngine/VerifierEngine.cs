@@ -12,11 +12,11 @@ public sealed partial class VerifierEngine
 {
     private enum SymbolKind { Value, Operator, LeftParen }
 
-    private readonly record struct Symbol(SymbolKind Kind, Rational Value, char Operator);
+    private readonly record struct Symbol(SymbolKind Kind, Measured Value, char Operator);
 
-    private enum ScanKind { Number, Identifier, Operator, LeftParen, RightParen }
+    private enum ScanKind { Number, Identifier, Operator, LeftParen, RightParen, Currency }
 
-    private readonly record struct Scanned(ScanKind Kind, string Text);
+    private readonly record struct Scanned(ScanKind Kind, string Text, string Currency = "");
 
     /// <summary>Tokenise indépendamment du noyau — aucune fonction partagée.</summary>
     private static List<Scanned> Scan(string input)
@@ -52,6 +52,12 @@ public sealed partial class VerifierEngine
                 tokens.Add(new Scanned(ScanKind.Identifier, text[start..index]));
                 continue;
             }
+            if (character is '€' or '$' or '£')
+            {
+                tokens.Add(new Scanned(ScanKind.Currency, character.ToString()));
+                index++;
+                continue;
+            }
             switch (character)
             {
                 case '(': tokens.Add(new Scanned(ScanKind.LeftParen, "(")); break;
@@ -63,13 +69,44 @@ public sealed partial class VerifierEngine
             }
             index++;
         }
-        return tokens;
+        // Attache les symboles monétaires au nombre adjacent (SPEC 3.2) —
+        // écrit indépendamment du noyau : symbole entre deux nombres = unsupported,
+        // symbole isolé = parse-error.
+        var attached = new List<Scanned>();
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            var token = tokens[i];
+            if (token.Kind != ScanKind.Currency) { attached.Add(token); continue; }
+            var before = attached.Count > 0 && attached[^1].Kind == ScanKind.Number;
+            var after = i + 1 < tokens.Count && tokens[i + 1].Kind == ScanKind.Number;
+            if (before && after) throw new CalculationException("unsupported");
+            if (!before && !after) throw new CalculationException("parse-error");
+            var code = Dimension.CurrencyOf(token.Text[0]).Code;
+            if (before)
+            {
+                if (attached[^1].Currency != "") throw new CalculationException("parse-error");
+                attached[^1] = attached[^1] with { Currency = code };
+            }
+            else
+            {
+                if (tokens[i + 1].Currency != "") throw new CalculationException("parse-error");
+                tokens[i + 1] = tokens[i + 1] with { Currency = code };
+            }
+        }
+        return attached;
     }
 
     /// <summary>Évalue par machine à pile. Mêmes erreurs typées que la spec.</summary>
     public Rational Evaluate(string input, IReadOnlyDictionary<string, Rational>? names = null)
     {
-        names ??= new Dictionary<string, Rational>();
+        var lifted = names?.ToDictionary(pair => pair.Key, pair => Measured.Plain(pair.Value));
+        return EvaluateDimensional(input, lifted).Value;
+    }
+
+    /// <summary>Évalue en valeur dimensionnée — SPEC 3.1, machine à pile.</summary>
+    public Measured EvaluateDimensional(string input, IReadOnlyDictionary<string, Measured>? names = null)
+    {
+        names ??= new Dictionary<string, Measured>();
         var tokens = Scan(input);
         // SPEC 2.1 : l'équilibre des parenthèses est structurel — vérifié avant
         // toute évaluation, comme dans le noyau (`(1/0` est `parenthesis`).
@@ -105,8 +142,10 @@ public sealed partial class VerifierEngine
             if (op is '~' or '%')
             {
                 if (output.Count == 0 || output.Pop() is not { Kind: SymbolKind.Value } top) throw new CalculationException("parse-error");
-                var unaryResult = op == '~' ? -top.Value : top.Value / new Rational(100, 1);
-                if (unaryResult.ExceedsLimits) throw new CalculationException("overflow");
+                var unaryResult = op == '~'
+                    ? new Measured(-top.Value.Value, top.Value.Dim)
+                    : new Measured(top.Value.Value / new Rational(100, 1), top.Value.Dim);
+                if (unaryResult.Value.ExceedsLimits) throw new CalculationException("overflow");
                 output.Push(new Symbol(SymbolKind.Value, unaryResult, '\0'));
                 return;
             }
@@ -116,23 +155,24 @@ public sealed partial class VerifierEngine
             if (rightSymbol.Kind != SymbolKind.Value || leftSymbol.Kind != SymbolKind.Value) throw new CalculationException("parse-error");
             var left = leftSymbol.Value;
             var right = rightSymbol.Value;
-            Rational result;
+            Measured result;
             switch (op)
             {
-                case '+': result = left + right; break;
-                case '-': result = left - right; break;
-                case '*': result = left * right; break;
-                case '/': result = left / right; break;
+                case '+': result = Measured.Add(left, right, true); break;
+                case '-': result = Measured.Add(left, right, false); break;
+                case '*': result = Measured.Multiply(left, right); break;
+                case '/': result = Measured.Divide(left, right); break;
                 case '^':
-                    if (right.Denominator != System.Numerics.BigInteger.One
-                        || right.Numerator > Kernel.MaxExponent
-                        || right.Numerator < -Kernel.MaxExponent)
+                    if (!left.Dim.IsNone || !right.Dim.IsNone) throw new CalculationException("dimension-mismatch");
+                    if (right.Value.Denominator != System.Numerics.BigInteger.One
+                        || right.Value.Numerator > Kernel.MaxExponent
+                        || right.Value.Numerator < -Kernel.MaxExponent)
                         throw new CalculationException("exponent");
-                    result = left.RaisedTo((int)right.Numerator);
+                    result = Measured.Plain(left.Value.RaisedTo((int)right.Value.Numerator));
                     break;
                 default: throw new CalculationException("parse-error");
             }
-            if (result.ExceedsLimits) throw new CalculationException("overflow");
+            if (result.Value.ExceedsLimits) throw new CalculationException("overflow");
             output.Push(new Symbol(SymbolKind.Value, result, '\0'));
         }
 
@@ -144,8 +184,9 @@ public sealed partial class VerifierEngine
                 {
                     if (!expectValue) throw new CalculationException("trailing");
                     var normalized = token.Text.Replace(',', '.');
-                    var value = Rational.ParseLiteral(normalized) ?? throw new CalculationException("parse-error");
-                    output.Push(new Symbol(SymbolKind.Value, value, '\0'));
+                    var parsed = Rational.ParseLiteral(normalized) ?? throw new CalculationException("parse-error");
+                    var dim = token.Currency == "" ? Dimension.None : new Dimension(DimKind.Currency, token.Currency);
+                    output.Push(new Symbol(SymbolKind.Value, new Measured(parsed, dim), '\0'));
                     expectValue = false;
                     break;
                 }

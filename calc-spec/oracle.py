@@ -65,13 +65,51 @@ def tokenize(expr):
             tokens.append(("ident", expr[i:j], i))
             i = j
             continue
+        if c in "€$£":
+            tokens.append(("cur", c, i))
+            i += 1
+            continue
         if c in "+-*/^()%":
             tokens.append(("op", c, i))
             i += 1
             continue
         raise CalcError("parse-error", i)
     tokens.append(("end", "", len(expr)))
-    return tokens
+    return merge_currency(tokens)
+
+
+CURRENCY_CODES = {"€": "EUR", "$": "USD", "£": "GBP"}
+
+
+def merge_currency(tokens):
+    """Attach currency symbols to the adjacent number — SPEC 3.2: prefix or
+    suffix, with or without space. A symbol between two numbers (`12€50`) is
+    `unsupported`; a lone symbol is `parse-error`."""
+    merged = []
+    ahead = list(tokens)
+    for i, tok in enumerate(ahead):
+        kind, val, pos = tok[0], tok[1], tok[2]
+        if kind != "cur":
+            merged.append(tok)
+            continue
+        before = merged and merged[-1][0] == "numcur" or merged and merged[-1][0] == "num"
+        after = i + 1 < len(ahead) and ahead[i + 1][0] == "num"
+        if before and after:
+            raise CalcError("unsupported", pos)
+        if not before and not after:
+            raise CalcError("parse-error", pos)
+        code = CURRENCY_CODES[val]
+        if before:
+            raw, p = merged[-1][1], merged[-1][2]
+            if merged[-1][0] == "numcur":
+                raise CalcError("parse-error", pos)
+            merged[-1] = ("numcur", raw, p, code)
+        else:
+            raw, p = ahead[i + 1][1], ahead[i + 1][2]
+            if ahead[i + 1][0] == "numcur":
+                raise CalcError("parse-error", pos)
+            ahead[i + 1] = ("numcur", raw, p, code)
+    return merged
 
 
 def parse_number(tok, pos):
@@ -85,6 +123,44 @@ def parse_number(tok, pos):
         return Fraction(t)
     except (ValueError, ZeroDivisionError):
         raise CalcError("parse-error", pos)
+
+
+def dim_add(a, b, add):
+    """a, b: (Fraction, dim) — SPEC 3.1: identical dimensions required."""
+    check_compatible(a[1], b[1])
+    return (a[0] + b[0] if add else a[0] - b[0], a[1])
+
+
+def dim_mul(a, b):
+    if a[1] is None:
+        dim = b[1]
+    elif b[1] is None:
+        dim = a[1]
+    else:
+        raise CalcError("dimension-mismatch")
+    return (a[0] * b[0], dim)
+
+
+def dim_div(a, b):
+    if b[0] == 0:
+        raise CalcError("division-by-zero")
+    if a[1] is None and b[1] is not None:
+        raise CalcError("dimension-mismatch")
+    if a[1] is not None and b[1] is not None:
+        check_compatible(a[1], b[1])
+        return (a[0] / b[0], None)
+    return (a[0] / b[0], a[1])
+
+
+def check_compatible(da, db):
+    ka = da[0] if da else None
+    kb = db[0] if db else None
+    if ka != kb:
+        raise CalcError("dimension-mismatch")
+    if ka == "currency" and da[1] != db[1]:
+        raise CalcError("currency-mixing")
+    if ka == "duration" and da[1] != db[1]:
+        raise CalcError("dimension-mismatch")
 
 
 class Parser:
@@ -103,7 +179,8 @@ class Parser:
 
     def parse(self, depth=0):
         value = self.expr(depth)
-        kind, val, pos = self.peek()
+        token = self.peek()
+        kind, val, pos = token[0], token[1], token[2]
         if kind != "end":
             # SPEC 2.1 : une fermante sans ouvrante est `parenthesis` ;
             # `trailing` ne concerne que les autres jetons résiduels.
@@ -115,85 +192,95 @@ class Parser:
     def expr(self, depth):
         v = self.term(depth)
         while True:
-            kind, val, _ = self.peek()
+            token = self.peek()
+            kind, val = token[0], token[1]
             if kind == "op" and val in "+-":
                 self.next()
                 r = self.term(depth)
-                v = v + r if val == "+" else v - r
+                v = dim_add(v, r, val == "+")
             else:
                 return v
 
     def term(self, depth):
         v = self.factor(depth)
         while True:
-            kind, val, _ = self.peek()
+            token = self.peek()
+            kind, val = token[0], token[1]
             if kind == "op" and val in "*/":
                 self.next()
                 r = self.factor(depth)
                 if val == "*":
-                    v = v * r
+                    v = dim_mul(v, r)
                 else:
-                    if r == 0:
-                        raise CalcError("division-by-zero")
-                    v = v / r
+                    v = dim_div(v, r)
             else:
                 return v
 
     def factor(self, depth):
-        kind, val, _ = self.peek()
+        token = self.peek()
+        kind, val = token[0], token[1]
         if kind == "op" and val == "-":
             self.next()
-            return -self.factor(depth)
+            negated = self.factor(depth)
+            return (-negated[0], negated[1])
         if kind == "op" and val == "+":
             self.next()
             return self.factor(depth)
         base = self.postfix(depth)
-        kind, val, _ = self.peek()
+        token = self.peek()
+        kind, val = token[0], token[1]
         if kind == "op" and val == "^":
             self.next()
             exp = self.factor(depth)  # right associative
-            if exp.denominator != 1 or abs(exp) > MAXEXP:
+            # SPEC 3.1 (v1.1) : exponentiation d'une valeur dimensionnée — contresens.
+            if base[1] is not None or exp[1] is not None:
+                raise CalcError("dimension-mismatch")
+            if exp[0].denominator != 1 or abs(exp[0]) > MAXEXP:
                 raise CalcError("exponent")
-            n = int(exp)
+            n = int(exp[0])
             if n >= 0:
-                return base ** n
-            if base == 0:
+                return (base[0] ** n, None)
+            if base[0] == 0:
                 raise CalcError("division-by-zero")
-            return Fraction(1, 1) / (base ** (-n))
+            return (Fraction(1, 1) / (base[0] ** (-n)), None)
         return base
 
     def postfix(self, depth):
         v = self.atom(depth)
         while True:
-            kind, val, _ = self.peek()
+            token = self.peek()
+            kind, val = token[0], token[1]
             if kind == "op" and val == "%":
                 self.next()
-                v = v / 100
+                v = (v[0] / 100, v[1])  # SPEC v1.1 : % conserve la dimension
             else:
                 return v
 
     def atom(self, depth):
         if depth > MAXDEPTH:
             raise CalcError("too-deep")
-        kind, val, pos = self.next()
+        token = self.next()
+        kind, val, pos = token[0], token[1], token[2]
         if kind == "num":
-            return parse_number(val, pos)
+            return (parse_number(val, pos), None)
+        if kind == "numcur":
+            return (parse_number(val, pos), ("currency", token[3]))
         if kind == "ident":
             if val not in self.names:
                 raise CalcError("unknown-identifier", pos)
             return self.names[val]
         if kind == "op" and val == "(":
             v = self.expr(depth + 1)
-            k2, v2, p2 = self.next()
-            if not (k2 == "op" and v2 == ")"):
-                raise CalcError("parenthesis", p2)
+            closing = self.next()
+            if not (closing[0] == "op" and closing[1] == ")"):
+                raise CalcError("parenthesis", closing[2])
             return v
         raise CalcError("parse-error", pos)
 
 
 def evaluate(expr, names=None):
-    """Evaluate one expression per spec; returns Fraction or raises CalcError."""
-    parsed_names = {k: parse_number(str(v), 0) for k, v in (names or {}).items()}
+    """Evaluate one expression per spec; returns (Fraction, dim) or raises CalcError."""
+    parsed_names = {k: (parse_number(str(v), 0), None) for k, v in (names or {}).items()}
     tokens = tokenize(normalize(expr))
     return Parser(tokens, parsed_names).parse()
 
@@ -244,8 +331,14 @@ def run_vector(vec):
     inp = vec["input"]
     expect = vec["expect"]
     try:
-        result = evaluate(inp, vec.get("names", {}))
+        result, dim = evaluate(inp, vec.get("names", {}))
         got = {"status": "ok", "rational": f"{result.numerator}/{result.denominator}"}
+        if dim is None:
+            got["dimension"] = "none"
+        elif dim[0] == "currency":
+            got["dimension"] = {"currency": dim[1]}
+        else:
+            got["dimension"] = {"duration": dim[1]}
         if "display_fr" in expect:
             places = expect.get("display_places", 4)
             got["display_fr"] = format_fr(result, places)
@@ -266,6 +359,8 @@ def check_vector(vec):
                 problems.append(f"rational {got['rational']} != {expect['rational']}")
             if "display_fr" in expect and got.get("display_fr") != expect["display_fr"]:
                 problems.append(f"display {got.get('display_fr')!r} != {expect['display_fr']!r}")
+            if "dimension" in expect and got.get("dimension") != expect["dimension"]:
+                problems.append(f"dimension {got.get('dimension')!r} != {expect['dimension']!r}")
     else:
         if got["status"] != "error":
             problems.append(f"expected error {expect.get('error')}, got ok {got.get('rational')}")

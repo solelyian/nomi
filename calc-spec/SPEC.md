@@ -112,6 +112,8 @@ Notes normatives :
 | `division-by-zero` | diviseur exactement nul |
 | `exponent` | exposant non entier ou hors `[-64, 64]` |
 | `unknown-identifier` | référence inconnue ou postérieure |
+| `dimension-mismatch` | addition/division/multiplication dimensionnellement incompatibles, ou exponentiation dimensionnée |
+| `currency-mixing` | deux codes monnaie différents combinés — aucune conversion dans le noyau |
 | `too-long` / `too-many-steps` / `too-deep` / `overflow` | bornes de la section 1.2 |
 
 Toute erreur est typée et positionnée ; aucune n'est rétrogradée en approximation.
@@ -122,14 +124,24 @@ Toute erreur est typée et positionnée ; aucune n'est rétrogradée en approxim
 
 ### 3.1 Dimensions
 
-Chaque valeur porte une dimension : `none`, `currency(code)`, `duration(unit)`,
-`percent`. Règles :
+Chaque valeur porte une dimension : `none`, `currency(code)`, `duration(unit)`.
+**Le pourcentage n'est pas une dimension** (clarification normative v1.1) : `%`
+est une mise à l'échelle exacte par 1/100 qui conserve la dimension de sa valeur
+— `currency × percent → currency` en découle sans exception, et `1 + 20%` reste
+de l'arithmétique sans dimension (1,2 exactement). La protection contre
+l'addition d'un taux à un montant est dimensionnelle : `100€ + 20%` est
+`dimension-mismatch` car la monnaie ne s'additionne qu'à la même monnaie.
+
+Règles :
 
 - addition/soustraction : dimensions identiques exigées, sinon `dimension-mismatch` ;
 - `currency × percent → currency` ; `currency ÷ currency → none` (ratio) ;
 - `none × currency → currency` ; multiplication/division de deux monnaies : `dimension-mismatch` ;
 - deux codes monnaie différents dans un même plan : `currency-mixing` — aucune conversion n'existe dans le noyau ;
-- `duration` : une seule unité par calcul en v1.0 ; la composition d'unités (`2 h 30`) est une conversion de frontière explicitement demandée, jamais devinée.
+- `duration` : une seule unité par calcul en v1.0 ; la composition d'unités (`2 h 30`) est une conversion de frontière explicitement demandée, jamais devinée ;
+- exponentiation : base et exposant sans dimension exigés — `(10€)^2` est `dimension-mismatch` (€² n'a pas de représentation en v1) ;
+- division : `d ÷ d` (même dimension) donne un ratio `none` ; `d ÷ none` conserve `d` ; `none ÷ d` est `dimension-mismatch` ;
+- multiplication de deux valeurs dimensionnées est `dimension-mismatch` (`€ × €`, `€ × h`).
 
 ### 3.2 Monnaies
 
@@ -219,8 +231,8 @@ Pour une affirmation `expression = résultat` :
 ```
 
 `rational` est la forme réduite exacte ; `display_fr` applique les règles de la
-section 1.3 en locale française. Les vecteurs de dimension et d'ancrage utilisent
-des champs supplémentaires documentés dans le corpus.
+section 1.3 en locale française. Les vecteurs de dimension ajoutent
+`"dimension": "none" | {"currency": "EUR"}` dans `expect`.
 
 ## 7. Journal des changements
 
@@ -228,3 +240,4 @@ des champs supplémentaires documentés dans le corpus.
 |---|---|---|
 | 1.0 | 2026-11-27 | Spécification initiale figée |
 | 1.0.1 | 2026-11-27 | Précision normative du groupement des milliers français (seuil, caractère U+202F, partie fractionnaire non groupée) — clarification sans changement de comportement attendu |
+| 1.1 | 2026-11-28 | Clarification normative : le pourcentage est une mise à l'échelle sans dimension (pas une dimension) — seule lecture cohérente avec `currency × percent → currency` et `1 + 20%` ; règles dimensionnelles de multiplication/division/exponentiation explicitées ; erreurs `dimension-mismatch` et `currency-mixing` ajoutées à la taxonomie |

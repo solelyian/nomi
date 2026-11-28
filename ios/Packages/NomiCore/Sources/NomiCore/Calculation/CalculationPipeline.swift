@@ -14,6 +14,42 @@ public struct CalcStepResult: Equatable, Sendable {
     public let value: Rational?
     public let unit: String
     public let verified: Bool
+    /// Code monnaie si la valeur est dimensionnée (EUR/USD/GBP) — vide sinon.
+    public let dimension: String
+
+    public init(id: String, expression: String, value: Rational?, unit: String, verified: Bool, dimension: String = "") {
+        self.id = id
+        self.expression = expression
+        self.value = value
+        self.unit = unit
+        self.verified = verified
+        self.dimension = dimension
+    }
+}
+
+/// Certificat de calcul — structure vérifiable, jamais du texte libre (SPEC 7.3).
+public struct CalcCertificate: Equatable, Sendable, Codable {
+    public let engine: String
+    public let steps: [CertificateStep]
+    public let grounding: String
+    public let verifier: String
+    public let status: String
+
+    public struct CertificateStep: Equatable, Sendable, Codable {
+        public let id: String
+        public let expression: String
+        public let value: String
+        public let unit: String
+        public let dimension: String
+    }
+
+    /// Forme JSON consignée — stable, triée, sans texte libre.
+    public func jsonString() -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
 }
 
 /// Pipeline de calcul déterministe — calc-spec/SPEC.md et deterministic_calculation_system.md.
@@ -31,6 +67,64 @@ public enum CalcPipeline {
 
     /// Extraction tolérante du plan : premier `{` au dernier `}`, jamais d'erreur —
     /// un plan illisible signifie simplement « pas de calcul ».
+    /// Plan de classification : le modèle nomme un schéma du catalogue et remplit
+    /// les slots — il ne pose plus de formule du tout (strate 1, §8.2).
+    public struct SchemaPlan: Equatable, Sendable {
+        public let schema: String
+        public let slots: [String: Rational]
+        public let answer: String
+    }
+
+    /// Lit un plan de classification JSON. Slots en littéraux canoniques stricts ;
+    /// tout slot illisible invalide le plan — jamais de lecture approximative.
+    public static func parseSchemaPlan(_ text: String) -> SchemaPlan? {
+        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), end > start else { return nil }
+        let slice = String(text[start...end])
+        guard let data = slice.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let schema = json["schema"] as? String,
+              let rawSlots = json["slots"] as? [String: Any] else { return nil }
+        var slots: [String: Rational] = [:]
+        for (key, value) in rawSlots {
+            guard key.count <= 32, key.allSatisfy({ ($0 >= "a" && $0 <= "z") || ($0 >= "0" && $0 <= "9") || $0 == "_" }) else { return nil }
+            let literal: String
+            if let text = value as? String { literal = text }
+            else if let number = value as? NSNumber { literal = number.stringValue }
+            else { return nil }
+            guard let parsed = Rational(decimalLiteral: literal.replacingOccurrences(of: ",", with: ".")) else { return nil }
+            slots[key] = parsed
+        }
+        let answer = (json["answer"] as? String) ?? ""
+        return SchemaPlan(schema: schema, slots: slots, answer: answer)
+    }
+
+    /// Ancrage des slots : chaque valeur doit être traçable vers la demande, une
+    /// constante autorisée ou une variante de taux — même règle que les expressions.
+    public static func slotsGrounded(_ slots: [String: Rational], known: [Rational]) -> Bool {
+        let hundred = Rational(integer: BigInt(magnitude: BigUInt(100), negative: false))
+        let one = Rational(integer: BigInt(magnitude: BigUInt(1), negative: false))
+        var values = Set(known.map { $0.magnitude })
+        for constant in constants { values.insert(constant.magnitude) }
+        for base in Array(values) {
+            values.insert(base / hundred)
+            values.insert(one + base / hundred)
+            values.insert(one - base / hundred)
+        }
+        return slots.values.allSatisfy { values.contains($0.magnitude) || $0.isZero && values.contains(zeroMagnitude) }
+    }
+
+    private static var zeroMagnitude: Rational { Rational(integer: BigInt(magnitude: BigUInt(0), negative: false)) }
+
+    /// Applique un plan de classification : ancrage des slots exigé, puis calcul
+    /// mécanique du schéma avec invariants et vérification inverse — tout écart
+    /// est bloquant, jamais de repli.
+    public static func runSchema(_ plan: SchemaPlan, known: [Rational]) -> SchemaOutcome? {
+        guard slotsGrounded(plan.slots, known: known) else { return nil }
+        guard let outcome = try? CalcSchemas.apply(plan.schema, slots: plan.slots) else { return nil }
+        guard outcome.invariantsHeld, outcome.inverseVerified else { return nil }
+        return outcome
+    }
+
     public static func parsePlan(_ text: String) -> (calculates: Bool, steps: [CalcPlanStep], answer: String) {
         guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), end > start,
               let data = String(text[start...end]).data(using: .utf8),
@@ -144,27 +238,56 @@ public enum CalcPipeline {
     public static func run(_ steps: [CalcPlanStep], known: [Rational]) -> [CalcStepResult] {
         let kernel = CalcKernel()
         let verifier = CalcVerifierEngine()
-        var bindings: [String: Rational] = [:]
+        // SPEC 3.1 : les dimensions se propagent par les identificateurs —
+        // une étape référencée porte sa dimension monétaire dans les suivantes.
+        var bindings: [String: Measured] = [:]
         var results: [CalcStepResult] = []
         for step in steps.prefix(maxSteps) {
             var verified = false
             var value: Rational?
-            if isGrounded(step.expression, known: known + Array(bindings.values)) {
+            var dimension = ""
+            if isGrounded(step.expression, known: known + bindings.values.map(\.value)) {
                 do {
-                    let kernelValue = try kernel.evaluate(step.expression, names: bindings)
-                    let verifierValue = try verifier.evaluate(step.expression, names: bindings)
+                    let kernelValue = try kernel.evaluateDimensional(step.expression, names: bindings)
+                    let verifierValue = try verifier.evaluateDimensional(step.expression, names: bindings)
                     if kernelValue == verifierValue {
-                        value = kernelValue
+                        value = kernelValue.value
                         verified = true
                         bindings[step.id] = kernelValue
+                        if kernelValue.dim.kind == .currency { dimension = kernelValue.dim.code }
                     }
                 } catch {
-                    // expression invalide ou borne dépassée : étape non vérifiée, jamais de repli
+                    // expression invalide, contresens dimensionnel ou borne dépassée :
+                    // étape non vérifiée, jamais de repli
                 }
             }
-            results.append(CalcStepResult(id: step.id, expression: step.expression, value: value, unit: step.unit, verified: verified))
+            results.append(CalcStepResult(id: step.id, expression: step.expression, value: value, unit: step.unit, verified: verified, dimension: dimension))
         }
         return results
+    }
+
+    /// Certificat d'un calcul par schéma du catalogue — la forme la plus forte :
+    /// classification + slots ancrés + invariants + vérification inverse (§8).
+    public static func certifySchema(_ outcome: SchemaOutcome, slots: [String: Rational], engineVersion: String = "nomi-calc/1.1") -> CalcCertificate {
+        let steps = outcome.values.sorted(by: { $0.key < $1.key }).map { key, value in
+            CalcCertificate.CertificateStep(
+                id: key, expression: outcome.schema,
+                value: value.displayFrench(), unit: "", dimension: "")
+        }
+        return CalcCertificate(engine: engineVersion, steps: steps, grounding: "anchored", verifier: "inverse", status: "verified")
+    }
+
+    /// Assemble le certificat de calcul d'une réponse — la structure affichée et
+    /// consignée, que le texte généré ne peut pas imiter (SPEC 7.3).
+    public static func certify(_ results: [CalcStepResult], grounded: Bool, engineVersion: String = "nomi-calc/1.1") -> CalcCertificate {
+        let verifiedSteps = results.filter(\.verified).map { result in
+            CalcCertificate.CertificateStep(
+                id: result.id, expression: result.expression,
+                value: result.value?.displayFrench() ?? "", unit: result.unit,
+                dimension: result.dimension)
+        }
+        let status = !results.isEmpty && results.allSatisfy(\.verified) && grounded ? "interpreted" : "ungrounded"
+        return CalcCertificate(engine: engineVersion, steps: verifiedSteps, grounding: grounded ? "anchored" : "unanchored", verifier: "agree", status: status)
     }
 
     // MARK: Composition mécanique
@@ -214,9 +337,50 @@ public enum CalcPipeline {
             }
             if !traceable { blocked.append(range) }
         }
+        // Nombres en toutes lettres — SPEC 7.2 : un chiffre écrit en lettres ne
+        // doit pas passer le masquage quand il est intraçable. Couverture bornée
+        // au français usuel (0–999 999) ; la composition structurée rend ce
+        // chemin marginal, mais il est fermé.
+        for wordRange in untraceableNumberWords(in: answer, allowed: allowed, excluding: blocked) {
+            blocked.append(wordRange)
+        }
         var text = answer
-        for range in blocked.reversed() { text.replaceSubrange(range, with: "…") }
+        for range in blocked.sorted(by: { $0.lowerBound > $1.lowerBound }) { text.replaceSubrange(range, with: "…") }
         return (text, blocked.count)
+    }
+
+    /// Balaye les séquences de mots-nombres français ; chaque séquence reconnue
+    /// dont la valeur n'est pas traçable est masquée. Les mots couverts par des
+    /// plages déjà bloquées (chiffres) sont ignorés.
+    private static func untraceableNumberWords(in answer: String, allowed: [Rational], excluding: [Range<String.Index>]) -> [Range<String.Index>] {
+        let wordPattern = try! NSRegularExpression(pattern: #"[A-Za-zÀ-ÿ]+(?:-[A-Za-zÀ-ÿ]+)*"#)
+        let matches = wordPattern.matches(in: answer, range: NSRange(answer.startIndex..., in: answer))
+        let words = matches.compactMap { match -> (word: String, range: Range<String.Index>)? in
+            guard let range = Range(match.range, in: answer) else { return nil }
+            return (String(answer[range]), range)
+        }
+        var blocked: [Range<String.Index>] = []
+        var index = 0
+        while index < words.count {
+            let remaining = words[index...].map(\.word)
+            if let parsed = NumberWords.parseSequence(remaining), parsed.consumed > 0 {
+                let start = words[index].range.lowerBound
+                let end = words[index + parsed.consumed - 1].range.upperBound
+                let sequenceRange = start..<end
+                // Jamais de masquage dans « un » article-like isolé hors contexte :
+                // 0 et 1 sont des constantes de la liste blanche — traçables.
+                let value = Rational(integer: BigInt(magnitude: BigUInt(UInt64(parsed.value)), negative: false))
+                let traceable = allowed.contains { sameAsDisplayed($0, value) }
+                    || constants.contains { $0 == value }
+                if !traceable, !excluding.contains(where: { $0.overlaps(sequenceRange) }) {
+                    blocked.append(sequenceRange)
+                }
+                index += parsed.consumed
+            } else {
+                index += 1
+            }
+        }
+        return blocked
     }
 
     /// Le texte affiche des valeurs arrondies : la comparaison se fait à l'échelle

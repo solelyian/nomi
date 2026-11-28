@@ -14,9 +14,9 @@ public sealed partial class Kernel
     public const int MaxDepth = 32;
     public const int MaxExponent = 64;
 
-    private enum TokenKind { Number, Identifier, Operator, End }
+    private enum TokenKind { Number, Identifier, Operator, CurrencySymbol, End }
 
-    private readonly record struct Token(TokenKind Kind, string Text, int Position);
+    private readonly record struct Token(TokenKind Kind, string Text, int Position, string Currency = "");
 
     /// <summary>Normalisation de la frontière de lecture — SPEC 3.3.</summary>
     private static string Normalize(string expression)
@@ -57,6 +57,12 @@ public sealed partial class Kernel
                 tokens.Add(new Token(TokenKind.Identifier, expression[start..index], start));
                 continue;
             }
+            if (character is '€' or '$' or '£')
+            {
+                tokens.Add(new Token(TokenKind.CurrencySymbol, character.ToString(), index));
+                index++;
+                continue;
+            }
             if ("+-*/^()%".Contains(character))
             {
                 tokens.Add(new Token(TokenKind.Operator, character.ToString(), index));
@@ -66,7 +72,40 @@ public sealed partial class Kernel
             throw new CalculationException("parse-error");
         }
         tokens.Add(new Token(TokenKind.End, "", expression.Length));
-        return tokens;
+        return MergeCurrency(tokens);
+    }
+
+    /// <summary>
+    /// Attache les symboles monétaires au nombre adjacent — SPEC 3.2 : préfixe ou
+    /// suffixe, avec ou sans espace. Un symbole entre deux nombres (`12€50`) est
+    /// `unsupported` ; un symbole sans nombre adjacent est `parse-error`.
+    /// </summary>
+    private static List<Token> MergeCurrency(List<Token> tokens)
+    {
+        var merged = new List<Token>();
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            var token = tokens[i];
+            if (token.Kind != TokenKind.CurrencySymbol) { merged.Add(token); continue; }
+            var before = merged.Count > 0 && merged[^1].Kind == TokenKind.Number;
+            var after = i + 1 < tokens.Count && tokens[i + 1].Kind == TokenKind.Number;
+            if (before && after) throw new CalculationException("unsupported");
+            if (!before && !after) throw new CalculationException("parse-error");
+            var code = Dimension.CurrencyOf(token.Text[0]).Code;
+            if (before)
+            {
+                var number = merged[^1];
+                if (number.Currency != "") throw new CalculationException("parse-error");
+                merged[^1] = number with { Currency = code };
+            }
+            else
+            {
+                var number = tokens[i + 1];
+                if (number.Currency != "") throw new CalculationException("parse-error");
+                tokens[i + 1] = number with { Currency = code };
+            }
+        }
+        return merged;
     }
 
     private static Rational ParseNumber(string raw)
@@ -76,13 +115,13 @@ public sealed partial class Kernel
         return Rational.ParseLiteral(normalized) ?? throw new CalculationException("parse-error");
     }
 
-    private sealed class Parser(List<Token> tokens, IReadOnlyDictionary<string, Rational> names)
+    private sealed class Parser(List<Token> tokens, IReadOnlyDictionary<string, Measured> names)
     {
         private int at;
 
         private Token Peek => tokens[Math.Min(at, tokens.Count - 1)];
 
-        public Rational Parse()
+        public Measured Parse()
         {
             // SPEC 2.1 : toute fermante sans ouvrante et toute ouvrante non fermée
             // sont `parenthesis` — détectées structurellement avant l'évaluation.
@@ -108,7 +147,7 @@ public sealed partial class Kernel
             return value;
         }
 
-        private Rational Expression(int depth)
+        private Measured Expression(int depth)
         {
             var value = Term(depth);
             while (Peek is { Kind: TokenKind.Operator, Text: "+" or "-" })
@@ -116,13 +155,13 @@ public sealed partial class Kernel
                 var add = Peek.Text == "+";
                 at++;
                 var right = Term(depth);
-                value = add ? value + right : value - right;
-                CheckOverflow(value);
+                value = Measured.Add(value, right, add);
+                CheckOverflow(value.Value);
             }
             return value;
         }
 
-        private Rational Term(int depth)
+        private Measured Term(int depth)
         {
             var value = Factor(depth);
             while (Peek is { Kind: TokenKind.Operator, Text: "*" or "/" })
@@ -130,46 +169,53 @@ public sealed partial class Kernel
                 var multiply = Peek.Text == "*";
                 at++;
                 var right = Factor(depth);
-                value = multiply ? value * right : value / right; // division : Rational lève division-by-zero
-                CheckOverflow(value);
+                value = multiply ? Measured.Multiply(value, right) : Measured.Divide(value, right); // division par zéro : Rational la lève
+                CheckOverflow(value.Value);
             }
             return value;
         }
 
-        private Rational Factor(int depth)
+        private Measured Factor(int depth)
         {
-            if (Peek is { Kind: TokenKind.Operator, Text: "-" }) { at++; return -Factor(depth); }
+            if (Peek is { Kind: TokenKind.Operator, Text: "-" }) { at++; return Negate(Factor(depth)); }
             if (Peek is { Kind: TokenKind.Operator, Text: "+" }) { at++; return Factor(depth); }
             var baseValue = Postfix(depth);
             if (Peek is { Kind: TokenKind.Operator, Text: "^" })
             {
                 at++;
                 var exponentValue = Factor(depth); // associatif à droite
-                if (exponentValue.Denominator != System.Numerics.BigInteger.One
-                    || exponentValue.Numerator > MaxExponent
-                    || exponentValue.Numerator < -MaxExponent)
+                // SPEC 3.1 : l'exponentiation d'une valeur dimensionnée est un
+                // contresens dimensionnel (€² n'a pas de représentation en v1).
+                if (!baseValue.Dim.IsNone || !exponentValue.Dim.IsNone) throw new CalculationException("dimension-mismatch");
+                if (exponentValue.Value.Denominator != System.Numerics.BigInteger.One
+                    || exponentValue.Value.Numerator > MaxExponent
+                    || exponentValue.Value.Numerator < -MaxExponent)
                     throw new CalculationException("exponent");
-                var exponent = (int)exponentValue.Numerator;
-                var result = baseValue.RaisedTo(exponent);
+                var exponent = (int)exponentValue.Value.Numerator;
+                var result = baseValue.Value.RaisedTo(exponent);
                 CheckOverflow(result);
-                return result;
+                return new Measured(result, Dimension.None);
             }
             return baseValue;
         }
 
-        private Rational Postfix(int depth)
+        private static Measured Negate(Measured value) => new(-value.Value, value.Dim);
+
+        private Measured Postfix(int depth)
         {
             var value = Atom(depth);
             while (Peek is { Kind: TokenKind.Operator, Text: "%" })
             {
                 at++;
-                value /= new Rational(100, 1);
-                CheckOverflow(value);
+                // SPEC v1.1 : % est une mise à l'échelle sans dimension —
+                // la dimension de la valeur est conservée.
+                value = new Measured(value.Value / new Rational(100, 1), value.Dim);
+                CheckOverflow(value.Value);
             }
             return value;
         }
 
-        private Rational Atom(int depth)
+        private Measured Atom(int depth)
         {
             if (depth > MaxDepth) throw new CalculationException("too-deep");
             var token = Peek;
@@ -177,7 +223,8 @@ public sealed partial class Kernel
             switch (token.Kind)
             {
                 case TokenKind.Number:
-                    return ParseNumber(token.Text);
+                    var dim = token.Currency == "" ? Dimension.None : new Dimension(DimKind.Currency, token.Currency);
+                    return new Measured(ParseNumber(token.Text), dim);
                 case TokenKind.Identifier:
                     // SPEC : identificateur = lettre (lettre|chiffre|"_")*, 32 caractères au plus.
                     if (token.Text.Length > 32 || token.Text[0] is < 'a' or > 'z' && token.Text[0] is < 'A' or > 'Z')
@@ -206,11 +253,20 @@ public sealed partial class Kernel
         }
     }
 
-    /// <summary>Évalue une expression en rationnel exact.</summary>
+    /// <summary>Évalue une expression en rationnel exact. Les liaisons sans
+    /// dimension sont acceptées telles quelles ; les règles dimensionnelles des
+    /// littéraux monétaires restent appliquées pendant l'évaluation.</summary>
     public Rational Evaluate(string expression, IReadOnlyDictionary<string, Rational>? names = null)
     {
+        var lifted = names?.ToDictionary(pair => pair.Key, pair => Measured.Plain(pair.Value));
+        return EvaluateDimensional(expression, lifted).Value;
+    }
+
+    /// <summary>Évalue une expression en valeur dimensionnée — SPEC 3.1.</summary>
+    public Measured EvaluateDimensional(string expression, IReadOnlyDictionary<string, Measured>? names = null)
+    {
         var tokens = Tokenize(Normalize(expression));
-        return new Parser(tokens, names ?? new Dictionary<string, Rational>()).Parse();
+        return new Parser(tokens, names ?? new Dictionary<string, Measured>()).Parse();
     }
 
     [GeneratedRegex(@"(?<=\d) (?=\d{3}(?!\d))")]

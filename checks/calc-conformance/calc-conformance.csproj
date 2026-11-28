@@ -8,9 +8,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Nomi.WinUI/CalcEngine/*.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="../../Nomi.WinUI/CalcEngine/Rational.cs" />
-    <Compile Include="../../Nomi.WinUI/CalcEngine/Kernel.cs" />
-    <Compile Include="../../Nomi.WinUI/CalcEngine/VerifierEngine.cs" />
   </ItemGroup>
 </Project>

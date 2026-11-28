@@ -146,3 +146,43 @@ final class CalcPipelineTests: XCTestCase {
         XCTAssertNil(CalcPipeline.compose(plan.answer, results: results))
     }
 }
+
+// MARK: — Masquage des nombres en toutes lettres (SPEC 7.2)
+final class NumberWordsMaskTests: XCTestCase {
+    private func rat(_ value: Int) -> Rational {
+        Rational(integer: BigInt(magnitude: BigUInt(UInt64(value)), negative: false))
+    }
+
+    func testParseSimpleWords() {
+        XCTAssertEqual(NumberWords.parse("soixante-huit"), 68)
+        XCTAssertEqual(NumberWords.parse("quatre-vingt-douze"), 92)
+        XCTAssertEqual(NumberWords.parse("vingt"), 20)
+        XCTAssertEqual(NumberWords.parse("soixante-dix"), 70)
+        XCTAssertEqual(NumberWords.parse("soixante-quinze"), 75)
+        XCTAssertNil(NumberWords.parse("bonjour"))
+    }
+
+    func testParseSequences() {
+        XCTAssertEqual(NumberWords.parseSequence(["deux", "cent", "quarante-deux"])?.value, 242)
+        XCTAssertEqual(NumberWords.parseSequence(["mille", "deux", "cents"])?.value, 1200)
+        XCTAssertEqual(NumberWords.parseSequence(["cent", "vingt"])?.value, 120)
+    }
+
+    func testMaskSpelledOutUntraceable() {
+        let masked = CalcPipeline.mask("Le total est de soixante-huit euros.", allowed: [])
+        XCTAssertTrue(masked.text.contains("…"), "le nombre en lettres intraçable est masqué : \(masked.text)")
+        XCTAssertEqual(masked.hidden, 1)
+    }
+
+    func testMaskSpelledOutTraceablePasses() {
+        let masked = CalcPipeline.mask("Le total est de soixante-huit euros.", allowed: [rat(68)])
+        XCTAssertEqual(masked.hidden, 0)
+        XCTAssertEqual(masked.text, "Le total est de soixante-huit euros.")
+    }
+
+    func testMaskSpelledOutConstantsPass() {
+        // 0-10 sont des constantes structurelles — traçables sans provenance.
+        let masked = CalcPipeline.mask("Il y a trois étapes.", allowed: [])
+        XCTAssertEqual(masked.hidden, 0)
+    }
+}
